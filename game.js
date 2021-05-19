@@ -10,8 +10,9 @@ var black = "rgb(0,0,0)";
 var white = "rgb(255,255,255)";
 var red = "rgb(255,0,0)";
 var green = "rgb(10,200,10)";
+var blue = "rgb(110,197,233)";
 
-renderer.setClearColor(black);
+renderer.setClearColor(blue);
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 var axes = new THREE.AxesHelper(30);
@@ -48,10 +49,22 @@ scene.add(spotlight)
 
 
 camera.position.x = 10;
-camera.position.y = 10;
+camera.position.y = 20;
 camera.position.z = 50;
 camera.lookAt(scene.position);
 
+var step = 0;
+function renderScene(){
+    //Before request add changes in rotation and camera movements
+    step += 0.005;
+    camera.position.x = 60*Math.cos(step);
+    camera.position.z = 60*Math.sin(step); 
+    camera.lookAt(scene.position);
+
+    requestAnimationFrame(renderScene);//request render scene at every frame
+    renderer.render(scene,camera);
+}
 
 $("#gameCanvas").append(renderer.domElement);
-renderer.render(scene,camera);
+// renderer.render(scene,camera);
+renderScene()
