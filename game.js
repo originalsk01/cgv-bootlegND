@@ -1,7 +1,10 @@
-console.log("Hello World")
+import {GLTFLoader} from "./js/GLTFLoader.js"
+import { RGBDEncoding } from "./js/three.module.js";
 
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight,0.1, 1000);
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+const loader = new GLTFLoader();
+
 
 var renderer = new THREE.WebGLRenderer();
 
@@ -17,6 +20,17 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 
 var axes = new THREE.AxesHelper(30);
 scene.add(axes);
+
+//Load model
+var obj;
+loader.load(
+    'thermos/scene.gltf',
+
+    function(gltf){
+        obj = gltf.scene;
+        scene.add( gltf.scene );
+    }
+)
 
 //plane
 var planeGeometry = new THREE.PlaneGeometry(500,500,1,1);
@@ -46,12 +60,25 @@ var spotlight = new THREE.SpotLight(0xffffff);
 spotlight.position.set(-40, 60, 40);
 scene.add(spotlight)
 
+//First person Controls section
+var cameraControls = new THREE.FirstPersonControls(camera);
 
 
+
+window.addEventListener('resize', function(){
+    renderer.setSize(window.innerWidth,window.innerHeight);
+    camera.aspect=window.innerWidth/window.innerHeight;
+
+})
+
+
+//Initial camera position
 camera.position.x = 10;
-camera.position.y = 20;
+camera.position.y = 10;
 camera.position.z = 50;
 camera.lookAt(scene.position);
+
+var clock = new THREE.Clock();
 
 var step = 0;
 function renderScene(){
@@ -60,6 +87,11 @@ function renderScene(){
     camera.position.x = 60*Math.cos(step);
     camera.position.z = 60*Math.sin(step); 
     camera.lookAt(scene.position);
+
+    // var delta = clock.getDelta();//Gives time from when it was last called
+    // cameraControls.update(delta);//Updates position
+    // renderer.clear();
+
 
     requestAnimationFrame(renderScene);//request render scene at every frame
     renderer.render(scene,camera);
