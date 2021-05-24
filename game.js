@@ -20,29 +20,45 @@ var camera = new THREE.PerspectiveCamera(
 //Animated model
 let mixer
 const loader = new FBXLoader()
-loader.load('character/Samba Dancing.fbx', (fbx) => {
-  mixer = new THREE.AnimationMixer(fbx)
-  fbx.scale.set(.15,.15,.15);
-  fbx.position.set(25,0,0);
+// loader.load('character/Samba Dancing.fbx', (fbx) => {
+//   mixer = new THREE.AnimationMixer(fbx)
+//   fbx.scale.set(.15,.15,.15);
+//   fbx.position.set(25,0,0);
 
-  const action = mixer.clipAction(fbx.animations[0])
-  action.play()
+//   const action = mixer.clipAction(fbx.animations[0])
+//   action.play()
 
-  fbx.traverse(function (child) {
-    if (child.isMesh) {
-      child.castShadow = true
-      child.receiveShadow = true
-    }
-  })
+//   fbx.traverse(function (child) {
+//     if (child.isMesh) {
+//       child.castShadow = true
+//       child.receiveShadow = true
+//     }
+//   })
 
-  scene.add(fbx)
-})
-var snakeobj = new THREE.Object3D;
+//   scene.add(fbx)
+// })
+
+//var snakeobj = new THREE.Object3D;
+var snakeobj
 var newLoader = new GLTFLoader()
+//var mixer
 newLoader.load('./resources/snake/scene.gltf', function (gltf) {
-  snakeobj.add(gltf.scene.children[0]);
+  snakeobj=gltf.scene;
+  mixer= new THREE.AnimationMixer(gltf.scene.children[0]);
+  gltf.animations.forEach((clip) => {mixer.clipAction(clip).play(); });
+  scene.add(gltf.scene)
+
 })
 scene.add(snakeobj);
+
+// newLoader.load('./resources/snake/scene.gltf', function (gltf) {
+//   //snakeobj.add(gltf.scene.children[0]);
+//   mixer= new THREE.AnimationMixer(gltf.scene.children[0]);
+//   gltf.animations.forEach((clip) => {mixer.clipAction(clip).play(); });
+//   scene.add(gltf.scene)
+
+// })
+// scene.add(snakeobj);
 
 
 var renderer = new THREE.WebGLRenderer()
