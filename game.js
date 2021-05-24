@@ -37,11 +37,13 @@ loader.load('character/Samba Dancing.fbx', (fbx) => {
 
   scene.add(fbx)
 })
-
+var snakeobj = new THREE.Object3D;
 var newLoader = new GLTFLoader()
-newLoader.load('/resources/snake/scene.gltf', function (gltf) {
-  scene.add(gltf.scene)
+newLoader.load('./resources/snake/scene.gltf', function (gltf) {
+  snakeobj.add(gltf.scene.children[0]);
 })
+scene.add(snakeobj);
+
 
 var renderer = new THREE.WebGLRenderer()
 
@@ -115,22 +117,21 @@ document.body.addEventListener('keydown', keyPressed);
 function keyPressed(e){
     switch(e.key) {
       case 'ArrowUp':
-          cube.rotateX(-0.1);
+          snakeobj.position.z+=1;
           break;
       case 'ArrowDown':
-          cube.rotateX(0.1);
-          break;
+        snakeobj.position.z+=-1;
+        break;
       case 'ArrowLeft':
-          cube.rotateY(-0.1);
+          snakeobj.position.x+=1;
           break;
       case 'ArrowRight':
-          cube.rotateY(0.1);
+          snakeobj.position.x+=-1;
           break;
     }
     e.preventDefault();
 
 }
-
 
 //Initial camera position
 camera.position.set(50, 50, 50)
