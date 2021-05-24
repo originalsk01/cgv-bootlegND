@@ -110,6 +110,28 @@ window.addEventListener('resize', function () {
   camera.aspect = window.innerWidth / window.innerHeight
 })
 
+document.body.addEventListener('keydown', keyPressed);
+
+function keyPressed(e){
+    switch(e.key) {
+      case 'ArrowUp':
+          cube.rotateX(-0.1);
+          break;
+      case 'ArrowDown':
+          cube.rotateX(0.1);
+          break;
+      case 'ArrowLeft':
+          cube.rotateY(-0.1);
+          break;
+      case 'ArrowRight':
+          cube.rotateY(0.1);
+          break;
+    }
+    e.preventDefault();
+
+}
+
+
 //Initial camera position
 camera.position.set(50, 50, 50)
 
@@ -130,8 +152,8 @@ function renderScene() {
   step += 0.005
 
   camera.lookAt(scene.position)
-  cube.position.z += Math.sin(step * Math.PI * rad)
-  cube.position.x += Math.cos(step * Math.PI * rad)
+//   cube.position.z += Math.sin(step * Math.PI * rad)
+//   cube.position.x += Math.cos(step * Math.PI * rad)
   // var delta = clock.getDelta();//Gives time from when it was last called
   // cameraControls.update(delta);//Updates position
   renderer.clear()
