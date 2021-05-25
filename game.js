@@ -78,11 +78,15 @@ controls.update()
 var axes = new THREE.AxesHelper(30)
 scene.add(axes)
 
-//Load model
+//Load textures
+var groundTexture = new THREE.TextureLoader().load('./Rock_041_SD/Rock_041_ambientOcclusion.jpg' );
+var altGroundTexture = new THREE.TextureLoader().load('rubble.jpeg' );
 
 //plane
 var planeGeometry = new THREE.PlaneGeometry(500, 500, 1, 1)
-var planeMaterial = new THREE.MeshBasicMaterial({ color: green })
+//using standard material so its got the same properties as unity rendering
+//meaning its affected by lights , basic means its unaffected by lights
+var planeMaterial = new THREE.MeshBasicMaterial({ map:groundTexture })
 var plane = new THREE.Mesh(planeGeometry, planeMaterial)
 plane.rotation.x = -0.5 * Math.PI
 scene.add(plane)
@@ -102,7 +106,7 @@ spotlight.position.set(-40, 60, 40)
 scene.add(spotlight)
 
 //
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.6)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 0.1)
 directionalLight.position.set(0, 10, 10)
 scene.add(directionalLight)
 
