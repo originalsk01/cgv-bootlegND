@@ -3,6 +3,7 @@ import { FBXLoader } from './js/libs/FBXLoader.js'
 import { OrbitControls } from './js/libs/OrbitControls.js';
 
 // import { RGBDEncoding } from './js/three.module.js';
+
 var jumpheight=10
 var scene,camera
 var snakeobj , mixer2
@@ -16,6 +17,13 @@ var white = 'rgb(255,255,255)'
 var red = 'rgb(255,0,0)'
 var green = 'rgb(10,200,10)'
 var blue = 'rgb(100,177,255)'
+
+var mixer
+const loader = new FBXLoader()
+var snakeobj = new THREE.Object3D;
+var newLoader = new GLTFLoader()
+var clock = new THREE.Clock()
+var step = 0
 
 
 
@@ -52,16 +60,20 @@ function init(){
     var axes = new THREE.AxesHelper(30)
     scene.add(axes)
 
-    
+    //Load textures
+    var groundTexture = new THREE.TextureLoader().load('./textures/Rock_041_SD/Rock_041_ambientOcclusion.jpg');
+    //plane
+    var planeGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1)
+    //using standard material so its got the same properties as unity rendering
+    //meaning its affected by lights , basic means its unaffected by lights
+    var planeMaterial = new THREE.MeshBasicMaterial({ map: groundTexture })
+    var plane = new THREE.Mesh(planeGeometry, planeMaterial)
+    plane.rotation.x = -0.5 * Math.PI
+    scene.add(plane)
 }
 
-//
-
-
-
 //Animated model
-var mixer
-const loader = new FBXLoader()
+
 loader.load('character/Samba Dancing.fbx', (fbx) => {
     mixer = new THREE.AnimationMixer(fbx)
     fbx.scale.set(.15, .15, .15);
@@ -80,11 +92,11 @@ loader.load('character/Samba Dancing.fbx', (fbx) => {
     scene.add(fbx)
 })
 
-var snakeobj = new THREE.Object3D;
-var newLoader = new GLTFLoader()
+
 newLoader.load('./resources/snake/scene.gltf', function (gltf) {
     mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
     gltf.animations.forEach((clip) => { mixer2.clipAction(clip).play(); });
+    // mixer2.clipAction(gltf.animations[0]).play()
     snakeobj.add(gltf.scene)
 
 })
@@ -96,25 +108,6 @@ var renderer = new THREE.WebGLRenderer()
 
 renderer.setClearColor(blue)
 renderer.setSize(window.innerWidth, window.innerHeight)
-
-
-
-
-//Load textures
-var groundTexture = new THREE.TextureLoader().load('./Rock_041_SD/Rock_041_ambientOcclusion.jpg');
-
-//plane
-var planeGeometry = new THREE.PlaneGeometry(500, 500, 1, 1)
-//using standard material so its got the same properties as unity rendering
-//meaning its affected by lights , basic means its unaffected by lights
-var planeMaterial = new THREE.MeshBasicMaterial({ map: groundTexture })
-var plane = new THREE.Mesh(planeGeometry, planeMaterial)
-plane.rotation.x = -0.5 * Math.PI
-scene.add(plane)
-
-
-
-
 
 window.addEventListener('resize', function () {
     renderer.setSize(window.innerWidth, window.innerHeight)
@@ -148,11 +141,11 @@ function keyPressed(e) {
 
 //Initial camera position
 
-var clock = new THREE.Clock()
-
-var step = 0
-
 function updateSnake(delta){
+    
+    camera.lookAt(snakeobj.position.x+15,snakeobj.position.y+5,snakeobj.position.z+10) //updates where the camera looks at bacsed on snake
+
+
     if (snakeobj) {//checks if snake object defined before doing loop for jump
         if(snakeobj.position.y>=jumpheight){
             snakeobj.position.y=jumpheight // set max height for jump
@@ -177,7 +170,6 @@ function renderScene() {
     //Before request add changes in rotation and camera movements
     step += 0.005
 
-    camera.lookAt(snakeobj.position.x+5,snakeobj.position.y+5,snakeobj.position.z+10)
     // var delta = clock.getDelta();//Gives time from when it was last called
     // cameraControls.update(delta);//Updates position
     renderer.clear()
@@ -189,5 +181,4 @@ function renderScene() {
 $('#gameCanvas').append(renderer.domElement)
 // var controls = new THREE.OrbitControls(camera, renderer.domElement)
 // controls.update()
-// renderer.render(scene,camera);
 renderScene()
