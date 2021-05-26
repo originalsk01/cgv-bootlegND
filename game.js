@@ -1,8 +1,7 @@
-import { GLTFLoader } from './js/GLTFLoader.js'
-import { FBXLoader } from './js/FBXLoader.js'
-import { OrbitControls } from './js/OrbitControls.js';
+import { GLTFLoader } from './js/libs/GLTFLoader.js'
+import { FBXLoader } from './js/libs/FBXLoader.js'
+import { OrbitControls } from './js/libs/OrbitControls.js';
 
-import { RGBDEncoding } from './js/three.module.js';
 ('use strict')
 var jumpheight=10
 var scene = new THREE.Scene()
@@ -38,15 +37,13 @@ loader.load('character/Samba Dancing.fbx', (fbx) => {
     scene.add(fbx)
 })
 
-//var snakeobj = new THREE.Object3D;
-var snakeobj
+var snakeobj = new THREE.Object3D;
 var newLoader = new GLTFLoader()
 var mixer2
 newLoader.load('./resources/snake/scene.gltf', function (gltf) {
-    snakeobj = gltf.scene;
     mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
     gltf.animations.forEach((clip) => { mixer2.clipAction(clip).play(); });
-    scene.add(gltf.scene)
+    snakeobj.add(gltf.scene)
 
 })
 scene.add(snakeobj);
@@ -81,7 +78,7 @@ var axes = new THREE.AxesHelper(30)
 scene.add(axes)
 
 //Load textures
-var groundTexture = new THREE.TextureLoader().load('./Rock_041_SD/Rock_041_ambientOcclusion.jpg');
+var groundTexture = new THREE.TextureLoader().load('./textures/Rock_041_SD/Rock_041_ambientOcclusion.jpg');
 var altGroundTexture = new THREE.TextureLoader().load('rubble.jpeg');
 
 //plane
