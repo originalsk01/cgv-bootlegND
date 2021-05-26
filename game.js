@@ -1,6 +1,6 @@
-import { GLTFLoader } from './js/GLTFLoader.js'
-import { FBXLoader } from './js/FBXLoader.js'
-import { OrbitControls } from './js/OrbitControls.js';
+import { GLTFLoader } from './js/libs/GLTFLoader.js'
+import { FBXLoader } from './js/libs/FBXLoader.js'
+import { OrbitControls } from './js/libs/OrbitControls.js';
 
 // import { RGBDEncoding } from './js/three.module.js';
 var jumpheight=10
@@ -81,13 +81,11 @@ loader.load('character/Samba Dancing.fbx', (fbx) => {
 })
 
 var snakeobj = new THREE.Object3D;
-
 var newLoader = new GLTFLoader()
 newLoader.load('./resources/snake/scene.gltf', function (gltf) {
-    snakeobj = gltf.scene;
     mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
     gltf.animations.forEach((clip) => { mixer2.clipAction(clip).play(); });
-    scene.add(gltf.scene)
+    snakeobj.add(gltf.scene)
 
 })
 scene.add(snakeobj);

@@ -3,7 +3,7 @@
  * Copyright 2010-2021 Three.js Authors
  * SPDX-License-Identifier: MIT
  */
-const REVISION = '129dev';
+const REVISION = '128';
 const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
 const TOUCH = { ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3 };
 const CullFaceNone = 0;
@@ -2514,7 +2514,6 @@ class WebGLRenderTarget extends EventDispatcher {
 		this.viewport.copy( source.viewport );
 
 		this.texture = source.texture.clone();
-		this.texture.image = { ...this.texture.image }; // See #20328.
 
 		this.depthBuffer = source.depthBuffer;
 		this.stencilBuffer = source.stencilBuffer;
@@ -2533,82 +2532,6 @@ class WebGLRenderTarget extends EventDispatcher {
 }
 
 WebGLRenderTarget.prototype.isWebGLRenderTarget = true;
-
-class WebGLMultipleRenderTargets extends WebGLRenderTarget {
-
-	constructor( width, height, count ) {
-
-		super( width, height );
-
-		const texture = this.texture;
-
-		this.texture = [];
-
-		for ( let i = 0; i < count; i ++ ) {
-
-			this.texture[ i ] = texture.clone();
-
-		}
-
-	}
-
-	setSize( width, height, depth = 1 ) {
-
-		if ( this.width !== width || this.height !== height || this.depth !== depth ) {
-
-			this.width = width;
-			this.height = height;
-			this.depth = depth;
-
-			for ( let i = 0, il = this.texture.length; i < il; i ++ ) {
-
-				this.texture[ i ].image.width = width;
-				this.texture[ i ].image.height = height;
-				this.texture[ i ].image.depth = depth;
-
-			}
-
-			this.dispose();
-
-		}
-
-		this.viewport.set( 0, 0, width, height );
-		this.scissor.set( 0, 0, width, height );
-
-		return this;
-
-	}
-
-	copy( source ) {
-
-		this.dispose();
-
-		this.width = source.width;
-		this.height = source.height;
-		this.depth = source.depth;
-
-		this.viewport.set( 0, 0, this.width, this.height );
-		this.scissor.set( 0, 0, this.width, this.height );
-
-		this.depthBuffer = source.depthBuffer;
-		this.stencilBuffer = source.stencilBuffer;
-		this.depthTexture = source.depthTexture;
-
-		this.texture.length = 0;
-
-		for ( let i = 0, il = source.texture.length; i < il; i ++ ) {
-
-			this.texture[ i ] = source.texture[ i ].clone();
-
-		}
-
-		return this;
-
-	}
-
-}
-
-WebGLMultipleRenderTargets.prototype.isWebGLMultipleRenderTargets = true;
 
 class WebGLMultisampleRenderTarget extends WebGLRenderTarget {
 
@@ -5973,13 +5896,13 @@ class Matrix4 {
 
 	}
 
-	makeShear( xy, xz, yx, yz, zx, zy ) {
+	makeShear( x, y, z ) {
 
 		this.set(
 
-			1, yx, zx, 0,
-			xy, 1, zy, 0,
-			xz, yz, 1, 0,
+			1, y, z, 0,
+			x, 1, z, 0,
+			x, y, 1, 0,
 			0, 0, 0, 1
 
 		);
@@ -6554,18 +6477,18 @@ class Layers {
 
 let _object3DId = 0;
 
-const _v1$4 = /*@__PURE__*/ new Vector3();
-const _q1 = /*@__PURE__*/ new Quaternion();
-const _m1$1 = /*@__PURE__*/ new Matrix4();
-const _target = /*@__PURE__*/ new Vector3();
+const _v1$4 = new /*@__PURE__*/ Vector3();
+const _q1 = new /*@__PURE__*/ Quaternion();
+const _m1$1 = new /*@__PURE__*/ Matrix4();
+const _target = new /*@__PURE__*/ Vector3();
 
-const _position$3 = /*@__PURE__*/ new Vector3();
-const _scale$2 = /*@__PURE__*/ new Vector3();
-const _quaternion$2 = /*@__PURE__*/ new Quaternion();
+const _position$3 = new /*@__PURE__*/ Vector3();
+const _scale$2 = new /*@__PURE__*/ Vector3();
+const _quaternion$2 = new /*@__PURE__*/ Quaternion();
 
-const _xAxis = /*@__PURE__*/ new Vector3( 1, 0, 0 );
-const _yAxis = /*@__PURE__*/ new Vector3( 0, 1, 0 );
-const _zAxis = /*@__PURE__*/ new Vector3( 0, 0, 1 );
+const _xAxis = new /*@__PURE__*/ Vector3( 1, 0, 0 );
+const _yAxis = new /*@__PURE__*/ Vector3( 0, 1, 0 );
+const _zAxis = new /*@__PURE__*/ Vector3( 0, 0, 1 );
 
 const _addedEvent = { type: 'added' };
 const _removedEvent = { type: 'removed' };
@@ -6905,20 +6828,6 @@ class Object3D extends EventDispatcher {
 			this.children.splice( index, 1 );
 
 			object.dispatchEvent( _removedEvent );
-
-		}
-
-		return this;
-
-	}
-
-	removeFromParent() {
-
-		const parent = this.parent;
-
-		if ( parent !== null ) {
-
-			parent.remove( this );
 
 		}
 
@@ -8014,89 +7923,91 @@ class Triangle {
 
 let materialId = 0;
 
-class Material extends EventDispatcher {
+function Material() {
 
-	constructor() {
+	Object.defineProperty( this, 'id', { value: materialId ++ } );
 
-		super();
+	this.uuid = generateUUID();
 
-		Object.defineProperty( this, 'id', { value: materialId ++ } );
+	this.name = '';
+	this.type = 'Material';
 
-		this.uuid = generateUUID();
+	this.fog = true;
 
-		this.name = '';
-		this.type = 'Material';
+	this.blending = NormalBlending;
+	this.side = FrontSide;
+	this.vertexColors = false;
 
-		this.fog = true;
+	this.opacity = 1;
+	this.transparent = false;
 
-		this.blending = NormalBlending;
-		this.side = FrontSide;
-		this.vertexColors = false;
+	this.blendSrc = SrcAlphaFactor;
+	this.blendDst = OneMinusSrcAlphaFactor;
+	this.blendEquation = AddEquation;
+	this.blendSrcAlpha = null;
+	this.blendDstAlpha = null;
+	this.blendEquationAlpha = null;
 
-		this.opacity = 1;
-		this.transparent = false;
+	this.depthFunc = LessEqualDepth;
+	this.depthTest = true;
+	this.depthWrite = true;
 
-		this.blendSrc = SrcAlphaFactor;
-		this.blendDst = OneMinusSrcAlphaFactor;
-		this.blendEquation = AddEquation;
-		this.blendSrcAlpha = null;
-		this.blendDstAlpha = null;
-		this.blendEquationAlpha = null;
+	this.stencilWriteMask = 0xff;
+	this.stencilFunc = AlwaysStencilFunc;
+	this.stencilRef = 0;
+	this.stencilFuncMask = 0xff;
+	this.stencilFail = KeepStencilOp;
+	this.stencilZFail = KeepStencilOp;
+	this.stencilZPass = KeepStencilOp;
+	this.stencilWrite = false;
 
-		this.depthFunc = LessEqualDepth;
-		this.depthTest = true;
-		this.depthWrite = true;
+	this.clippingPlanes = null;
+	this.clipIntersection = false;
+	this.clipShadows = false;
 
-		this.stencilWriteMask = 0xff;
-		this.stencilFunc = AlwaysStencilFunc;
-		this.stencilRef = 0;
-		this.stencilFuncMask = 0xff;
-		this.stencilFail = KeepStencilOp;
-		this.stencilZFail = KeepStencilOp;
-		this.stencilZPass = KeepStencilOp;
-		this.stencilWrite = false;
+	this.shadowSide = null;
 
-		this.clippingPlanes = null;
-		this.clipIntersection = false;
-		this.clipShadows = false;
+	this.colorWrite = true;
 
-		this.shadowSide = null;
+	this.precision = null; // override the renderer's default precision for this material
 
-		this.colorWrite = true;
+	this.polygonOffset = false;
+	this.polygonOffsetFactor = 0;
+	this.polygonOffsetUnits = 0;
 
-		this.precision = null; // override the renderer's default precision for this material
+	this.dithering = false;
 
-		this.polygonOffset = false;
-		this.polygonOffsetFactor = 0;
-		this.polygonOffsetUnits = 0;
+	this.alphaTest = 0;
+	this.alphaToCoverage = false;
+	this.premultipliedAlpha = false;
 
-		this.dithering = false;
+	this.visible = true;
 
-		this.alphaTest = 0;
-		this.alphaToCoverage = false;
-		this.premultipliedAlpha = false;
+	this.toneMapped = true;
 
-		this.visible = true;
+	this.userData = {};
 
-		this.toneMapped = true;
+	this.version = 0;
 
-		this.userData = {};
+}
 
-		this.version = 0;
+Material.prototype = Object.assign( Object.create( EventDispatcher.prototype ), {
 
-	}
+	constructor: Material,
 
-	onBuild( /* shaderobject, renderer */ ) {}
+	isMaterial: true,
 
-	onBeforeCompile( /* shaderobject, renderer */ ) {}
+	onBuild: function ( /* shaderobject, renderer */ ) {},
 
-	customProgramCacheKey() {
+	onBeforeCompile: function ( /* shaderobject, renderer */ ) {},
+
+	customProgramCacheKey: function () {
 
 		return this.onBeforeCompile.toString();
 
-	}
+	},
 
-	setValues( values ) {
+	setValues: function ( values ) {
 
 		if ( values === undefined ) return;
 
@@ -8145,9 +8056,9 @@ class Material extends EventDispatcher {
 
 		}
 
-	}
+	},
 
-	toJSON( meta ) {
+	toJSON: function ( meta ) {
 
 		const isRoot = ( meta === undefined || typeof meta === 'string' );
 
@@ -8322,6 +8233,7 @@ class Material extends EventDispatcher {
 
 		if ( this.morphTargets === true ) data.morphTargets = true;
 		if ( this.morphNormals === true ) data.morphNormals = true;
+		if ( this.skinning === true ) data.skinning = true;
 
 		if ( this.flatShading === true ) data.flatShading = this.flatShading;
 
@@ -8361,15 +8273,15 @@ class Material extends EventDispatcher {
 
 		return data;
 
-	}
+	},
 
-	clone() {
+	clone: function () {
 
 		return new this.constructor().copy( this );
 
-	}
+	},
 
-	copy( source ) {
+	copy: function ( source ) {
 
 		this.name = source.name;
 
@@ -8446,23 +8358,25 @@ class Material extends EventDispatcher {
 
 		return this;
 
-	}
+	},
 
-	dispose() {
+	dispose: function () {
 
 		this.dispatchEvent( { type: 'dispose' } );
 
 	}
 
-	set needsUpdate( value ) {
+} );
+
+Object.defineProperty( Material.prototype, 'needsUpdate', {
+
+	set: function ( value ) {
 
 		if ( value === true ) this.version ++;
 
 	}
 
-}
-
-Material.prototype.isMaterial = true;
+} );
 
 const _colorKeywords = { 'aliceblue': 0xF0F8FF, 'antiquewhite': 0xFAEBD7, 'aqua': 0x00FFFF, 'aquamarine': 0x7FFFD4, 'azure': 0xF0FFFF,
 	'beige': 0xF5F5DC, 'bisque': 0xFFE4C4, 'black': 0x000000, 'blanchedalmond': 0xFFEBCD, 'blue': 0x0000FF, 'blueviolet': 0x8A2BE2,
@@ -9099,6 +9013,7 @@ Color.prototype.b = 1;
  *  wireframe: <boolean>,
  *  wireframeLinewidth: <float>,
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>
  * }
  */
@@ -9135,6 +9050,7 @@ class MeshBasicMaterial extends Material {
 		this.wireframeLinecap = 'round';
 		this.wireframeLinejoin = 'round';
 
+		this.skinning = false;
 		this.morphTargets = false;
 
 		this.setValues( parameters );
@@ -9169,6 +9085,7 @@ class MeshBasicMaterial extends Material {
 		this.wireframeLinecap = source.wireframeLinecap;
 		this.wireframeLinejoin = source.wireframeLinejoin;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 
 		return this;
@@ -9179,8 +9096,8 @@ class MeshBasicMaterial extends Material {
 
 MeshBasicMaterial.prototype.isMeshBasicMaterial = true;
 
-const _vector$9 = /*@__PURE__*/ new Vector3();
-const _vector2 = /*@__PURE__*/ new Vector2();
+const _vector$9 = new /*@__PURE__*/ Vector3();
+const _vector2 = new /*@__PURE__*/ Vector2();
 
 class BufferAttribute {
 
@@ -9204,9 +9121,9 @@ class BufferAttribute {
 
 		this.version = 0;
 
-	}
+		this.onUploadCallback = function () {};
 
-	onUploadCallback() {}
+	}
 
 	set needsUpdate( value ) {
 
@@ -9722,12 +9639,12 @@ function getTypedArray( type, buffer ) {
 
 let _id = 0;
 
-const _m1 = /*@__PURE__*/ new Matrix4();
-const _obj = /*@__PURE__*/ new Object3D();
-const _offset = /*@__PURE__*/ new Vector3();
-const _box$1 = /*@__PURE__*/ new Box3();
-const _boxMorphTargets = /*@__PURE__*/ new Box3();
-const _vector$8 = /*@__PURE__*/ new Vector3();
+const _m1 = new /*@__PURE__*/ Matrix4();
+const _obj = new /*@__PURE__*/ Object3D();
+const _offset = new /*@__PURE__*/ Vector3();
+const _box$1 = new /*@__PURE__*/ Box3();
+const _boxMorphTargets = new /*@__PURE__*/ Box3();
+const _vector$8 = new /*@__PURE__*/ Vector3();
 
 class BufferGeometry extends EventDispatcher {
 
@@ -11202,7 +11119,7 @@ function checkBufferGeometryIntersection( object, material, raycaster, ray, posi
 
 	}
 
-	if ( object.isSkinnedMesh ) {
+	if ( object.isSkinnedMesh && material.skinning ) {
 
 		object.boneTransform( a, _vA$1 );
 		object.boneTransform( b, _vB$1 );
@@ -11493,6 +11410,7 @@ var default_fragment = "void main() {\n\tgl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0
  *
  *  lights: <bool>,
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>,
  *  morphNormals: <bool>
  * }
@@ -11521,6 +11439,7 @@ class ShaderMaterial extends Material {
 		this.lights = false; // set to use scene lights
 		this.clipping = false; // set to use user-defined clipping planes
 
+		this.skinning = false; // set to use skinning attribute streams
 		this.morphTargets = false; // set to use morph targets
 		this.morphNormals = false; // set to use morph normals
 
@@ -11574,6 +11493,8 @@ class ShaderMaterial extends Material {
 
 		this.lights = source.lights;
 		this.clipping = source.clipping;
+
+		this.skinning = source.skinning;
 
 		this.morphTargets = source.morphTargets;
 		this.morphNormals = source.morphNormals;
@@ -13156,7 +13077,7 @@ const UniformsLib = {
 
 	common: {
 
-		diffuse: { value: new Color( 0xffffff ) },
+		diffuse: { value: new Color( 0xeeeeee ) },
 		opacity: { value: 1.0 },
 
 		map: { value: null },
@@ -13333,7 +13254,7 @@ const UniformsLib = {
 
 	points: {
 
-		diffuse: { value: new Color( 0xffffff ) },
+		diffuse: { value: new Color( 0xeeeeee ) },
 		opacity: { value: 1.0 },
 		size: { value: 1.0 },
 		scale: { value: 1.0 },
@@ -13345,7 +13266,7 @@ const UniformsLib = {
 
 	sprite: {
 
-		diffuse: { value: new Color( 0xffffff ) },
+		diffuse: { value: new Color( 0xeeeeee ) },
 		opacity: { value: 1.0 },
 		center: { value: new Vector2( 0.5, 0.5 ) },
 		rotation: { value: 0.0 },
@@ -13670,9 +13591,8 @@ function WebGLBackground( renderer, cubemaps, state, objects, premultipliedAlpha
 	let currentBackgroundVersion = 0;
 	let currentTonemapping = null;
 
-	function render( renderList, scene ) {
+	function render( renderList, scene, camera, forceClear ) {
 
-		let forceClear = false;
 		let background = scene.isScene === true ? scene.background : null;
 
 		if ( background && background.isTexture ) {
@@ -14586,8 +14506,6 @@ function WebGLCapabilities( gl, extensions, parameters ) {
 
 	}
 
-	const drawBuffers = isWebGL2 || extensions.has( 'WEBGL_draw_buffers' );
-
 	const logarithmicDepthBuffer = parameters.logarithmicDepthBuffer === true;
 
 	const maxTextures = gl.getParameter( 34930 );
@@ -14609,8 +14527,6 @@ function WebGLCapabilities( gl, extensions, parameters ) {
 	return {
 
 		isWebGL2: isWebGL2,
-
-		drawBuffers: drawBuffers,
 
 		getMaxAnisotropy: getMaxAnisotropy,
 		getMaxPrecision: getMaxPrecision,
@@ -17646,7 +17562,7 @@ function WebGLPrograms( renderer, cubemaps, extensions, capabilities, bindingSta
 			sizeAttenuation: material.sizeAttenuation,
 			logarithmicDepthBuffer: logarithmicDepthBuffer,
 
-			skinning: object.isSkinnedMesh === true && maxBones > 0,
+			skinning: material.skinning && maxBones > 0,
 			maxBones: maxBones,
 			useVertexTexture: floatVertexTextures,
 
@@ -18758,6 +18674,7 @@ class MeshDepthMaterial extends Material {
 
 		this.depthPacking = BasicDepthPacking;
 
+		this.skinning = false;
 		this.morphTargets = false;
 
 		this.map = null;
@@ -18783,6 +18700,7 @@ class MeshDepthMaterial extends Material {
 
 		this.depthPacking = source.depthPacking;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 
 		this.map = source.map;
@@ -18811,6 +18729,7 @@ MeshDepthMaterial.prototype.isMeshDepthMaterial = true;
  *  nearDistance: <float>,
  *  farDistance: <float>,
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>,
  *
  *  map: new THREE.Texture( <Image> ),
@@ -18836,6 +18755,7 @@ class MeshDistanceMaterial extends Material {
 		this.nearDistance = 1;
 		this.farDistance = 1000;
 
+		this.skinning = false;
 		this.morphTargets = false;
 
 		this.map = null;
@@ -18860,6 +18780,7 @@ class MeshDistanceMaterial extends Material {
 		this.nearDistance = source.nearDistance;
 		this.farDistance = source.farDistance;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 
 		this.map = source.map;
@@ -19097,9 +19018,9 @@ function WebGLShadowMap( _renderer, _objects, _capabilities ) {
 
 	}
 
-	function getDepthMaterialVariant( useMorphing ) {
+	function getDepthMaterialVariant( useMorphing, useSkinning, useInstancing ) {
 
-		const index = useMorphing << 0;
+		const index = useMorphing << 0 | useSkinning << 1 | useInstancing << 2;
 
 		let material = _depthMaterials[ index ];
 
@@ -19109,7 +19030,8 @@ function WebGLShadowMap( _renderer, _objects, _capabilities ) {
 
 				depthPacking: RGBADepthPacking,
 
-				morphTargets: useMorphing
+				morphTargets: useMorphing,
+				skinning: useSkinning
 
 			} );
 
@@ -19121,9 +19043,9 @@ function WebGLShadowMap( _renderer, _objects, _capabilities ) {
 
 	}
 
-	function getDistanceMaterialVariant( useMorphing ) {
+	function getDistanceMaterialVariant( useMorphing, useSkinning, useInstancing ) {
 
-		const index = useMorphing << 0;
+		const index = useMorphing << 0 | useSkinning << 1 | useInstancing << 2;
 
 		let material = _distanceMaterials[ index ];
 
@@ -19131,7 +19053,8 @@ function WebGLShadowMap( _renderer, _objects, _capabilities ) {
 
 			material = new MeshDistanceMaterial( {
 
-				morphTargets: useMorphing
+				morphTargets: useMorphing,
+				skinning: useSkinning
 
 			} );
 
@@ -19167,7 +19090,25 @@ function WebGLShadowMap( _renderer, _objects, _capabilities ) {
 
 			}
 
-			result = getMaterialVariant( useMorphing );
+			let useSkinning = false;
+
+			if ( object.isSkinnedMesh === true ) {
+
+				if ( material.skinning === true ) {
+
+					useSkinning = true;
+
+				} else {
+
+					console.warn( 'THREE.WebGLShadowMap: THREE.SkinnedMesh with material.skinning set to false:', object );
+
+				}
+
+			}
+
+			const useInstancing = object.isInstancedMesh === true;
+
+			result = getMaterialVariant( useMorphing, useSkinning, useInstancing );
 
 		} else {
 
@@ -19655,11 +19596,8 @@ function WebGLState( gl, extensions, capabilities ) {
 	let currentTextureSlot = null;
 	let currentBoundTextures = {};
 
-	const scissorParam = gl.getParameter( 3088 );
-	const viewportParam = gl.getParameter( 2978 );
-
-	const currentScissor = new Vector4().fromArray( scissorParam );
-	const currentViewport = new Vector4().fromArray( viewportParam );
+	const currentScissor = new Vector4( 0, 0, gl.canvas.width, gl.canvas.height );
+	const currentViewport = new Vector4( 0, 0, gl.canvas.width, gl.canvas.height );
 
 	function createTexture( type, target, count ) {
 
@@ -19763,11 +19701,7 @@ function WebGLState( gl, extensions, capabilities ) {
 
 			}
 
-			return true;
-
 		}
-
-		return false;
 
 	}
 
@@ -20583,6 +20517,8 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 		deallocateRenderTarget( renderTarget );
 
+		info.memory.textures --;
+
 	}
 
 	//
@@ -20612,8 +20548,6 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 			_gl.deleteTexture( textureProperties.__webglTexture );
 
-			info.memory.textures --;
-
 		}
 
 		if ( renderTarget.depthTexture ) {
@@ -20638,26 +20572,6 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 			if ( renderTargetProperties.__webglMultisampledFramebuffer ) _gl.deleteFramebuffer( renderTargetProperties.__webglMultisampledFramebuffer );
 			if ( renderTargetProperties.__webglColorRenderbuffer ) _gl.deleteRenderbuffer( renderTargetProperties.__webglColorRenderbuffer );
 			if ( renderTargetProperties.__webglDepthRenderbuffer ) _gl.deleteRenderbuffer( renderTargetProperties.__webglDepthRenderbuffer );
-
-		}
-
-		if ( renderTarget.isWebGLMultipleRenderTargets ) {
-
-			for ( let i = 0, il = texture.length; i < il; i ++ ) {
-
-				const attachmentProperties = properties.get( texture[ i ] );
-
-				if ( attachmentProperties.__webglTexture ) {
-
-					_gl.deleteTexture( attachmentProperties.__webglTexture );
-
-					info.memory.textures --;
-
-				}
-
-				properties.remove( texture[ i ] );
-
-			}
 
 		}
 
@@ -21213,7 +21127,9 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 	// Render targets
 
 	// Setup storage for target texture and bind it to correct framebuffer
-	function setupFrameBufferTexture( framebuffer, renderTarget, texture, attachment, textureTarget ) {
+	function setupFrameBufferTexture( framebuffer, renderTarget, attachment, textureTarget ) {
+
+		const texture = renderTarget.texture;
 
 		const glFormat = utils.convert( texture.format );
 		const glType = utils.convert( texture.type );
@@ -21293,8 +21209,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 		} else {
 
-			// Use the first texture for MRT so far
-			const texture = renderTarget.isWebGLMultipleRenderTargets === true ? renderTarget.texture[ 0 ] : renderTarget.texture;
+			const texture = renderTarget.texture;
 
 			const glFormat = utils.convert( texture.format );
 			const glType = utils.convert( texture.type );
@@ -21414,16 +21329,12 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 		renderTarget.addEventListener( 'dispose', onRenderTargetDispose );
 
-		if ( renderTarget.isWebGLMultipleRenderTargets !== true ) {
+		textureProperties.__webglTexture = _gl.createTexture();
+		textureProperties.__version = texture.version;
 
-			textureProperties.__webglTexture = _gl.createTexture();
-			textureProperties.__version = texture.version;
-			info.memory.textures ++;
-
-		}
+		info.memory.textures ++;
 
 		const isCube = ( renderTarget.isWebGLCubeRenderTarget === true );
-		const isMultipleRenderTargets = ( renderTarget.isWebGLMultipleRenderTargets === true );
 		const isMultisample = ( renderTarget.isWebGLMultisampleRenderTarget === true );
 		const isRenderTarget3D = texture.isDataTexture3D || texture.isDataTexture2DArray;
 		const supportsMips = isPowerOfTwo$1( renderTarget ) || isWebGL2;
@@ -21454,33 +21365,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 			renderTargetProperties.__webglFramebuffer = _gl.createFramebuffer();
 
-			if ( isMultipleRenderTargets ) {
-
-				if ( capabilities.drawBuffers ) {
-
-					const textures = renderTarget.texture;
-
-					for ( let i = 0, il = textures.length; i < il; i ++ ) {
-
-						const attachmentProperties = properties.get( textures[ i ] );
-
-						if ( attachmentProperties.__webglTexture === undefined ) {
-
-							attachmentProperties.__webglTexture = _gl.createTexture();
-
-							info.memory.textures ++;
-
-						}
-
-					}
-
-				} else {
-
-					console.warn( 'THREE.WebGLRenderer: WebGLMultipleRenderTargets can only be used with WebGL2 or WEBGL_draw_buffers extension.' );
-
-				}
-
-			} else if ( isMultisample ) {
+			if ( isMultisample ) {
 
 				if ( isWebGL2 ) {
 
@@ -21528,7 +21413,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 			for ( let i = 0; i < 6; i ++ ) {
 
-				setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer[ i ], renderTarget, texture, 36064, 34069 + i );
+				setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer[ i ], renderTarget, 36064, 34069 + i );
 
 			}
 
@@ -21539,29 +21424,6 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 			}
 
 			state.bindTexture( 34067, null );
-
-		} else if ( isMultipleRenderTargets ) {
-
-			const textures = renderTarget.texture;
-
-			for ( let i = 0, il = textures.length; i < il; i ++ ) {
-
-				const attachment = textures[ i ];
-				const attachmentProperties = properties.get( attachment );
-
-				state.bindTexture( 3553, attachmentProperties.__webglTexture );
-				setTextureParameters( 3553, attachment, supportsMips );
-				setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer, renderTarget, attachment, 36064 + i, 3553 );
-
-				if ( textureNeedsGenerateMipmaps( attachment, supportsMips ) ) {
-
-					generateMipmap( 3553, attachment, renderTarget.width, renderTarget.height );
-
-				}
-
-			}
-
-			state.bindTexture( 3553, null );
 
 		} else {
 
@@ -21586,7 +21448,7 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 			state.bindTexture( glTextureType, textureProperties.__webglTexture );
 			setTextureParameters( glTextureType, texture, supportsMips );
-			setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer, renderTarget, texture, 36064, glTextureType );
+			setupFrameBufferTexture( renderTargetProperties.__webglFramebuffer, renderTarget, 36064, glTextureType );
 
 			if ( textureNeedsGenerateMipmaps( texture, supportsMips ) ) {
 
@@ -21610,24 +21472,18 @@ function WebGLTextures( _gl, extensions, state, properties, capabilities, utils,
 
 	function updateRenderTargetMipmap( renderTarget ) {
 
+		const texture = renderTarget.texture;
+
 		const supportsMips = isPowerOfTwo$1( renderTarget ) || isWebGL2;
 
-		const textures = renderTarget.isWebGLMultipleRenderTargets === true ? renderTarget.texture : [ renderTarget.texture ];
+		if ( textureNeedsGenerateMipmaps( texture, supportsMips ) ) {
 
-		for ( let i = 0, il = textures.length; i < il; i ++ ) {
+			const target = renderTarget.isWebGLCubeRenderTarget ? 34067 : 3553;
+			const webglTexture = properties.get( texture ).__webglTexture;
 
-			const texture = textures[ i ];
-
-			if ( textureNeedsGenerateMipmaps( texture, supportsMips ) ) {
-
-				const target = renderTarget.isWebGLCubeRenderTarget ? 34067 : 3553;
-				const webglTexture = properties.get( texture ).__webglTexture;
-
-				state.bindTexture( target, webglTexture );
-				generateMipmap( target, texture, renderTarget.width, renderTarget.height );
-				state.bindTexture( target, null );
-
-			}
+			state.bindTexture( target, webglTexture );
+			generateMipmap( target, texture, renderTarget.width, renderTarget.height );
+			state.bindTexture( target, null );
 
 		}
 
@@ -23554,10 +23410,6 @@ function WebGLRenderer( parameters ) {
 	const _scissor = new Vector4( 0, 0, _width, _height );
 	let _scissorTest = false;
 
-	//
-
-	const _currentDrawBuffers = [];
-
 	// frustum
 
 	const _frustum = new Frustum();
@@ -23683,8 +23535,6 @@ function WebGLRenderer( parameters ) {
 		utils = new WebGLUtils( _gl, extensions, capabilities );
 
 		state = new WebGLState( _gl, extensions, capabilities );
-
-		_currentDrawBuffers[ 0 ] = 1029;
 
 		info = new WebGLInfo( _gl );
 		properties = new WebGLProperties();
@@ -24387,6 +24237,22 @@ function WebGLRenderer( parameters ) {
 
 	this.render = function ( scene, camera ) {
 
+		let renderTarget, forceClear;
+
+		if ( arguments[ 2 ] !== undefined ) {
+
+			console.warn( 'THREE.WebGLRenderer.render(): the renderTarget argument has been removed. Use .setRenderTarget() instead.' );
+			renderTarget = arguments[ 2 ];
+
+		}
+
+		if ( arguments[ 3 ] !== undefined ) {
+
+			console.warn( 'THREE.WebGLRenderer.render(): the forceClear argument has been removed. Use .clear() instead.' );
+			forceClear = arguments[ 3 ];
+
+		}
+
 		if ( camera !== undefined && camera.isCamera !== true ) {
 
 			console.error( 'THREE.WebGLRenderer.render: camera is not an instance of THREE.Camera.' );
@@ -24411,7 +24277,7 @@ function WebGLRenderer( parameters ) {
 		}
 
 		//
-		if ( scene.isScene === true ) scene.onBeforeRender( _this, scene, camera, _currentRenderTarget );
+		if ( scene.isScene === true ) scene.onBeforeRender( _this, scene, camera, renderTarget || _currentRenderTarget );
 
 		currentRenderState = renderStates.get( scene, renderStateStack.length );
 		currentRenderState.init();
@@ -24456,9 +24322,15 @@ function WebGLRenderer( parameters ) {
 
 		if ( this.info.autoReset === true ) this.info.reset();
 
+		if ( renderTarget !== undefined ) {
+
+			this.setRenderTarget( renderTarget );
+
+		}
+
 		//
 
-		background.render( currentRenderList, scene );
+		background.render( currentRenderList, scene, camera, forceClear );
 
 		// render scene
 
@@ -24841,7 +24713,6 @@ function WebGLRenderer( parameters ) {
 
 		materialProperties.outputEncoding = parameters.outputEncoding;
 		materialProperties.instancing = parameters.instancing;
-		materialProperties.skinning = parameters.skinning;
 		materialProperties.numClippingPlanes = parameters.numClippingPlanes;
 		materialProperties.numIntersection = parameters.numClipIntersection;
 		materialProperties.vertexAlphas = parameters.vertexAlphas;
@@ -24899,14 +24770,6 @@ function WebGLRenderer( parameters ) {
 				needsProgramChange = true;
 
 			} else if ( ! object.isInstancedMesh && materialProperties.instancing === true ) {
-
-				needsProgramChange = true;
-
-			} else if ( object.isSkinnedMesh && materialProperties.skinning === false ) {
-
-				needsProgramChange = true;
-
-			} else if ( ! object.isSkinnedMesh && materialProperties.skinning === true ) {
 
 				needsProgramChange = true;
 
@@ -25032,7 +24895,7 @@ function WebGLRenderer( parameters ) {
 				material.isMeshStandardMaterial ||
 				material.isShaderMaterial ||
 				material.isShadowMaterial ||
-				object.isSkinnedMesh ) {
+				material.skinning ) {
 
 				p_uniforms.setValue( _gl, 'viewMatrix', camera.matrixWorldInverse );
 
@@ -25044,7 +24907,7 @@ function WebGLRenderer( parameters ) {
 		// auto-setting of texture unit for bone texture must go before other textures
 		// otherwise textures used for skinning can take over texture units reserved for other material textures
 
-		if ( object.isSkinnedMesh ) {
+		if ( material.skinning ) {
 
 			p_uniforms.setOptional( _gl, object, 'bindMatrix' );
 			p_uniforms.setOptional( _gl, object, 'bindMatrixInverse' );
@@ -25257,73 +25120,7 @@ function WebGLRenderer( parameters ) {
 
 		}
 
-		const framebufferBound = state.bindFramebuffer( 36160, framebuffer );
-
-		if ( framebufferBound && capabilities.drawBuffers ) {
-
-			let needsUpdate = false;
-
-			if ( renderTarget ) {
-
-				if ( renderTarget.isWebGLMultipleRenderTargets ) {
-
-					const textures = renderTarget.texture;
-
-					if ( _currentDrawBuffers.length !== textures.length || _currentDrawBuffers[ 0 ] !== 36064 ) {
-
-						for ( let i = 0, il = textures.length; i < il; i ++ ) {
-
-							_currentDrawBuffers[ i ] = 36064 + i;
-
-						}
-
-						_currentDrawBuffers.length = textures.length;
-
-						needsUpdate = true;
-
-					}
-
-				} else {
-
-					if ( _currentDrawBuffers.length !== 1 || _currentDrawBuffers[ 0 ] !== 36064 ) {
-
-						_currentDrawBuffers[ 0 ] = 36064;
-						_currentDrawBuffers.length = 1;
-
-						needsUpdate = true;
-
-					}
-
-				}
-
-			} else {
-
-				if ( _currentDrawBuffers.length !== 1 || _currentDrawBuffers[ 0 ] !== 1029 ) {
-
-					_currentDrawBuffers[ 0 ] = 1029;
-					_currentDrawBuffers.length = 1;
-
-					needsUpdate = true;
-
-				}
-
-			}
-
-			if ( needsUpdate ) {
-
-				if ( capabilities.isWebGL2 ) {
-
-					_gl.drawBuffers( _currentDrawBuffers );
-
-				} else {
-
-					extensions.get( 'WEBGL_draw_buffers' ).drawBuffersWEBGL( _currentDrawBuffers );
-
-				}
-
-			}
-
-		}
+		state.bindFramebuffer( 36160, framebuffer );
 
 		state.viewport( _currentViewport );
 		state.scissor( _currentScissor );
@@ -25715,9 +25512,9 @@ class InterleavedBuffer {
 
 		this.uuid = generateUUID();
 
-	}
+		this.onUploadCallback = function () {};
 
-	onUploadCallback() {}
+	}
 
 	set needsUpdate( value ) {
 
@@ -25789,7 +25586,7 @@ class InterleavedBuffer {
 
 		const array = new this.array.constructor( data.arrayBuffers[ this.array.buffer._uuid ] );
 
-		const ib = new this.constructor( array, this.stride );
+		const ib = new InterleavedBuffer( array, this.stride );
 		ib.setUsage( this.usage );
 
 		return ib;
@@ -25841,7 +25638,7 @@ class InterleavedBuffer {
 
 InterleavedBuffer.prototype.isInterleavedBuffer = true;
 
-const _vector$6 = /*@__PURE__*/ new Vector3();
+const _vector$6 = new /*@__PURE__*/ Vector3();
 
 class InterleavedBufferAttribute {
 
@@ -31762,6 +31559,7 @@ RawShaderMaterial.prototype.isRawShaderMaterial = true;
  *  wireframe: <boolean>,
  *  wireframeLinewidth: <float>,
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>,
  *  morphNormals: <bool>,
  *
@@ -31822,6 +31620,7 @@ class MeshStandardMaterial extends Material {
 		this.wireframeLinecap = 'round';
 		this.wireframeLinejoin = 'round';
 
+		this.skinning = false;
 		this.morphTargets = false;
 		this.morphNormals = false;
 
@@ -31882,6 +31681,7 @@ class MeshStandardMaterial extends Material {
 		this.wireframeLinecap = source.wireframeLinecap;
 		this.wireframeLinejoin = source.wireframeLinejoin;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 		this.morphNormals = source.morphNormals;
 
@@ -32045,6 +31845,7 @@ MeshPhysicalMaterial.prototype.isMeshPhysicalMaterial = true;
  *  wireframe: <boolean>,
  *  wireframeLinewidth: <float>,
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>,
  *  morphNormals: <bool>,
  *
@@ -32101,6 +31902,7 @@ class MeshPhongMaterial extends Material {
 		this.wireframeLinecap = 'round';
 		this.wireframeLinejoin = 'round';
 
+		this.skinning = false;
 		this.morphTargets = false;
 		this.morphNormals = false;
 
@@ -32155,6 +31957,7 @@ class MeshPhongMaterial extends Material {
 		this.wireframeLinecap = source.wireframeLinecap;
 		this.wireframeLinejoin = source.wireframeLinejoin;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 		this.morphNormals = source.morphNormals;
 
@@ -32201,6 +32004,7 @@ MeshPhongMaterial.prototype.isMeshPhongMaterial = true;
  *  wireframe: <boolean>,
  *  wireframeLinewidth: <float>,
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>,
  *  morphNormals: <bool>
  * }
@@ -32249,6 +32053,7 @@ class MeshToonMaterial extends Material {
 		this.wireframeLinecap = 'round';
 		this.wireframeLinejoin = 'round';
 
+		this.skinning = false;
 		this.morphTargets = false;
 		this.morphNormals = false;
 
@@ -32293,6 +32098,7 @@ class MeshToonMaterial extends Material {
 		this.wireframeLinecap = source.wireframeLinecap;
 		this.wireframeLinejoin = source.wireframeLinejoin;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 		this.morphNormals = source.morphNormals;
 
@@ -32322,6 +32128,7 @@ MeshToonMaterial.prototype.isMeshToonMaterial = true;
  *  wireframe: <boolean>,
  *  wireframeLinewidth: <float>
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>,
  *  morphNormals: <bool>,
  *
@@ -32353,6 +32160,7 @@ class MeshNormalMaterial extends Material {
 
 		this.fog = false;
 
+		this.skinning = false;
 		this.morphTargets = false;
 		this.morphNormals = false;
 
@@ -32380,6 +32188,7 @@ class MeshNormalMaterial extends Material {
 		this.wireframe = source.wireframe;
 		this.wireframeLinewidth = source.wireframeLinewidth;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 		this.morphNormals = source.morphNormals;
 
@@ -32422,6 +32231,7 @@ MeshNormalMaterial.prototype.isMeshNormalMaterial = true;
  *  wireframe: <boolean>,
  *  wireframeLinewidth: <float>,
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>,
  *  morphNormals: <bool>
  * }
@@ -32463,6 +32273,7 @@ class MeshLambertMaterial extends Material {
 		this.wireframeLinecap = 'round';
 		this.wireframeLinejoin = 'round';
 
+		this.skinning = false;
 		this.morphTargets = false;
 		this.morphNormals = false;
 
@@ -32502,6 +32313,7 @@ class MeshLambertMaterial extends Material {
 		this.wireframeLinecap = source.wireframeLinecap;
 		this.wireframeLinejoin = source.wireframeLinejoin;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 		this.morphNormals = source.morphNormals;
 
@@ -32535,6 +32347,7 @@ MeshLambertMaterial.prototype.isMeshLambertMaterial = true;
  *
  *  alphaMap: new THREE.Texture( <Image> ),
  *
+ *  skinning: <bool>,
  *  morphTargets: <bool>,
  *  morphNormals: <bool>
  *
@@ -32571,6 +32384,7 @@ class MeshMatcapMaterial extends Material {
 
 		this.alphaMap = null;
 
+		this.skinning = false;
 		this.morphTargets = false;
 		this.morphNormals = false;
 
@@ -32606,6 +32420,7 @@ class MeshMatcapMaterial extends Material {
 
 		this.alphaMap = source.alphaMap;
 
+		this.skinning = source.skinning;
 		this.morphTargets = source.morphTargets;
 		this.morphNormals = source.morphNormals;
 
@@ -38580,6 +38395,7 @@ class MaterialLoader extends Loader {
 		if ( json.polygonOffsetFactor !== undefined ) material.polygonOffsetFactor = json.polygonOffsetFactor;
 		if ( json.polygonOffsetUnits !== undefined ) material.polygonOffsetUnits = json.polygonOffsetUnits;
 
+		if ( json.skinning !== undefined ) material.skinning = json.skinning;
 		if ( json.morphTargets !== undefined ) material.morphTargets = json.morphTargets;
 		if ( json.morphNormals !== undefined ) material.morphNormals = json.morphNormals;
 		if ( json.dithering !== undefined ) material.dithering = json.dithering;
@@ -49336,4 +49152,4 @@ if ( typeof window !== 'undefined' ) {
 
 }
 
-export { ACESFilmicToneMapping, AddEquation, AddOperation, AdditiveAnimationBlendMode, AdditiveBlending, AlphaFormat, AlwaysDepth, AlwaysStencilFunc, AmbientLight, AmbientLightProbe, AnimationClip, AnimationLoader, AnimationMixer, AnimationObjectGroup, AnimationUtils, ArcCurve, ArrayCamera, ArrowHelper, Audio, AudioAnalyser, AudioContext, AudioListener, AudioLoader, AxesHelper, AxisHelper, BackSide, BasicDepthPacking, BasicShadowMap, BinaryTextureLoader, Bone, BooleanKeyframeTrack, BoundingBoxHelper, Box2, Box3, Box3Helper, BoxGeometry as BoxBufferGeometry, BoxGeometry, BoxHelper, BufferAttribute, BufferGeometry, BufferGeometryLoader, ByteType, Cache, Camera, CameraHelper, CanvasRenderer, CanvasTexture, CatmullRomCurve3, CineonToneMapping, CircleGeometry as CircleBufferGeometry, CircleGeometry, ClampToEdgeWrapping, Clock, Color, ColorKeyframeTrack, CompressedTexture, CompressedTextureLoader, ConeGeometry as ConeBufferGeometry, ConeGeometry, CubeCamera, CubeReflectionMapping, CubeRefractionMapping, CubeTexture, CubeTextureLoader, CubeUVReflectionMapping, CubeUVRefractionMapping, CubicBezierCurve, CubicBezierCurve3, CubicInterpolant, CullFaceBack, CullFaceFront, CullFaceFrontBack, CullFaceNone, Curve, CurvePath, CustomBlending, CustomToneMapping, CylinderGeometry as CylinderBufferGeometry, CylinderGeometry, Cylindrical, DataTexture, DataTexture2DArray, DataTexture3D, DataTextureLoader, DataUtils, DecrementStencilOp, DecrementWrapStencilOp, DefaultLoadingManager, DepthFormat, DepthStencilFormat, DepthTexture, DirectionalLight, DirectionalLightHelper, DiscreteInterpolant, DodecahedronGeometry as DodecahedronBufferGeometry, DodecahedronGeometry, DoubleSide, DstAlphaFactor, DstColorFactor, DynamicBufferAttribute, DynamicCopyUsage, DynamicDrawUsage, DynamicReadUsage, EdgesGeometry, EdgesHelper, EllipseCurve, EqualDepth, EqualStencilFunc, EquirectangularReflectionMapping, EquirectangularRefractionMapping, Euler, EventDispatcher, ExtrudeGeometry as ExtrudeBufferGeometry, ExtrudeGeometry, FaceColors, FileLoader, FlatShading, Float16BufferAttribute, Float32Attribute, Float32BufferAttribute, Float64Attribute, Float64BufferAttribute, FloatType, Fog, FogExp2, Font, FontLoader, FrontSide, Frustum, GLBufferAttribute, GLSL1, GLSL3, GammaEncoding, GreaterDepth, GreaterEqualDepth, GreaterEqualStencilFunc, GreaterStencilFunc, GridHelper, Group, HalfFloatType, HemisphereLight, HemisphereLightHelper, HemisphereLightProbe, IcosahedronGeometry as IcosahedronBufferGeometry, IcosahedronGeometry, ImageBitmapLoader, ImageLoader, ImageUtils, ImmediateRenderObject, IncrementStencilOp, IncrementWrapStencilOp, InstancedBufferAttribute, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, Int16Attribute, Int16BufferAttribute, Int32Attribute, Int32BufferAttribute, Int8Attribute, Int8BufferAttribute, IntType, InterleavedBuffer, InterleavedBufferAttribute, Interpolant, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InvertStencilOp, JSONLoader, KeepStencilOp, KeyframeTrack, LOD, LatheGeometry as LatheBufferGeometry, LatheGeometry, Layers, LensFlare, LessDepth, LessEqualDepth, LessEqualStencilFunc, LessStencilFunc, Light, LightProbe, Line, Line3, LineBasicMaterial, LineCurve, LineCurve3, LineDashedMaterial, LineLoop, LinePieces, LineSegments, LineStrip, LinearEncoding, LinearFilter, LinearInterpolant, LinearMipMapLinearFilter, LinearMipMapNearestFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearToneMapping, Loader, LoaderUtils, LoadingManager, LogLuvEncoding, LoopOnce, LoopPingPong, LoopRepeat, LuminanceAlphaFormat, LuminanceFormat, MOUSE, Material, MaterialLoader, MathUtils as Math, MathUtils, Matrix3, Matrix4, MaxEquation, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshDistanceMaterial, MeshFaceMaterial, MeshLambertMaterial, MeshMatcapMaterial, MeshNormalMaterial, MeshPhongMaterial, MeshPhysicalMaterial, MeshStandardMaterial, MeshToonMaterial, MinEquation, MirroredRepeatWrapping, MixOperation, MultiMaterial, MultiplyBlending, MultiplyOperation, NearestFilter, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NeverDepth, NeverStencilFunc, NoBlending, NoColors, NoToneMapping, NormalAnimationBlendMode, NormalBlending, NotEqualDepth, NotEqualStencilFunc, NumberKeyframeTrack, Object3D, ObjectLoader, ObjectSpaceNormalMap, OctahedronGeometry as OctahedronBufferGeometry, OctahedronGeometry, OneFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, OrthographicCamera, PCFShadowMap, PCFSoftShadowMap, PMREMGenerator, ParametricGeometry as ParametricBufferGeometry, ParametricGeometry, Particle, ParticleBasicMaterial, ParticleSystem, ParticleSystemMaterial, Path, PerspectiveCamera, Plane, PlaneGeometry as PlaneBufferGeometry, PlaneGeometry, PlaneHelper, PointCloud, PointCloudMaterial, PointLight, PointLightHelper, Points, PointsMaterial, PolarGridHelper, PolyhedronGeometry as PolyhedronBufferGeometry, PolyhedronGeometry, PositionalAudio, PropertyBinding, PropertyMixer, QuadraticBezierCurve, QuadraticBezierCurve3, Quaternion, QuaternionKeyframeTrack, QuaternionLinearInterpolant, REVISION, RGBADepthPacking, RGBAFormat, RGBAIntegerFormat, RGBA_ASTC_10x10_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_BPTC_Format, RGBA_ETC2_EAC_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGBDEncoding, RGBEEncoding, RGBEFormat, RGBFormat, RGBIntegerFormat, RGBM16Encoding, RGBM7Encoding, RGB_ETC1_Format, RGB_ETC2_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGB_S3TC_DXT1_Format, RGFormat, RGIntegerFormat, RawShaderMaterial, Ray, Raycaster, RectAreaLight, RedFormat, RedIntegerFormat, ReinhardToneMapping, RepeatWrapping, ReplaceStencilOp, ReverseSubtractEquation, RingGeometry as RingBufferGeometry, RingGeometry, SRGB8_ALPHA8_ASTC_10x10_Format, SRGB8_ALPHA8_ASTC_10x5_Format, SRGB8_ALPHA8_ASTC_10x6_Format, SRGB8_ALPHA8_ASTC_10x8_Format, SRGB8_ALPHA8_ASTC_12x10_Format, SRGB8_ALPHA8_ASTC_12x12_Format, SRGB8_ALPHA8_ASTC_4x4_Format, SRGB8_ALPHA8_ASTC_5x4_Format, SRGB8_ALPHA8_ASTC_5x5_Format, SRGB8_ALPHA8_ASTC_6x5_Format, SRGB8_ALPHA8_ASTC_6x6_Format, SRGB8_ALPHA8_ASTC_8x5_Format, SRGB8_ALPHA8_ASTC_8x6_Format, SRGB8_ALPHA8_ASTC_8x8_Format, Scene, SceneUtils, ShaderChunk, ShaderLib, ShaderMaterial, ShadowMaterial, Shape, ShapeGeometry as ShapeBufferGeometry, ShapeGeometry, ShapePath, ShapeUtils, ShortType, Skeleton, SkeletonHelper, SkinnedMesh, SmoothShading, Sphere, SphereGeometry as SphereBufferGeometry, SphereGeometry, Spherical, SphericalHarmonics3, SplineCurve, SpotLight, SpotLightHelper, Sprite, SpriteMaterial, SrcAlphaFactor, SrcAlphaSaturateFactor, SrcColorFactor, StaticCopyUsage, StaticDrawUsage, StaticReadUsage, StereoCamera, StreamCopyUsage, StreamDrawUsage, StreamReadUsage, StringKeyframeTrack, SubtractEquation, SubtractiveBlending, TOUCH, TangentSpaceNormalMap, TetrahedronGeometry as TetrahedronBufferGeometry, TetrahedronGeometry, TextGeometry as TextBufferGeometry, TextGeometry, Texture, TextureLoader, TorusGeometry as TorusBufferGeometry, TorusGeometry, TorusKnotGeometry as TorusKnotBufferGeometry, TorusKnotGeometry, Triangle, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, TubeGeometry as TubeBufferGeometry, TubeGeometry, UVMapping, Uint16Attribute, Uint16BufferAttribute, Uint32Attribute, Uint32BufferAttribute, Uint8Attribute, Uint8BufferAttribute, Uint8ClampedAttribute, Uint8ClampedBufferAttribute, Uniform, UniformsLib, UniformsUtils, UnsignedByteType, UnsignedInt248Type, UnsignedIntType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedShort565Type, UnsignedShortType, VSMShadowMap, Vector2, Vector3, Vector4, VectorKeyframeTrack, Vertex, VertexColors, VideoTexture, WebGL1Renderer, WebGLCubeRenderTarget, WebGLMultipleRenderTargets, WebGLMultisampleRenderTarget, WebGLRenderTarget, WebGLRenderTargetCube, WebGLRenderer, WebGLUtils, WireframeGeometry, WireframeHelper, WrapAroundEnding, XHRLoader, ZeroCurvatureEnding, ZeroFactor, ZeroSlopeEnding, ZeroStencilOp, sRGBEncoding };
+export { ACESFilmicToneMapping, AddEquation, AddOperation, AdditiveAnimationBlendMode, AdditiveBlending, AlphaFormat, AlwaysDepth, AlwaysStencilFunc, AmbientLight, AmbientLightProbe, AnimationClip, AnimationLoader, AnimationMixer, AnimationObjectGroup, AnimationUtils, ArcCurve, ArrayCamera, ArrowHelper, Audio, AudioAnalyser, AudioContext, AudioListener, AudioLoader, AxesHelper, AxisHelper, BackSide, BasicDepthPacking, BasicShadowMap, BinaryTextureLoader, Bone, BooleanKeyframeTrack, BoundingBoxHelper, Box2, Box3, Box3Helper, BoxGeometry as BoxBufferGeometry, BoxGeometry, BoxHelper, BufferAttribute, BufferGeometry, BufferGeometryLoader, ByteType, Cache, Camera, CameraHelper, CanvasRenderer, CanvasTexture, CatmullRomCurve3, CineonToneMapping, CircleGeometry as CircleBufferGeometry, CircleGeometry, ClampToEdgeWrapping, Clock, Color, ColorKeyframeTrack, CompressedTexture, CompressedTextureLoader, ConeGeometry as ConeBufferGeometry, ConeGeometry, CubeCamera, CubeReflectionMapping, CubeRefractionMapping, CubeTexture, CubeTextureLoader, CubeUVReflectionMapping, CubeUVRefractionMapping, CubicBezierCurve, CubicBezierCurve3, CubicInterpolant, CullFaceBack, CullFaceFront, CullFaceFrontBack, CullFaceNone, Curve, CurvePath, CustomBlending, CustomToneMapping, CylinderGeometry as CylinderBufferGeometry, CylinderGeometry, Cylindrical, DataTexture, DataTexture2DArray, DataTexture3D, DataTextureLoader, DataUtils, DecrementStencilOp, DecrementWrapStencilOp, DefaultLoadingManager, DepthFormat, DepthStencilFormat, DepthTexture, DirectionalLight, DirectionalLightHelper, DiscreteInterpolant, DodecahedronGeometry as DodecahedronBufferGeometry, DodecahedronGeometry, DoubleSide, DstAlphaFactor, DstColorFactor, DynamicBufferAttribute, DynamicCopyUsage, DynamicDrawUsage, DynamicReadUsage, EdgesGeometry, EdgesHelper, EllipseCurve, EqualDepth, EqualStencilFunc, EquirectangularReflectionMapping, EquirectangularRefractionMapping, Euler, EventDispatcher, ExtrudeGeometry as ExtrudeBufferGeometry, ExtrudeGeometry, FaceColors, FileLoader, FlatShading, Float16BufferAttribute, Float32Attribute, Float32BufferAttribute, Float64Attribute, Float64BufferAttribute, FloatType, Fog, FogExp2, Font, FontLoader, FrontSide, Frustum, GLBufferAttribute, GLSL1, GLSL3, GammaEncoding, GreaterDepth, GreaterEqualDepth, GreaterEqualStencilFunc, GreaterStencilFunc, GridHelper, Group, HalfFloatType, HemisphereLight, HemisphereLightHelper, HemisphereLightProbe, IcosahedronGeometry as IcosahedronBufferGeometry, IcosahedronGeometry, ImageBitmapLoader, ImageLoader, ImageUtils, ImmediateRenderObject, IncrementStencilOp, IncrementWrapStencilOp, InstancedBufferAttribute, InstancedBufferGeometry, InstancedInterleavedBuffer, InstancedMesh, Int16Attribute, Int16BufferAttribute, Int32Attribute, Int32BufferAttribute, Int8Attribute, Int8BufferAttribute, IntType, InterleavedBuffer, InterleavedBufferAttribute, Interpolant, InterpolateDiscrete, InterpolateLinear, InterpolateSmooth, InvertStencilOp, JSONLoader, KeepStencilOp, KeyframeTrack, LOD, LatheGeometry as LatheBufferGeometry, LatheGeometry, Layers, LensFlare, LessDepth, LessEqualDepth, LessEqualStencilFunc, LessStencilFunc, Light, LightProbe, Line, Line3, LineBasicMaterial, LineCurve, LineCurve3, LineDashedMaterial, LineLoop, LinePieces, LineSegments, LineStrip, LinearEncoding, LinearFilter, LinearInterpolant, LinearMipMapLinearFilter, LinearMipMapNearestFilter, LinearMipmapLinearFilter, LinearMipmapNearestFilter, LinearToneMapping, Loader, LoaderUtils, LoadingManager, LogLuvEncoding, LoopOnce, LoopPingPong, LoopRepeat, LuminanceAlphaFormat, LuminanceFormat, MOUSE, Material, MaterialLoader, MathUtils as Math, MathUtils, Matrix3, Matrix4, MaxEquation, Mesh, MeshBasicMaterial, MeshDepthMaterial, MeshDistanceMaterial, MeshFaceMaterial, MeshLambertMaterial, MeshMatcapMaterial, MeshNormalMaterial, MeshPhongMaterial, MeshPhysicalMaterial, MeshStandardMaterial, MeshToonMaterial, MinEquation, MirroredRepeatWrapping, MixOperation, MultiMaterial, MultiplyBlending, MultiplyOperation, NearestFilter, NearestMipMapLinearFilter, NearestMipMapNearestFilter, NearestMipmapLinearFilter, NearestMipmapNearestFilter, NeverDepth, NeverStencilFunc, NoBlending, NoColors, NoToneMapping, NormalAnimationBlendMode, NormalBlending, NotEqualDepth, NotEqualStencilFunc, NumberKeyframeTrack, Object3D, ObjectLoader, ObjectSpaceNormalMap, OctahedronGeometry as OctahedronBufferGeometry, OctahedronGeometry, OneFactor, OneMinusDstAlphaFactor, OneMinusDstColorFactor, OneMinusSrcAlphaFactor, OneMinusSrcColorFactor, OrthographicCamera, PCFShadowMap, PCFSoftShadowMap, PMREMGenerator, ParametricGeometry as ParametricBufferGeometry, ParametricGeometry, Particle, ParticleBasicMaterial, ParticleSystem, ParticleSystemMaterial, Path, PerspectiveCamera, Plane, PlaneGeometry as PlaneBufferGeometry, PlaneGeometry, PlaneHelper, PointCloud, PointCloudMaterial, PointLight, PointLightHelper, Points, PointsMaterial, PolarGridHelper, PolyhedronGeometry as PolyhedronBufferGeometry, PolyhedronGeometry, PositionalAudio, PropertyBinding, PropertyMixer, QuadraticBezierCurve, QuadraticBezierCurve3, Quaternion, QuaternionKeyframeTrack, QuaternionLinearInterpolant, REVISION, RGBADepthPacking, RGBAFormat, RGBAIntegerFormat, RGBA_ASTC_10x10_Format, RGBA_ASTC_10x5_Format, RGBA_ASTC_10x6_Format, RGBA_ASTC_10x8_Format, RGBA_ASTC_12x10_Format, RGBA_ASTC_12x12_Format, RGBA_ASTC_4x4_Format, RGBA_ASTC_5x4_Format, RGBA_ASTC_5x5_Format, RGBA_ASTC_6x5_Format, RGBA_ASTC_6x6_Format, RGBA_ASTC_8x5_Format, RGBA_ASTC_8x6_Format, RGBA_ASTC_8x8_Format, RGBA_BPTC_Format, RGBA_ETC2_EAC_Format, RGBA_PVRTC_2BPPV1_Format, RGBA_PVRTC_4BPPV1_Format, RGBA_S3TC_DXT1_Format, RGBA_S3TC_DXT3_Format, RGBA_S3TC_DXT5_Format, RGBDEncoding, RGBEEncoding, RGBEFormat, RGBFormat, RGBIntegerFormat, RGBM16Encoding, RGBM7Encoding, RGB_ETC1_Format, RGB_ETC2_Format, RGB_PVRTC_2BPPV1_Format, RGB_PVRTC_4BPPV1_Format, RGB_S3TC_DXT1_Format, RGFormat, RGIntegerFormat, RawShaderMaterial, Ray, Raycaster, RectAreaLight, RedFormat, RedIntegerFormat, ReinhardToneMapping, RepeatWrapping, ReplaceStencilOp, ReverseSubtractEquation, RingGeometry as RingBufferGeometry, RingGeometry, SRGB8_ALPHA8_ASTC_10x10_Format, SRGB8_ALPHA8_ASTC_10x5_Format, SRGB8_ALPHA8_ASTC_10x6_Format, SRGB8_ALPHA8_ASTC_10x8_Format, SRGB8_ALPHA8_ASTC_12x10_Format, SRGB8_ALPHA8_ASTC_12x12_Format, SRGB8_ALPHA8_ASTC_4x4_Format, SRGB8_ALPHA8_ASTC_5x4_Format, SRGB8_ALPHA8_ASTC_5x5_Format, SRGB8_ALPHA8_ASTC_6x5_Format, SRGB8_ALPHA8_ASTC_6x6_Format, SRGB8_ALPHA8_ASTC_8x5_Format, SRGB8_ALPHA8_ASTC_8x6_Format, SRGB8_ALPHA8_ASTC_8x8_Format, Scene, SceneUtils, ShaderChunk, ShaderLib, ShaderMaterial, ShadowMaterial, Shape, ShapeGeometry as ShapeBufferGeometry, ShapeGeometry, ShapePath, ShapeUtils, ShortType, Skeleton, SkeletonHelper, SkinnedMesh, SmoothShading, Sphere, SphereGeometry as SphereBufferGeometry, SphereGeometry, Spherical, SphericalHarmonics3, SplineCurve, SpotLight, SpotLightHelper, Sprite, SpriteMaterial, SrcAlphaFactor, SrcAlphaSaturateFactor, SrcColorFactor, StaticCopyUsage, StaticDrawUsage, StaticReadUsage, StereoCamera, StreamCopyUsage, StreamDrawUsage, StreamReadUsage, StringKeyframeTrack, SubtractEquation, SubtractiveBlending, TOUCH, TangentSpaceNormalMap, TetrahedronGeometry as TetrahedronBufferGeometry, TetrahedronGeometry, TextGeometry as TextBufferGeometry, TextGeometry, Texture, TextureLoader, TorusGeometry as TorusBufferGeometry, TorusGeometry, TorusKnotGeometry as TorusKnotBufferGeometry, TorusKnotGeometry, Triangle, TriangleFanDrawMode, TriangleStripDrawMode, TrianglesDrawMode, TubeGeometry as TubeBufferGeometry, TubeGeometry, UVMapping, Uint16Attribute, Uint16BufferAttribute, Uint32Attribute, Uint32BufferAttribute, Uint8Attribute, Uint8BufferAttribute, Uint8ClampedAttribute, Uint8ClampedBufferAttribute, Uniform, UniformsLib, UniformsUtils, UnsignedByteType, UnsignedInt248Type, UnsignedIntType, UnsignedShort4444Type, UnsignedShort5551Type, UnsignedShort565Type, UnsignedShortType, VSMShadowMap, Vector2, Vector3, Vector4, VectorKeyframeTrack, Vertex, VertexColors, VideoTexture, WebGL1Renderer, WebGLCubeRenderTarget, WebGLMultisampleRenderTarget, WebGLRenderTarget, WebGLRenderTargetCube, WebGLRenderer, WebGLUtils, WireframeGeometry, WireframeHelper, WrapAroundEnding, XHRLoader, ZeroCurvatureEnding, ZeroFactor, ZeroSlopeEnding, ZeroStencilOp, sRGBEncoding };
