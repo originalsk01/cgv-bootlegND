@@ -4,9 +4,23 @@ import { OrbitControls } from './js/libs/OrbitControls.js';
 
 // import { RGBDEncoding } from './js/three.module.js';
 
-var jumpheight=10
-var scene,camera
-var snakeobj , mixer2
+var jumpheight = 10
+var scene, camera
+
+
+var orthoScene = new THREE.Scene();
+//creating the camera for the overlay
+var orthoCamera = new THREE.OrthographicCamera(
+    window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2,
+    window.innerHeight / - 2, - 500, 1000);
+orthoCamera.position.x = 0;
+orthoCamera.position.y = 0;
+orthoCamera.position.z = 0;
+
+
+
+
+var snakeobj, mixer2
 var spotlight = new THREE.SpotLight(0xffffff)
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.1)
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444)
@@ -28,7 +42,7 @@ var step = 0
 
 
 init()
-function init(){
+function init() {
     scene = new THREE.Scene()
     scene.background = new THREE.Color(0xa0a0a0)
     camera = new THREE.PerspectiveCamera(
@@ -37,7 +51,7 @@ function init(){
         1,
         2000
     )
-    
+
     //spotlight
     spotlight.position.set(-40, 60, 40)
     scene.add(spotlight)
@@ -70,6 +84,30 @@ function init(){
     var plane = new THREE.Mesh(planeGeometry, planeMaterial)
     plane.rotation.x = -0.5 * Math.PI
     scene.add(plane)
+
+    //Begin creating hud element
+
+    var container = document.createElement('div');
+    container.setAttribute(
+        "style", "width:100%; height:100%");
+    document.body.appendChild(container);
+
+
+
+
+    var spriteMaterial = new THREE.SpriteMaterial({
+        map:
+            THREE.ImageUtils.loadTexture(
+                "./resources/mchotbar.png")
+    });
+    var sprite = new THREE.Sprite(spriteMaterial);
+    sprite.position.set(-400, -300, 0);
+    sprite.scale.set(window.innerHeight, window.innerWidth/14, 1); //set dimensions for the hud
+    orthoScene.add(sprite);
+
+
+
+
 }
 
 //Animated model
@@ -104,7 +142,9 @@ scene.add(snakeobj);
 
 
 var renderer = new THREE.WebGLRenderer()
-
+renderer.setClearColor(0xf0f0f0);
+renderer.setSize(800, 600);
+renderer.autoClear = false;
 
 renderer.setClearColor(blue)
 renderer.setSize(window.innerWidth, window.innerHeight)
@@ -132,8 +172,8 @@ function keyPressed(e) {
             snakeobj.position.x += -1;
             break;
         case " ": // check if the space button pressed
-            snakeobj.position.y+=jumpheight
-            
+            snakeobj.position.y += jumpheight
+
     }
     e.preventDefault();
 
@@ -141,18 +181,18 @@ function keyPressed(e) {
 
 //Initial camera position
 
-function updateSnake(delta){
-    
-    camera.lookAt(snakeobj.position.x+15,snakeobj.position.y+5,snakeobj.position.z+10) //updates where the camera looks at bacsed on snake
+function updateSnake(delta) {
+
+    camera.lookAt(snakeobj.position.x + 15, snakeobj.position.y + 5, snakeobj.position.z + 10) //updates where the camera looks at bacsed on snake
 
 
     if (snakeobj) {//checks if snake object defined before doing loop for jump
-        if(snakeobj.position.y>=jumpheight){
-            snakeobj.position.y=jumpheight // set max height for jump
+        if (snakeobj.position.y >= jumpheight) {
+            snakeobj.position.y = jumpheight // set max height for jump
         }
-        if(snakeobj.position.y>0 ){//check if the snake is above groun
-    
-            snakeobj.position.y -= delta*20// make snake fall at rate of loop animation
+        if (snakeobj.position.y > 0) {//check if the snake is above groun
+
+            snakeobj.position.y -= delta * 20// make snake fall at rate of loop animation
         }
     }
 
@@ -161,7 +201,8 @@ function updateSnake(delta){
 
 function renderScene() {
     //Model
-    camera.position.set(snakeobj.position.x,snakeobj.position.y+10,snakeobj.position.z-10);//camera will always be set to the snakes current position by some offset
+    renderer.clear()
+    camera.position.set(snakeobj.position.x, snakeobj.position.y + 10, snakeobj.position.z - 10);//camera will always be set to the snakes current position by some offset
     const delta = clock.getDelta()
 
     if (mixer) mixer.update(delta)
@@ -176,6 +217,9 @@ function renderScene() {
 
     requestAnimationFrame(renderScene) //request render scene at every frame
     renderer.render(scene, camera)
+
+    renderer.clearDepth()
+    renderer.render(orthoScene, orthoCamera)
 }
 
 $('#gameCanvas').append(renderer.domElement)
