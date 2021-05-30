@@ -94,11 +94,23 @@ function init() {
   meshPlane.rotation.x = -Math.PI / 2;
   meshPlane.receiveShadow = true;
   scene.add(meshPlane);
-  //Grid floor
+  //Grid for floor
   var grid = new THREE.GridHelper(5000, 40, 0xff0000, 0x0000ff);
   grid.material.opacity = 0.7;
   grid.material.transparent = true;
   scene.add(grid);
+
+  //Skybox
+  const loader = new THREE.CubeTextureLoader();
+  const texture = loader.load([
+      'textures/skybox/indigo_ft.jpg',
+      'textures/skybox/indigo_bk.jpg',
+      'textures/skybox/indigo_up.jpg',
+      'textures/skybox/indigo_dn.jpg',
+      'textures/skybox/indigo_rt.jpg',
+      'textures/skybox/indigo_lf.jpg'
+  ]);
+  scene.background = texture;
 
   //Create first person controls
   controls = new PointerLockControls(camera, document.body);
@@ -217,7 +229,7 @@ newLoader.load("./resources/snake/scene.gltf", function(gltf) {
 });
 scene.add(snakeobj);
 
-var renderer = new THREE.WebGLRenderer();
+var renderer = new THREE.WebGLRenderer({antialias:true});
 
 renderer.setClearColor(blue);
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -233,12 +245,29 @@ function renderScene() {
 
   renderer.clear();
 
+  const delta = clock.getDelta()
+  //Animate snake and person
+  if (mixer) mixer.update(delta)
+  if (mixer2) mixer2.update(delta)
+
+
+  //Set snake position and direction
+//   snakeobj.position.set(camera.position.x, camera.position.y-5, camera.position.z)
+//   let cameraDirection = camera.getWorldDirection();
+//   //snakeobj.lookAt(cameraDirection);
+//   let snakeDirection = snakeobj.getWorldDirection();
+//   let angle = snakeDirection.angleTo(cameraDirection);
+//   snakeobj.rotateY(angle);
+// //   let snakeDir = new THREE.Vector3();
+// //   camera.getWorldDirection(snakeDir);
+// //   snakeobj.lookAt(snakeDir);
+
   requestAnimationFrame(renderScene); //request render scene at every frame
   const time = performance.now();
 
   if (controls.isLocked === true) {
 
-    const delta = (time - prevTime) / 1000;
+    // const delta = (time - prevTime) / 1000;
 
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
