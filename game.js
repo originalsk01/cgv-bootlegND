@@ -291,15 +291,10 @@ function renderScene() {
   if (mixer2) mixer2.update(delta)
 
   //Set snake position and direction
-  //   snakeobj.position.set(camera.position.x, camera.position.y-5, camera.position.z)
-  //   let cameraDirection = camera.getWorldDirection();
-  //   //snakeobj.lookAt(cameraDirection);
-  //   let snakeDirection = snakeobj.getWorldDirection();
-  //   let angle = snakeDirection.angleTo(cameraDirection);
-  //   snakeobj.rotateY(angle);
-  // //   let snakeDir = new THREE.Vector3();
-  // //   camera.getWorldDirection(snakeDir);
-  // //   snakeobj.lookAt(snakeDir);
+  snakeobj.position.set(camera.position.x, camera.position.y-5, camera.position.z);
+  let cameraDirectionNormalised = camera.getWorldDirection();
+  let cameraDirection = new THREE.Vector3(camera.position.x + cameraDirectionNormalised.x, snakeobj.position.y , camera.position.z + cameraDirectionNormalised.z);
+  snakeobj.lookAt(cameraDirection);
 
   requestAnimationFrame(renderScene) //request render scene at every frame
   const time = performance.now()
