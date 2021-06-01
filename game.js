@@ -166,9 +166,6 @@ class Game {
 			// create one mega big platform mesh from super geometry 
 			const platform = new THREE.Mesh(geometriesTiles, tileMaterial);
 
-
-			
-
 			// place lower left corner of platform mesh  at X-Z (0,0)
 			platform.translateX(gridSquareSize*length/2)
 			platform.translateZ(gridSquareSize*width/2)
@@ -265,6 +262,8 @@ class Game {
 		})
 
 		scene.add(shipModel)
+
+		
 
 		// create cannon body for ship
 		// shipBody = new CANNON.Body({
