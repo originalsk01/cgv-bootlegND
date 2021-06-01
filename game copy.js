@@ -262,7 +262,7 @@ class Game {
 		})
 
 		scene.add(shipModel)
-
+		console.log(shipModel)
 		
 
 		// create cannon body for ship
