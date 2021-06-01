@@ -1,4 +1,4 @@
-To set up environment run the following commands in the project folder:
+To set up environment run the following commands in the project folder
 
 npm init -y
 npm install --global rollup
@@ -8,8 +8,8 @@ npm i three
 npm i cannon-es
 npm i three-to-cannon
 
-to build project run:
+to build project run
 rollup -c
 
-to start server run:
+to start server run
 http-server
