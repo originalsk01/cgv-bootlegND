@@ -249,27 +249,39 @@ class Game {
 		shipModel = new THREE.Object3D
 		let shipLoader = new GLTFLoader() 
 		shipLoader.load('/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf', function (gltfModel) {	
-			gltfModel.scene.scale.multiplyScalar(1.9)
-        	gltfModel.scene.position.x = 5
-        	gltfModel.scene.position.z = 5
-			gltfModel.scene.rotateY(Math.PI)
-			gltfModel.scene.traverse(function (child) {
+			// gltfModel.scene.multiplyScalar(1.9)
+        	// gltfModel.scene.x = 5
+        	// gltfModel.scene.z = 5
+			// gltfModel.scene.rotateY(Math.PI)
+			// gltfModel.scene.traverse(function (child) {
     
-				console.log(child);
+			// 	console.log(child);
 			
-			});
-			shipModel.add(gltfModel.scene)
+			// });
+			shipModel.add(gltfModel.scene.children[0])
 		})
 
-		scene.add(shipModel)
+		// shipModel.set.scale(1.9,1.9,1.9)
+		// shipModel.translateX(5)
+		// shipModel.translateZ(5)
+		// shipModel.rotateY(Math.PI)
 
+		
+		shipModel.applyMatrix4( new THREE.Matrix4().makeScale(1.9,1.9,1.9) );
+		shipModel.applyMatrix4( new THREE.Matrix4().makeTranslation(-5,0,-5) );
+		
+		shipModel.applyMatrix4( new THREE.Matrix4().makeRotationY(Math.PI) );
+
+
+		scene.add(shipModel)
+		console.log(shipModel)
 		
 
 		// create cannon body for ship
 		// shipBody = new CANNON.Body({
 		// 	mass: 10,
 		// 	//shape: threeToCannon(shipModel).shape,
-		// 	shape: threeToCannon(shipModel, {type: ShapeType.SPHERE}).shape,
+		// 	shape: threeToCannon(shipModel.children[0], {type: ShapeType.SPHERE}).shape,
 		// })
 		// const shipPos = new THREE.Vector3()
 		// platform.getWorldPosition(shipPos)
