@@ -1,6 +1,5 @@
 To set up environment run the following commands in the project folder:  
 
-npm init -y  
 npm install --global rollup  
 npm install --global http-server  
 npm i @rollup/plugin-node-resolve  

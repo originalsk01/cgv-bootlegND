@@ -57286,293 +57286,311 @@
 	// cannon-es global vars
 	let world;
 	let sphereBody;
-	const timeStep = 1 / 60; 
+	const timeStep = 1 / 60;
 	let lastCallTime;
+
+
+	//textures
+	var loader,skyBoxtexture;
 
 
 	class Game {
 
-		init() {
+	  init() {
 
-			// Scene
-			scene = new Scene();
-			scene.background = new Color(0xa0a0a0);
+	    // Scene
+	    scene = new Scene();
+	    // scene.background = new THREE.Color(0xa0a0a0)
 
-			// Physics world
-			world = new World({
-				gravity: new Vec3(0, -9.82, 0), // m/s²
-			});
-
-			stats = new Stats();
-			document.body.appendChild(stats.dom);
-
-			
-			// Camera
-			camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-			camera.position.z = 400;
-		
-			// Initial camera position
-			camera.position.set(50,10,25);
+	    //Skybox
+	    loader = new CubeTextureLoader();
+	    skyBoxtexture = loader.load([
+	      'textures/skybox/indigo_ft.jpg',
+	      'textures/skybox/indigo_bk.jpg',
+	      'textures/skybox/indigo_up.jpg',
+	      'textures/skybox/indigo_dn.jpg',
+	      'textures/skybox/indigo_rt.jpg',
+	      'textures/skybox/indigo_lf.jpg',
+	    ]);
+	    // console.log(skyBoxtexture)
+	    scene.background = skyBoxtexture;
 
 
-			// Renderer
-			renderer = new WebGLRenderer( { antialias: true } );
-			renderer.setClearColor(blue);
-			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3);
-			window.addEventListener( 'resize', onWindowResize, false );
-			document.body.appendChild(renderer.domElement);
+	    // Physics world
+	    world = new World({
+	      gravity: new Vec3(0, -9.82, 0), // m/s²
+	    });
+
+	    stats = new Stats();
+	    document.body.appendChild(stats.dom);
 
 
-			// Orbit Controls
-			const controls = new OrbitControls(camera, renderer.domElement);
-			controls.update();
-			
-			// Axes Helper
-			const axes = new AxesHelper(100);
-			scene.add(axes);
+	    // Camera
+	    camera = new PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+	    camera.position.z = 400;
 
-			// X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
-			const gridSize = 500;
-			const gridDivisions = 50;
-			const gridHelper = new GridHelper( gridSize, gridDivisions );
-			scene.add( gridHelper );
+	    // Initial camera position
+	    camera.position.set(50, 10, 25);
 
 
-			// Size of one unit for world coordinates if Grid used as basis
-			const gridSquareSize =gridSize/gridDivisions;
+	    // Renderer
+	    renderer = new WebGLRenderer({ antialias: true });
+	    renderer.setClearColor(blue);
+	    renderer.setPixelRatio(window.devicePixelRatio);
+	    renderer.setSize(2 * window.innerWidth / 3, 2 * window.innerHeight / 3);
+	    window.addEventListener('resize', onWindowResize, false);
+	    document.body.appendChild(renderer.domElement);
 
 
-			// Lights
-			const ambientLight = new AmbientLight(0xffffff,0.6);
-			scene.add(ambientLight);
-		
-			const dirLight = new DirectionalLight(0xffffff);
-			dirLight.position.set(0, 200, 100);
-			dirLight.castShadow = true;
-			dirLight.shadow.camera.top = 180;
-			dirLight.shadow.camera.bottom = -100;
-			dirLight.shadow.camera.left = -120;
-			dirLight.shadow.camera.right = 120;
-			scene.add(dirLight);
+	    // Orbit Controls
+	    const controls = new OrbitControls(camera, renderer.domElement);
+	    controls.update();
 
-			
+	    // Axes Helper
+	    const axes = new AxesHelper(100);
+	    scene.add(axes);
 
-			// Create a static ground plane for the ground
-			const groundBody = new Body({
-			type: Body.STATIC, // can also be achieved by setting the mass to 0
-			shape: new Plane(),
-			});
-			groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
-			world.addBody(groundBody);
+	    // X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
+	    const gridSize = 500;
+	    const gridDivisions = 50;
+	    const gridHelper = new GridHelper(gridSize, gridDivisions);
+	    scene.add(gridHelper);
 
 
-			// Add sphere model to three scene
-			const radius = 5; // m
-			const geometry = new SphereGeometry(radius,20,20);
-			const material = new MeshLambertMaterial({ color: blue });
-			sphereMesh = new Mesh(geometry, material);
-
-			scene.add(sphereMesh);
-
-			
-			// Create sphere body in physics world
-			
-			sphereBody = new Body({
-				mass: 50, // kg
-				//shape: new CANNON.Sphere(radius),
-				shape: S(sphereMesh, {type: P.SPHERE}).shape,
-			});
-			sphereBody.position.set(21, 50, 21); // m
-			world.addBody(sphereBody);
+	    // Size of one unit for world coordinates if Grid used as basis
+	    const gridSquareSize = gridSize / gridDivisions;
 
 
-			// Function to create a platform of size legth by width in world units
-			// out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
-			// your machine would otherwise die if it tried to render this many grouped objects normally
-			const createPlatform =(length,width,tileColorMap)=>{
-				
-				const tiles = [];
+	    // Lights
+	    const ambientLight = new AmbientLight(0xffffff, 0.6);
+	    scene.add(ambientLight);
 
-				const tileGeometry = new BoxGeometry(1,0.25, 1);
-				
-				//const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
-				const tileMaterial = new MeshPhongMaterial({ map: tileColorMap });
-				
-				const midpointOffset=0.5;
-
-				
-				for(let x=0;x<length;x++){
-					const xpos=x+midpointOffset;
-					for(let z=0;z<width;z++){
-						const zpos=z+midpointOffset;
-						// instead of creating a new geometry, we just clone the bufferGeometry instance
-						const newTile = tileGeometry.clone();
-						const y =  0; //getRandomInt(0,5)
-						newTile.applyMatrix4( new Matrix4().makeTranslation(xpos,y,zpos) );
-						// then, we push this bufferGeometry instance in our array
-						tiles.push(newTile);
-					}
-				
-				}
-
-				// merge into single super buffer geometry;
-				const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
-				// centre super geometry at local origin
-				geometriesTiles.applyMatrix4( new Matrix4().makeTranslation(-length/2,0,-width/2 ) );
-				geometriesTiles.applyMatrix4( new Matrix4().makeScale(gridSquareSize,gridSquareSize,gridSquareSize) );
+	    const dirLight = new DirectionalLight(0xffffff);
+	    dirLight.position.set(0, 200, 100);
+	    dirLight.castShadow = true;
+	    dirLight.shadow.camera.top = 180;
+	    dirLight.shadow.camera.bottom = -100;
+	    dirLight.shadow.camera.left = -120;
+	    dirLight.shadow.camera.right = 120;
+	    scene.add(dirLight);
 
 
-				// create one mega big platform mesh from super geometry 
-				const platform = new Mesh(geometriesTiles, tileMaterial);
 
-				// place lower left corner of platform mesh  at X-Z (0,0)
-				platform.translateX(gridSquareSize*length/2);
-				platform.translateZ(gridSquareSize*width/2);
-			
-				return platform
-			};
-
-
-			// Function to set platform postition in gameboard coordinates in world
-			const placePlatform=(platform,x,y,z)=>{
-				
-				// translate platform in world coordinates
-				x=x*gridSquareSize;
-				y=y*gridSquareSize*0.25;
-				z=z*gridSquareSize;
-				platform.applyMatrix4( new Matrix4().makeTranslation(x,y,z));
-
-				
-				// create cannon body for platform
-				const platformBody = new Body({
-					type: Body.STATIC,
-					shape: S(platform, {type: P.BOX}).shape,
-				});
-				const platformPos = new Vector3();
-				platform.getWorldPosition(platformPos);
-				platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
-
-				return {
-					threePlatform: platform,
-					cannonPlatform: platformBody
-				}
-			};
-
-			// Function to add multiple platforms into a gameboard
-			// allow different textures/colours for different sections
-			const createGameBoard=()=>{
-
-				const board = new Group();
-				const platformGeometries = [];
-				const platformBodies = [];
-				let newPlatform;
-				let colorMap;
-
-				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,2,colorMap),0,5,0);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
+	    // Create a static ground plane for the ground
+	    const groundBody = new Body({
+	      type: Body.STATIC, // can also be achieved by setting the mass to 0
+	      shape: new Plane(),
+	    });
+	    groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
+	    world.addBody(groundBody);
 
 
-				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(5,5,colorMap),3,0,3);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
+	    // Add sphere model to three scene
+	    const radius = 5; // m
+	    const geometry = new SphereGeometry(radius, 20, 20);
+	    const material = new MeshLambertMaterial({ color: blue });
+	    sphereMesh = new Mesh(geometry, material);
+
+	    scene.add(sphereMesh);
 
 
-				for (let i=0;i<platformGeometries.length;i++){
-					board.add(platformGeometries[i]);
-					world.addBody(platformBodies[i]);
-				}
+	    // Create sphere body in physics world
 
-				return board
-	    	};
-
-			// Add gameboard to world
-			const gameboard = createGameBoard();
-			scene.add(gameboard);
+	    sphereBody = new Body({
+	      mass: 50, // kg
+	      //shape: new CANNON.Sphere(radius),
+	      shape: S(sphereMesh, { type: P.SPHERE }).shape,
+	    });
+	    sphereBody.position.set(21, 50, 21); // m
+	    world.addBody(sphereBody);
 
 
-			// Add animated snake
-			// const snakeLoader = new GLTFLoader()
-			// snakeLoader.load('models/snake/snake/scene.gltf', function (gltf) {
-			// 	snakeModel = gltf.scene
-			// 	snakeMixer = new THREE.AnimationMixer(snakeModel.children[0]);
-			// 	//snakeobj.position.setY(5)
-			// 	gltf.animations.forEach((clip) => { snakeMixer.clipAction(clip).play(); });
-			// 	scene.add(snakeModel)
-			// })
+	    // Function to create a platform of size legth by width in world units
+	    // out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
+	    // your machine would otherwise die if it tried to render this many grouped objects normally
+	    const createPlatform = (length, width, tileColorMap) => {
 
-			// Add player ship to threejs scene
-			
-			shipModel = new Object3D;
-			let shipLoader = new GLTFLoader(); 
-			shipLoader.load('/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf', function (gltfModel) {	
-				gltfModel.scene.scale.multiplyScalar(1.9);
-	        	gltfModel.scene.position.x = 5;
-	        	gltfModel.scene.position.z = 5;
-				gltfModel.scene.rotateY(Math.PI);
-				gltfModel.scene.traverse(function (child) {
-	    
-					console.log(child);
-				
-				});
-				shipModel.add(gltfModel.scene);
-			});
+	      const tiles = [];
 
-			scene.add(shipModel);
+	      const tileGeometry = new BoxGeometry(1, 0.25, 1);
 
-			
+	      //const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
+	      const tileMaterial = new MeshPhongMaterial({ map: tileColorMap });
 
-			// create cannon body for ship
-			// shipBody = new CANNON.Body({
-			// 	mass: 10,
-			// 	//shape: threeToCannon(shipModel).shape,
-			// 	shape: threeToCannon(shipModel, {type: ShapeType.SPHERE}).shape,
-			// })
-			// const shipPos = new THREE.Vector3()
-			// platform.getWorldPosition(shipPos)
-			// platformBody.position.set(shipPos.x, shipPos.y, shipPos.z)
-
-			//world.addBody(shipBody)
-
-			//let shipGeometry = shipModel.getObjectByName('SmallFighter').geometry;
-			//console.log(shipGeometry);
-
-			document.body.addEventListener('keydown', keyPressed);
-
-			function keyPressed(e){
-				switch(e.key) {
-				case 'ArrowUp':
-					snakeobj.position.z+=1;
-					break;
-				case 'ArrowDown':
-					snakeobj.position.z+=-1;
-					break;
-				case 'ArrowLeft':
-					snakeobj.position.x+=1;
-					break;
-				case 'ArrowRight':
-					snakeobj.position.x+=-1;
-					break;
-				}
-				e.preventDefault();
-
-			}
-			
-			clock = new Clock();
-			
-			//initCannon()
-			
-			animate();
+	      const midpointOffset = 0.5;
 
 
-		}
+	      for (let x = 0; x < length; x++) {
+	        const xpos = x + midpointOffset;
+	        for (let z = 0; z < width; z++) {
+	          const zpos = z + midpointOffset;
+	          // instead of creating a new geometry, we just clone the bufferGeometry instance
+	          const newTile = tileGeometry.clone();
+	          const y = 0; //getRandomInt(0,5)
+	          newTile.applyMatrix4(new Matrix4().makeTranslation(xpos, y, zpos));
+	          // then, we push this bufferGeometry instance in our array
+	          tiles.push(newTile);
+	        }
 
-		
+	      }
 
-		
+	      // merge into single super buffer geometry;
+	      const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
+	      // centre super geometry at local origin
+	      geometriesTiles.applyMatrix4(new Matrix4().makeTranslation(-length / 2, 0, -width / 2));
+	      geometriesTiles.applyMatrix4(new Matrix4().makeScale(gridSquareSize, gridSquareSize, gridSquareSize));
+
+
+	      // create one mega big platform mesh from super geometry 
+	      const platform = new Mesh(geometriesTiles, tileMaterial);
+
+	      // place lower left corner of platform mesh  at X-Z (0,0)
+	      platform.translateX(gridSquareSize * length / 2);
+	      platform.translateZ(gridSquareSize * width / 2);
+
+	      return platform
+	    };
+
+
+	    // Function to set platform postition in gameboard coordinates in world
+	    const placePlatform = (platform, x, y, z) => {
+
+	      // translate platform in world coordinates
+	      x = x * gridSquareSize;
+	      y = y * gridSquareSize * 0.25;
+	      z = z * gridSquareSize;
+	      platform.applyMatrix4(new Matrix4().makeTranslation(x, y, z));
+
+
+	      // create cannon body for platform
+	      const platformBody = new Body({
+	        type: Body.STATIC,
+	        shape: S(platform, { type: P.BOX }).shape,
+	      });
+	      const platformPos = new Vector3();
+	      platform.getWorldPosition(platformPos);
+	      platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
+
+	      return {
+	        threePlatform: platform,
+	        cannonPlatform: platformBody
+	      }
+	    };
+
+	    // Function to add multiple platforms into a gameboard
+	    // allow different textures/colours for different sections
+	    const createGameBoard = () => {
+
+	      const board = new Group();
+	      const platformGeometries = [];
+	      const platformBodies = [];
+	      let newPlatform;
+	      let colorMap;
+
+	      colorMap = new TextureLoader().load('./textures/blue_floor.png');
+	      newPlatform = placePlatform(createPlatform(2, 2, colorMap), 0, 5, 0);
+	      platformGeometries.push(newPlatform.threePlatform);
+	      platformBodies.push(newPlatform.cannonPlatform);
+
+
+	      colorMap = new TextureLoader().load('./textures/blue_floor.png');
+	      newPlatform = placePlatform(createPlatform(5, 5, colorMap), 3, 0, 3);
+	      platformGeometries.push(newPlatform.threePlatform);
+	      platformBodies.push(newPlatform.cannonPlatform);
+
+
+	      for (let i = 0; i < platformGeometries.length; i++) {
+	        board.add(platformGeometries[i]);
+	        world.addBody(platformBodies[i]);
+	      }
+
+	      return board
+	    };
+
+	    // Add gameboard to world
+	    const gameboard = createGameBoard();
+	    scene.add(gameboard);
+
+
+	    // Add animated snake
+	    // const snakeLoader = new GLTFLoader()
+	    // snakeLoader.load('models/snake/snake/scene.gltf', function (gltf) {
+	    // 	snakeModel = gltf.scene
+	    // 	snakeMixer = new THREE.AnimationMixer(snakeModel.children[0]);
+	    // 	//snakeobj.position.setY(5)
+	    // 	gltf.animations.forEach((clip) => { snakeMixer.clipAction(clip).play(); });
+	    // 	scene.add(snakeModel)
+	    // })
+
+	    // Add player ship to threejs scene
+
+	    shipModel = new Object3D;
+	    let shipLoader = new GLTFLoader();
+	    shipLoader.load('/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf', function (gltfModel) {
+	      gltfModel.scene.scale.multiplyScalar(1.9);
+	      gltfModel.scene.position.x = 5;
+	      gltfModel.scene.position.z = 5;
+	      gltfModel.scene.rotateY(Math.PI);
+	      gltfModel.scene.traverse(function (child) {
+
+	        console.log(child);
+
+	      });
+	      shipModel.add(gltfModel.scene);
+	    });
+
+	    scene.add(shipModel);
+
+
+
+	    // create cannon body for ship
+	    // shipBody = new CANNON.Body({
+	    // 	mass: 10,
+	    // 	//shape: threeToCannon(shipModel).shape,
+	    // 	shape: threeToCannon(shipModel, {type: ShapeType.SPHERE}).shape,
+	    // })
+	    // const shipPos = new THREE.Vector3()
+	    // platform.getWorldPosition(shipPos)
+	    // platformBody.position.set(shipPos.x, shipPos.y, shipPos.z)
+
+	    //world.addBody(shipBody)
+
+	    //let shipGeometry = shipModel.getObjectByName('SmallFighter').geometry;
+	    //console.log(shipGeometry);
+
+	    document.body.addEventListener('keydown', keyPressed);
+
+	    function keyPressed(e) {
+	      switch (e.key) {
+	        case 'ArrowUp':
+	          snakeobj.position.z += 1;
+	          break;
+	        case 'ArrowDown':
+	          snakeobj.position.z += -1;
+	          break;
+	        case 'ArrowLeft':
+	          snakeobj.position.x += 1;
+	          break;
+	        case 'ArrowRight':
+	          snakeobj.position.x += -1;
+	          break;
+	      }
+	      e.preventDefault();
+
+	    }
+
+	    clock = new Clock();
+
+	    //initCannon()
+
+	    animate();
+
+
+	  }
+
+
+
+
 
 	}
 
@@ -57602,49 +57620,49 @@
 
 
 	function animate() {
-		
-		// cannon-es world stepping
-		updatePhysics();
-		
 
-		// three.js model positions updates using cannon-es simulation
-		sphereMesh.position.copy(sphereBody.position);
-		sphereMesh.quaternion.copy(sphereBody.quaternion);
+	  // cannon-es world stepping
+	  updatePhysics();
 
-		//plat0.position.copy(plat0Body.position)
-		//plat0.quaternion.copy(plat0Body.quaternion)
-		
-		// models animations
-		clock.getDelta();
-	  
-		// render three.js
 
-		renderer.clear();
-		requestAnimationFrame(animate); //request render scene at every frame
-		renderer.render(scene, camera);
-		stats.update();
+	  // three.js model positions updates using cannon-es simulation
+	  sphereMesh.position.copy(sphereBody.position);
+	  sphereMesh.quaternion.copy(sphereBody.quaternion);
+
+	  //plat0.position.copy(plat0Body.position)
+	  //plat0.quaternion.copy(plat0Body.quaternion)
+
+	  // models animations
+	  clock.getDelta();
+
+	  // render three.js
+
+	  renderer.clear();
+	  requestAnimationFrame(animate); //request render scene at every frame
+	  renderer.render(scene, camera);
+	  stats.update();
 	}
 
 
 	function onWindowResize() {
 
-		camera.aspect = window.innerWidth / window.innerHeight;
-		camera.updateProjectionMatrix();
-		renderer.setSize( window.innerWidth, window.innerHeight );
+	  camera.aspect = window.innerWidth / window.innerHeight;
+	  camera.updateProjectionMatrix();
+	  renderer.setSize(window.innerWidth, window.innerHeight);
 
 	}
 
 
-	function updatePhysics(){
-		
-		const time = performance.now() / 1000;
-		if (!lastCallTime) {
-			world.step(timeStep);
-		} else {
-			const dt = time - lastCallTime;
-			world.step(timeStep, dt);
-		}
-		lastCallTime = time;	
+	function updatePhysics() {
+
+	  const time = performance.now() / 1000;
+	  if (!lastCallTime) {
+	    world.step(timeStep);
+	  } else {
+	    const dt = time - lastCallTime;
+	    world.step(timeStep, dt);
+	  }
+	  lastCallTime = time;
 	}
 
 	const game = new Game();
