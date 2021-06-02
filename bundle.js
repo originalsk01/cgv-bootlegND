@@ -57288,7 +57288,7 @@
 	// cannon-es global vars
 	let world;
 	let sphereBody;
-	const timeStep = 1 / 60; 
+	const timeStep = 1 / 60;
 	let lastCallTime;
 
 
@@ -57504,7 +57504,7 @@
 			shipModel.applyMatrix4( new Matrix4().makeRotationY(Math.PI) );
 
 			scene.add(shipModel);
-			console.log(shipModel);
+			//console.log(shipModel)
 
 			// create cannon body for ship
 			new Body({
@@ -57578,49 +57578,49 @@
 
 
 	function animate() {
-		
-		// cannon-es world stepping
-		updatePhysics();
-		
 
-		// three.js model positions updates using cannon-es simulation
-		sphereMesh.position.copy(sphereBody.position);
-		sphereMesh.quaternion.copy(sphereBody.quaternion);
+	  // cannon-es world stepping
+	  updatePhysics();
 
-		//plat0.position.copy(plat0Body.position)
-		//plat0.quaternion.copy(plat0Body.quaternion)
-		
-		// models animations
-		clock.getDelta();
-	  
-		// render three.js
 
-		renderer.clear();
-		requestAnimationFrame(animate); //request render scene at every frame
-		renderer.render(scene, camera);
-		stats.update();
+	  // three.js model positions updates using cannon-es simulation
+	  sphereMesh.position.copy(sphereBody.position);
+	  sphereMesh.quaternion.copy(sphereBody.quaternion);
+
+	  //plat0.position.copy(plat0Body.position)
+	  //plat0.quaternion.copy(plat0Body.quaternion)
+
+	  // models animations
+	  clock.getDelta();
+
+	  // render three.js
+
+	  renderer.clear();
+	  requestAnimationFrame(animate); //request render scene at every frame
+	  renderer.render(scene, camera);
+	  stats.update();
 	}
 
 
 	function onWindowResize() {
 
-		camera.aspect = window.innerWidth / window.innerHeight;
-		camera.updateProjectionMatrix();
-		renderer.setSize( window.innerWidth, window.innerHeight );
+	  camera.aspect = window.innerWidth / window.innerHeight;
+	  camera.updateProjectionMatrix();
+	  renderer.setSize(window.innerWidth, window.innerHeight);
 
 	}
 
 
-	function updatePhysics(){
-		
-		const time = performance.now() / 1000;
-		if (!lastCallTime) {
-			world.step(timeStep);
-		} else {
-			const dt = time - lastCallTime;
-			world.step(timeStep, dt);
-		}
-		lastCallTime = time;	
+	function updatePhysics() {
+
+	  const time = performance.now() / 1000;
+	  if (!lastCallTime) {
+	    world.step(timeStep);
+	  } else {
+	    const dt = time - lastCallTime;
+	    world.step(timeStep, dt);
+	  }
+	  lastCallTime = time;
 	}
 
 	const game = new Game();
