@@ -57281,6 +57281,8 @@
 	// three.js global vars
 	let camera, scene, stats, renderer, clock;
 	let sphereMesh, shipModel;
+
+	const shipPath = '/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf';
 	const blue = 'rgb(110,197,233)';
 
 	// cannon-es global vars
@@ -57292,7 +57294,7 @@
 
 	class Game {
 
-		init() {
+		async init() {
 
 			// Scene
 			scene = new Scene();
@@ -57493,64 +57495,24 @@
 			const gameboard = createGameBoard();
 			scene.add(gameboard);
 
-
-			// Add animated snake
-			// const snakeLoader = new GLTFLoader()
-			// snakeLoader.load('models/snake/snake/scene.gltf', function (gltf) {
-			// 	snakeModel = gltf.scene
-			// 	snakeMixer = new THREE.AnimationMixer(snakeModel.children[0]);
-			// 	//snakeobj.position.setY(5)
-			// 	gltf.animations.forEach((clip) => { snakeMixer.clipAction(clip).play(); });
-			// 	scene.add(snakeModel)
-			// })
-
-			// Add player ship to threejs scene
-			
 			shipModel = new Object3D;
-			let shipLoader = new GLTFLoader(); 
-			shipLoader.load('/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf', function (gltfModel) {	
-				// gltfModel.scene.multiplyScalar(1.9)
-	        	// gltfModel.scene.x = 5
-	        	// gltfModel.scene.z = 5
-				// gltfModel.scene.rotateY(Math.PI)
-				// gltfModel.scene.traverse(function (child) {
-	    
-				// 	console.log(child);
-				
-				// });
-				shipModel.add(gltfModel.scene.children[0]);
-			});
-
-			// shipModel.set.scale(1.9,1.9,1.9)
-			// shipModel.translateX(5)
-			// shipModel.translateZ(5)
-			// shipModel.rotateY(Math.PI)
-
 			
+			shipModel = await loadModel(shipPath);
+
 			shipModel.applyMatrix4( new Matrix4().makeScale(1.9,1.9,1.9) );
 			shipModel.applyMatrix4( new Matrix4().makeTranslation(-5,0,-5) );
-			
 			shipModel.applyMatrix4( new Matrix4().makeRotationY(Math.PI) );
-
 
 			scene.add(shipModel);
 			console.log(shipModel);
-			
 
 			// create cannon body for ship
 			new Body({
 				mass: 10,
-				//shape: threeToCannon(shipModel).shape,
-				shape: S(shipModel.children[0], {type: P.SPHERE}).shape,
+				shape: S(shipModel).shape,
 			});
-			// const shipPos = new THREE.Vector3()
-			// platform.getWorldPosition(shipPos)
-			// platformBody.position.set(shipPos.x, shipPos.y, shipPos.z)
+			//console.log(shipBody)
 
-			//world.addBody(shipBody)
-
-			//let shipGeometry = shipModel.getObjectByName('SmallFighter').geometry;
-			//console.log(shipGeometry);
 
 			document.body.addEventListener('keydown', keyPressed);
 
@@ -57579,13 +57541,7 @@
 			
 			animate();
 
-
 		}
-
-		
-
-		
-
 	}
 
 	// function initCannon(){
@@ -57611,6 +57567,14 @@
 	// 	world.addBody(groundBody)
 	// }
 
+
+	async function loadModel(path){
+		const loader = new GLTFLoader();	
+
+		const model = await loader.loadAsync(path);
+
+		return model.scene.children[0]
+	}
 
 
 	function animate() {
