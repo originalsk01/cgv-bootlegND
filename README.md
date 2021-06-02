@@ -11,4 +11,8 @@ To build project run:
 rollup -c  
 
 To start server run:  
-http-server  
+http-server
+
+You need to run rollup -c everytime you make changes to game.js in order  
+for them to reflected in the running game instance. Then reload the tab in  
+your browser running the http-server instance.

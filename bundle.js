@@ -57346,9 +57346,123 @@
 	    const controls = new OrbitControls(camera, renderer.domElement);
 	    controls.update();
 
+<<<<<<< HEAD
 	    // Axes Helper
 	    const axes = new AxesHelper(100);
 	    scene.add(axes);
+=======
+			// Function to add multiple platforms into a gameboard
+			// allow different textures/colours for different sections
+			const createGameBoard=()=>{
+
+				const board = new Group();
+				const platformGeometries = [];
+				const platformBodies = [];
+				let newPlatform;
+				let colorMap;
+
+				colorMap = new TextureLoader().load('./textures/blue_floor.png');
+				newPlatform = placePlatform(createPlatform(2,2,colorMap),0,5,0);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+
+				colorMap = new TextureLoader().load('./textures/blue_floor.png');
+				newPlatform = placePlatform(createPlatform(5,5,colorMap),3,0,3);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+
+				for (let i=0;i<platformGeometries.length;i++){
+					board.add(platformGeometries[i]);
+					world.addBody(platformBodies[i]);
+				}
+
+				return board
+	    	};
+
+			// Add gameboard to world
+			const gameboard = createGameBoard();
+			scene.add(gameboard);
+
+
+			// Add animated snake
+			// const snakeLoader = new GLTFLoader()
+			// snakeLoader.load('models/snake/snake/scene.gltf', function (gltf) {
+			// 	snakeModel = gltf.scene
+			// 	snakeMixer = new THREE.AnimationMixer(snakeModel.children[0]);
+			// 	//snakeobj.position.setY(5)
+			// 	gltf.animations.forEach((clip) => { snakeMixer.clipAction(clip).play(); });
+			// 	scene.add(snakeModel)
+			// })
+
+			// Add player ship to threejs scene
+			
+			shipModel = new Object3D;
+			let shipLoader = new GLTFLoader(); 
+			shipLoader.load('/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf', function (gltfModel) {	
+				// gltfModel.scene.multiplyScalar(1.9)
+	        	// gltfModel.scene.x = 5
+	        	// gltfModel.scene.z = 5
+				// gltfModel.scene.rotateY(Math.PI)
+				// gltfModel.scene.traverse(function (child) {
+	    
+				// 	console.log(child);
+				
+				// });
+				shipModel.add(gltfModel.scene.children[0]);
+			});
+
+			// shipModel.set.scale(1.9,1.9,1.9)
+			// shipModel.translateX(5)
+			// shipModel.translateZ(5)
+			// shipModel.rotateY(Math.PI)
+
+			
+			shipModel.applyMatrix4( new Matrix4().makeScale(1.9,1.9,1.9) );
+			shipModel.applyMatrix4( new Matrix4().makeTranslation(-5,0,-5) );
+			
+			shipModel.applyMatrix4( new Matrix4().makeRotationY(Math.PI) );
+
+
+			scene.add(shipModel);
+			console.log(shipModel);
+			
+
+			// create cannon body for ship
+			new Body({
+				mass: 10,
+				//shape: threeToCannon(shipModel).shape,
+				shape: S(shipModel.children[0], {type: P.SPHERE}).shape,
+			});
+			// const shipPos = new THREE.Vector3()
+			// platform.getWorldPosition(shipPos)
+			// platformBody.position.set(shipPos.x, shipPos.y, shipPos.z)
+
+			//world.addBody(shipBody)
+
+			//let shipGeometry = shipModel.getObjectByName('SmallFighter').geometry;
+			//console.log(shipGeometry);
+
+			document.body.addEventListener('keydown', keyPressed);
+
+			function keyPressed(e){
+				switch(e.key) {
+				case 'ArrowUp':
+					snakeobj.position.z+=1;
+					break;
+				case 'ArrowDown':
+					snakeobj.position.z+=-1;
+					break;
+				case 'ArrowLeft':
+					snakeobj.position.x+=1;
+					break;
+				case 'ArrowRight':
+					snakeobj.position.x+=-1;
+					break;
+				}
+				e.preventDefault();
+>>>>>>> d7c169282870895a0fa1f5768a5c07f4edf72417
 
 	    // X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
 	    const gridSize = 500;
