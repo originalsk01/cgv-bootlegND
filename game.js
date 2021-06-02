@@ -11,8 +11,10 @@ import { threeToCannon, ShapeType } from 'three-to-cannon';
 // three.js global vars
 let camera, scene, stats, renderer, clock, snakeMixer, dancerMixer
 let sphereMesh, snakeModel, dancerModel, shipModel
-
 const shipPath = '/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf'
+
+//three.js textures
+let skyBoxtexture
 
 // global
 const black = 'rgb(0,0,0)'
@@ -38,7 +40,22 @@ class Game {
 
 		// Scene
 		scene = new THREE.Scene()
-		scene.background = new THREE.Color(0xa0a0a0)
+		//scene.background = new THREE.Color(0xa0a0a0)
+
+
+		//Skybox
+		const skyBoxLoader = new THREE.CubeTextureLoader()
+		skyBoxtexture = skyBoxLoader.load([
+		  'textures/skybox/indigo_ft.jpg',
+		  'textures/skybox/indigo_bk.jpg',
+		  'textures/skybox/indigo_up.jpg',
+		  'textures/skybox/indigo_dn.jpg',
+		  'textures/skybox/indigo_rt.jpg',
+		  'textures/skybox/indigo_lf.jpg',
+		])
+		// console.log(skyBoxtexture)
+		scene.background = skyBoxtexture
+
 
 		// Physics world
 		world = new CANNON.World({
@@ -284,29 +301,6 @@ class Game {
 	}
 }
 
-// function initCannon(){
-// 	world = new CANNON.World({
-// 		gravity: new CANNON.Vec3(0, -9.82, 0), // m/s²
-// 	})
-
-// 	// Create a sphere body
-// 	const radius = 5 // m
-// 	sphereBody = new CANNON.Body({
-// 		mass: 20, // kg
-// 		shape: new CANNON.Sphere(radius),
-// 	})
-// 	sphereBody.position.set(0, 1000, 0) // m
-// 	world.addBody(sphereBody)
-
-// 	// Create a static plane for the ground
-// 	const groundBody = new CANNON.Body({
-// 	type: CANNON.Body.STATIC, // can also be achieved by setting the mass to 0
-// 	shape: new CANNON.Plane(),
-// 	})
-// 	groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0) // make it face up
-// 	world.addBody(groundBody)
-// }
-
 
 async function loadModel(path){
 	const loader = new GLTFLoader()	
@@ -326,9 +320,6 @@ function animate() {
 	// three.js model positions updates using cannon-es simulation
 	sphereMesh.position.copy(sphereBody.position)
 	sphereMesh.quaternion.copy(sphereBody.quaternion)
-
-	//plat0.position.copy(plat0Body.position)
-	//plat0.quaternion.copy(plat0Body.quaternion)
 	
 	// models animations
 	const delta = clock.getDelta()
