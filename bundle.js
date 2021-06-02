@@ -57289,7 +57289,7 @@
 
 	// cannon-es global vars
 	let world;
-	let sphereBody;
+	let sphereBody, shipBody;
 	const timeStep = 1 / 60; 
 	let lastCallTime;
 
@@ -57524,10 +57524,14 @@
 			//console.log(shipModel)
 
 			// create cannon body for ship
-			new Body({
+			shipBody = new Body({
 				mass: 10,
 				shape: S(shipModel).shape,
 			});
+			shipBody.position.set(25, 5, 25);
+			new Vec3(0,1,0);
+			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), Math.PI);
+			world.addBody(shipBody);
 			//console.log(shipBody)
 
 
@@ -57580,6 +57584,9 @@
 		// three.js model positions updates using cannon-es simulation
 		sphereMesh.position.copy(sphereBody.position);
 		sphereMesh.quaternion.copy(sphereBody.quaternion);
+
+		shipModel.position.copy(shipBody.position);
+		shipModel.quaternion.copy(shipBody.quaternion);
 		
 		// models animations
 		clock.getDelta();

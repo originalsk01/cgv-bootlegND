@@ -268,6 +268,11 @@ class Game {
 			mass: 10,
 			shape: threeToCannon(shipModel).shape,
 		})
+		shipBody.position.set(25, 5, 25)
+		var axis = new CANNON.Vec3(0,1,0);
+		var angle = Math.PI;
+		shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
+		world.addBody(shipBody)
 		//console.log(shipBody)
 
 
@@ -320,6 +325,9 @@ function animate() {
 	// three.js model positions updates using cannon-es simulation
 	sphereMesh.position.copy(sphereBody.position)
 	sphereMesh.quaternion.copy(sphereBody.quaternion)
+
+	shipModel.position.copy(shipBody.position)
+	shipModel.quaternion.copy(shipBody.quaternion)
 	
 	// models animations
 	const delta = clock.getDelta()
