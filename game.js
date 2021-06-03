@@ -50,19 +50,20 @@ const direction = new THREE.Vector3();
 const vertex = new THREE.Vector3();
 const color = new THREE.Color();
 
-var tokensArray = []; //Array containing tokens
-var boxArray = []; // Array containing box for tokens
-var playerGeometry;
-var playerBox;
-var playerMaterial;
-var playerCustom;
-//var playerBox;
-//var playerCustom;
+var minutes, seconds, milliseconds, gameStart,gameLoad
 
-var tokenScore = 0;
+var timer = document.createElement('div');
+timer.style.position = 'absolute';
+timer.style.color = 'white';
+timer.style.top = '0%';
+timer.style.textAlign = 'center';
+timer.style.width = '100%';
+timer.style.margin = '0 auto';
+timer.innerHTML = '<div id = "timer"></div>';
 
 init();
 function init() {
+  gameLoad=new Date().getTime();
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xa0a0a0);
   camera = new THREE.PerspectiveCamera(
@@ -143,24 +144,26 @@ function init() {
   //blocker and instructions is used to pause and start game
   const blocker = document.getElementById("blocker");
   const instructions = document.getElementById("instructions");
+  const timer = document.getElementById("timer");
 
-  instructions.addEventListener("click", function() {
+  instructions.addEventListener("click", function () {
     controls.lock();
   });
 
-  controls.addEventListener("lock", function() {
+  controls.addEventListener("lock", function () {
     instructions.style.display = "none";
     blocker.style.display = "none";
+    // gameLoad = new Date().getTime();
   });
 
-  controls.addEventListener("unlock", function() {
+  controls.addEventListener("unlock", function () {
     blocker.style.display = "block";
     instructions.style.display = "";
   });
 
   scene.add(controls.getObject());
 
-  const onKeyDown = function(event) {
+  const onKeyDown = function (event) {
     switch (event.code) {
       case "ArrowUp":
       case "KeyW":
@@ -189,7 +192,7 @@ function init() {
     }
   };
 
-  const onKeyUp = function(event) {
+  const onKeyUp = function (event) {
     switch (event.code) {
       case "ArrowUp":
       case "KeyW":
@@ -237,7 +240,7 @@ function loadModels() {
     const action = mixer.clipAction(fbx.animations[0]);
     action.play();
 
-    fbx.traverse(function(child) {
+    fbx.traverse(function (child) {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
@@ -248,7 +251,7 @@ function loadModels() {
   });
 
   //Snake
-  newLoader.load("./resources/snake/scene.gltf", function(gltf) {
+  newLoader.load("./resources/snake/scene.gltf", function (gltf) {
     mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
     gltf.animations.forEach((clip) => {
       mixer2.clipAction(clip).play();
@@ -259,21 +262,23 @@ function loadModels() {
   scene.add(snakeobj);
 
   //Starship
-  shipLoader.load("character/LPSP_SmallStarfigher.gltf", function(gltfModel) {
+  shipLoader.load("character/LPSP_SmallStarfigher.gltf", function (gltfModel) {
     gltfModel.scene.scale.multiplyScalar(1.9);
-    gltfModel.scene.traverse(function(child) {
+    gltfModel.scene.traverse(function (child) {
       //console.log(child);
     });
     shipModel.add(gltfModel.scene);
+
   });
+
 
   scene.add(shipModel);
 
   
   //Token that the playr collects
-  tokenLoader.load("character/token.gltf", function(gltfModel) {
+  tokenLoader.load("character/token.gltf", function (gltfModel) {
     gltfModel.scene.scale.multiplyScalar(0.1);
-    gltfModel.scene.traverse(function(child) {
+    gltfModel.scene.traverse(function (child) {
       //console.log(child);
     });
     tokenModel.add(gltfModel.scene);
@@ -330,7 +335,7 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 //when window resizes
-window.addEventListener("resize", function() {
+window.addEventListener("resize", function () {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
 });
@@ -377,6 +382,17 @@ window.addEventListener("resize", function() {
 
 
 function renderScene() {
+  gameStart=new Date().getTime();
+
+  var distance=gameStart-gameLoad
+  minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  milliseconds = Math.floor((distance % (1000 * 60)) * 1000 / 1000);
+
+  document.getElementById("timer").innerHTML ="<h1>Snake Invader</h1><h2>Snake Invader</h2>"
+  +'<div class ="timerSec">'+ minutes + " Minutes" +"</div><div class ='timerSec'>"+ seconds + " Seconds"+'</div></div>';
+
+
   renderer.clear();
 
   const delta = clock.getDelta();
