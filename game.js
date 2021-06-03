@@ -61,8 +61,21 @@ var playerCustom;
 //var playerCustom;
 
 //Colours
-  const vibrantYellow = new THREE.Color( 0xF49F1C );
-  const darkBlue = new THREE.Color( 0x003380 );
+const vibrantYellow = new THREE.Color(0xF49F1C);
+const darkBlue = new THREE.Color(0x003380);
+
+
+var minutes, seconds, milliseconds, gameStart, gameLoad
+
+var timer = document.createElement('div');
+timer.style.position = 'absolute';
+timer.style.color = 'white';
+timer.style.top = '0%';
+timer.style.textAlign = 'center';
+timer.style.width = '100%';
+timer.style.margin = '0 auto';
+timer.innerHTML = '<div id = "timer"></div>';
+
 
 var tokenScore = 0;
 
@@ -70,6 +83,7 @@ var renderFrames = 0;
 
 init();
 function init() {
+  gameLoad = new Date().getTime();
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xa0a0a0);
   camera = new THREE.PerspectiveCamera(
@@ -151,23 +165,23 @@ function init() {
   const blocker = document.getElementById("blocker");
   const instructions = document.getElementById("instructions");
 
-  instructions.addEventListener("click", function() {
+  instructions.addEventListener("click", function () {
     controls.lock();
   });
 
-  controls.addEventListener("lock", function() {
+  controls.addEventListener("lock", function () {
     instructions.style.display = "none";
     blocker.style.display = "none";
   });
 
-  controls.addEventListener("unlock", function() {
+  controls.addEventListener("unlock", function () {
     blocker.style.display = "block";
     instructions.style.display = "";
   });
 
   scene.add(controls.getObject());
 
-  const onKeyDown = function(event) {
+  const onKeyDown = function (event) {
     switch (event.code) {
       case "ArrowUp":
       case "KeyW":
@@ -196,7 +210,7 @@ function init() {
     }
   };
 
-  const onKeyUp = function(event) {
+  const onKeyUp = function (event) {
     switch (event.code) {
       case "ArrowUp":
       case "KeyW":
@@ -244,7 +258,7 @@ function loadModels() {
     const action = mixer.clipAction(fbx.animations[0]);
     action.play();
 
-    fbx.traverse(function(child) {
+    fbx.traverse(function (child) {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
@@ -255,7 +269,7 @@ function loadModels() {
   });
 
   //Snake
-  newLoader.load("./resources/snake/scene.gltf", function(gltf) {
+  newLoader.load("./resources/snake/scene.gltf", function (gltf) {
     mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
     gltf.animations.forEach((clip) => {
       mixer2.clipAction(clip).play();
@@ -266,9 +280,9 @@ function loadModels() {
   scene.add(snakeobj);
 
   //Starship
-  shipLoader.load("character/LPSP_SmallStarfigher.gltf", function(gltfModel) {
+  shipLoader.load("character/LPSP_SmallStarfigher.gltf", function (gltfModel) {
     gltfModel.scene.scale.multiplyScalar(1.9);
-    gltfModel.scene.traverse(function(child) {
+    gltfModel.scene.traverse(function (child) {
       //console.log(child);
     });
     shipModel.add(gltfModel.scene);
@@ -276,7 +290,7 @@ function loadModels() {
 
   scene.add(shipModel);
 
-  
+
   //Token that the playr collects
   // tokenLoader.load("character/token.gltf", function(gltfModel) {
   //   gltfModel.scene.scale.multiplyScalar(0.1);
@@ -295,7 +309,7 @@ function loadModels() {
     // const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
 
     //createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
-    var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3 );
+    var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
     //console.log('Inner',innerTokenCustom);
     //console.log('Outer',outerTokenCustom);
 
@@ -317,14 +331,14 @@ function loadModels() {
     console.log(tokenCenter);
 
     scene.add(tokenCustom);
-    
+
     //Since the bounding box for each token must be computed within the animation loop,
     //we create the tokens and boxes as empty here and add them to their respective arrays,
     //which can be looped through and each token and box can be accessed within the animation loop.
     tokensArray.push(tokenCustom);
     boxArray.push(tokenBox);
   }
-  
+
   //Create a transparent box around the player in order to detect collisions with tokens
   playerGeometry = new THREE.BoxGeometry(5, 5, 5);
   playerBox = new THREE.Box3(); //bounding box
@@ -335,7 +349,7 @@ function loadModels() {
   playerCustom.geometry.computeBoundingBox();
   //playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
 
-  var playerCenter = new THREE.Vector3(2,5,8);
+  var playerCenter = new THREE.Vector3(2, 5, 8);
   playerCenter = playerBox.getCenter();
   console.log('playerCenter:');
   console.log(playerCenter);
@@ -352,7 +366,7 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 //when window resizes
-window.addEventListener("resize", function() {
+window.addEventListener("resize", function () {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
 });
@@ -400,12 +414,12 @@ function createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerCo
   //createToken creates a token consisting of 2 objects, one within the other.
   //Opacities may be set in order to alter the appearance as well as make the inner object visible
   var innerGeometry = new THREE.OctahedronBufferGeometry(innerRadius, innerDetail)
-  var innerMaterial = new THREE.MeshLambertMaterial( { color: innerColour, transparent: true, opacity: innerOpacity} );
-  var innerCustom = new THREE.Mesh( innerGeometry, innerMaterial );
+  var innerMaterial = new THREE.MeshLambertMaterial({ color: innerColour, transparent: true, opacity: innerOpacity });
+  var innerCustom = new THREE.Mesh(innerGeometry, innerMaterial);
 
   var outerGeometry = new THREE.OctahedronBufferGeometry(outerRadius, outerDetail)
-  var outerMaterial = new THREE.MeshLambertMaterial( { color: outerColour, transparent: true, opacity: outerOpacity } );
-  var outerCustom = new THREE.Mesh( outerGeometry, outerMaterial );
+  var outerMaterial = new THREE.MeshLambertMaterial({ color: outerColour, transparent: true, opacity: outerOpacity });
+  var outerCustom = new THREE.Mesh(outerGeometry, outerMaterial);
 
   outerCustom.add(innerCustom);
   innerCustomArray.push(innerCustom);// use separate array for innerCustom which will be global so that we can access them
@@ -442,11 +456,20 @@ function renderScene() {
   requestAnimationFrame(renderScene); //request render scene at every frame
   const time = performance.now();
 
- 
+  gameStart = new Date().getTime();
+
+  var distance = gameStart - gameLoad
+  minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  milliseconds = Math.floor((distance % (1000 * 60)) * 1000 / 1000);
+
+  document.getElementById("timer").innerHTML = "<h1>Snake Invader</h1><h2>Snake Invader</h2>"
+    + '<div class ="timerSec">' + minutes + " Minutes" + "</div><div class ='timerSec'>" + seconds + " Seconds"+ '<div> Score: ' +tokenScore+'</div>'+'</div></div>';
+
   //Compute bounding box for player
   playerCustom.position.set(camera.position.x, camera.position.y, camera.position.z)
-  playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
-  
+  playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
+
   //playerBox.position.set(camera.position.x, camera.position.y, camera.position.z);
 
   //We have a counter to count the number of frames that have passed and after a certain 
@@ -460,8 +483,8 @@ function renderScene() {
         .copy(tokensArray[k].geometry.boundingBox)
         .applyMatrix4(tokensArray[k].matrixWorld);
       //Determine if player touches token
-      const blue = new THREE.Color( 0x0000ff );
-      if (playerBox.intersectsBox(boxArray[k]) &&  (tokensArray[k].material.color.equals(darkBlue))) {
+      const blue = new THREE.Color(0x0000ff);
+      if (playerBox.intersectsBox(boxArray[k]) && (tokensArray[k].material.color.equals(darkBlue))) {
         tokenScore += 1;
 
         //Make outer shape of token transparent
