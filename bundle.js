@@ -57218,12 +57218,14 @@
 	// player control global variables
 	let keys;
 
+
 	// followCam global variables
 	let followCam, followCamRig, followCamTarget;
 	let lerpedShipPos = new Vector3;
 	let followingDistance = 15;
 	let rigToTargetDist = followingDistance;
 	let shipVelocity = 0.0;
+	let shipRotationRad = 0;
 
 
 	class Game {
@@ -57464,11 +57466,11 @@
 
 			// create cannon body for ship
 			shipBody = new Body({
-				mass: 10,
+				mass: 5,
 				shape: S(shipModel).shape,
 			});
 			shipBody.position.set(25, 5, 25);
-			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), Math.PI);
+			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
 			world.addBody(shipBody);
 			//console.log(shipBody)
 			
@@ -57499,26 +57501,34 @@
 	    let shipToRigDir = new Vector3;
 
 	    if ( keys.w )
-	        shipSpeed = 0.25;
+	        shipSpeed = 10;
 	    else if ( keys.s )
-	        shipSpeed = -0.25;
+	        shipSpeed = -10;
 
 	    shipVelocity += ( shipSpeed - shipVelocity ) * .1;
-	    shipModel.translateZ( shipVelocity );
-		//shipBody.position.x+=shipVelocity
+	    //shipModel.translateZ( shipVelocity );
+		//shipBody.position.z+=shipVelocity
+		shipBody.applyLocalImpulse(new Vec3(0,0,shipVelocity));
+		shipModel.position.copy(shipBody.position);
+		
 		//shipBody.applyImpulse(new CANNON.Vec3(0,0,shipVelocity))
-	    if ( keys.a )
-	        shipModel.rotateY(0.05);
-			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), 0.05);
-	    else if ( keys.d )
-	        shipModel.rotateY(-0.05);
-			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), -0.05);
-
+	    if ( keys.a ){
+	        //shipModel.rotateY(0.05);
+			shipRotationRad += 0.05;
+			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
+			shipModel.quaternion.copy(shipBody.quaternion);
+		}
+	    else if ( keys.d ){
+	        //shipModel.rotateY(-0.05);
+			shipRotationRad -= 0.05;
+			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
+			shipModel.quaternion.copy(shipBody.quaternion);
+		}
 		//shipModel.position.copy(shipBody.position)
 		//shipModel.quaternion.copy(shipBody.quaternion)
 		
-		lerpedShipPos.lerp(shipModel.position, 0.4);
-		//lerpedShipPos.lerp(shipBody.position, 0.4);
+		//lerpedShipPos.lerp(shipModel.position, 0.4);
+		lerpedShipPos.lerp(shipBody.position, 0.4);
 	    
 	    camRigPos.copy(followCamRig.position);
 
@@ -57594,8 +57604,8 @@
 		sphereMesh.position.copy(sphereBody.position);
 		sphereMesh.quaternion.copy(sphereBody.quaternion);
 
-		//shipModel.position.copy(shipBody.position)
-		//shipModel.quaternion.copy(shipBody.quaternion)
+		shipModel.position.copy(shipBody.position);
+		shipModel.quaternion.copy(shipBody.quaternion);
 	}
 
 	// load up gltf model asynchronously

@@ -76,7 +76,7 @@ class Game {
 		document.body.appendChild(stats.dom)
 
 		
-		// Normale camera
+		// Normal camera
 		camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 )
 
 		// Normal camera initial position and orientation
