@@ -281,7 +281,7 @@ function loadModels() {
   scene.add(tokenModel);
 
   //Create tokens
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 2; i++) {
     const tokenGeometry = new THREE.BoxGeometry(20,20,20);
     const tokenBox = new THREE.Box3(); //bounding box
     const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
@@ -290,21 +290,20 @@ function loadModels() {
     //Generate random positions for each of the tokens
     var randomX = Math.floor(Math.random() * 100);
     var randomZ = Math.floor(Math.random() * 100);
-    tokenCustom.position.set(randomX, 0, randomZ)
+    tokenCustom.position.set(randomX, -300, randomZ)
     // ensure the bounding box is computed for its geometry
     // this should be done only once (assuming static geometries)
     tokenCustom.geometry.computeBoundingBox();
 
     scene.add(tokenCustom);
     
-
     //Since the bounding box for each token must be computed within the animation loop,
     //we create the tokens and boxes as empty here and add them to their respective arrays,
     //which can be looped through and each token and box can be accessed within the animation loop.
     tokensArray.push(tokenCustom);
     boxArray.push(tokenBox);
-    console.log(boxArray)
   }
+  console.log(boxArray)
 
   //Create Player bounding box
   // playerBox = new THREE.Box3();
@@ -416,9 +415,20 @@ function renderScene() {
     //Determine if player touches token
     if (playerBox.intersectsBox(boxArray[k])) {
       tokenScore += 1;
+      //tokensArray[k].position.set(tokensArray[k].position.x, tokensArray[k].position.y-100,tokensArray[k].position.z);
+
+      //Now we dispose the token if it was touched
+      // tokensArray[k].traverse(function(child) {
+      //   if (child.geometry !== undefined) {
+      //     child.geometry.dispose();
+      //     child.material.dispose();
+      //     console.log('disposed token')
+      //   }
+      // });
+
       tokensArray[k].material.color.setHex(0x000000ff); //Trying to set to transparent when in contact, but failing so it is blue for now
       console.log(tokenScore);
-    }
+    }  
   }
 
 
