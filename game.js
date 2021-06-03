@@ -51,7 +51,8 @@ const vertex = new THREE.Vector3();
 const color = new THREE.Color();
 
 var tokensArray = []; //Array containing tokens
-var boxArray = []; // Array containing box for tokens
+var boxArray = []; // Array containing box for tokens'
+var innerCustomArray = []
 var playerGeometry;
 var playerBox;
 var playerMaterial;
@@ -407,6 +408,7 @@ function createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerCo
   var outerCustom = new THREE.Mesh( outerGeometry, outerMaterial );
 
   outerCustom.add(innerCustom);
+  innerCustomArray.push(innerCustom);// use separate array for innerCustom which will be global so that we can access them
   console.log(outerCustom);
   return outerCustom;
 }
@@ -466,8 +468,8 @@ function renderScene() {
         tokensArray[k].material.transparent = true;
         tokensArray[k].material.opacity = 0;
         //Make inner shape of token transparent
-        tokensArray[k].innerCustom.material.transparent = true;
-        tokensArray[k].innerCustom.material.opacity = 0;
+        innerCustomArray[k].material.transparent = true;
+        innerCustomArray[k].material.opacity = 0;
 
         //tokensArray[k].material.color.lerp();
 
