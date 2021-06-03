@@ -59,6 +59,10 @@ var playerCustom;
 //var playerBox;
 //var playerCustom;
 
+//Colours
+  const vibrantYellow = new THREE.Color( 0xF49F1C );
+  const darkBlue = new THREE.Color( 0x003380 );
+
 var tokenScore = 0;
 
 var renderFrames = 0;
@@ -273,20 +277,27 @@ function loadModels() {
 
   
   //Token that the playr collects
-  tokenLoader.load("character/token.gltf", function(gltfModel) {
-    gltfModel.scene.scale.multiplyScalar(0.1);
-    gltfModel.scene.traverse(function(child) {
-      //console.log(child);
-    });
-    tokenModel.add(gltfModel.scene);
-  });
-  scene.add(tokenModel);
+  // tokenLoader.load("character/token.gltf", function(gltfModel) {
+  //   gltfModel.scene.scale.multiplyScalar(0.1);
+  //   gltfModel.scene.traverse(function(child) {
+  //     //console.log(child);
+  //   });
+  //   tokenModel.add(gltfModel.scene);
+  // });
+  // scene.add(tokenModel);
 
   //Create tokens
   for (let i = 0; i < 20; i++) {
-    const tokenGeometry = new THREE.BoxGeometry(5,5,5);
-    const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-    const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
+    //const tokenGeometry = new THREE.BoxGeometry(5,5,5);
+    // const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
+    // const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+    // const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
+
+    //createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
+    var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3 );
+    //console.log('Inner',innerTokenCustom);
+    //console.log('Outer',outerTokenCustom);
+
 
     //Generate random positions for each of the tokens
     var randomX = Math.floor(Math.random() * 100);
@@ -384,6 +395,22 @@ window.addEventListener("resize", function() {
 // objects.push(box)
 //}
 
+function createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity) {
+  //createToken creates a token consisting of 2 objects, one within the other.
+  //Opacities may be set in order to alter the appearance as well as make the inner object visible
+  var innerGeometry = new THREE.OctahedronBufferGeometry(innerRadius, innerDetail)
+  var innerMaterial = new THREE.MeshLambertMaterial( { color: innerColour, transparent: true, opacity: innerOpacity} );
+  var innerCustom = new THREE.Mesh( innerGeometry, innerMaterial );
+
+  var outerGeometry = new THREE.OctahedronBufferGeometry(outerRadius, outerDetail)
+  var outerMaterial = new THREE.MeshLambertMaterial( { color: outerColour, transparent: true, opacity: outerOpacity } );
+  var outerCustom = new THREE.Mesh( outerGeometry, outerMaterial );
+
+  outerCustom.add(innerCustom);
+  console.log(outerCustom);
+  return outerCustom;
+}
+
 
 
 function renderScene() {
@@ -432,23 +459,19 @@ function renderScene() {
         .applyMatrix4(tokensArray[k].matrixWorld);
       //Determine if player touches token
       const blue = new THREE.Color( 0x0000ff );
-      if (playerBox.intersectsBox(boxArray[k]) &&  !(tokensArray[k].material.color.equals(blue))) {
+      if (playerBox.intersectsBox(boxArray[k]) &&  (tokensArray[k].material.color.equals(darkBlue))) {
         tokenScore += 1;
+
+        //Make outer shape of token transparent
         tokensArray[k].material.transparent = true;
         tokensArray[k].material.opacity = 0;
-        //boxArray.splice(k,1);
-        //tokensArray[k].position.set(tokensArray[k].position.x, tokensArray[k].position.y-100,tokensArray[k].position.z);
+        //Make inner shape of token transparent
+        tokensArray[k].innerCustom.material.transparent = true;
+        tokensArray[k].innerCustom.material.opacity = 0;
 
-        //Now we dispose the token if it was touched
-        // tokensArray[k].traverse(function(child) {
-        //   if (child.geometry !== undefined) {
-        //     child.geometry.dispose();
-        //     child.material.dispose();
-        //     console.log('disposed token')
-        //   }
-        // });
+        //tokensArray[k].material.color.lerp();
 
-        tokensArray[k].material.color.setHex(0x0000ff); //Trying to set to transparent when in contact, but failing so it is blue for now
+        tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
         console.log(tokenScore);
       }
     }
