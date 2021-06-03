@@ -29,10 +29,19 @@ let sphereBody, shipBody
 const timeStep = 1 / 60 
 let lastCallTime
 
+// follow cam & controls
+//let followCam, followCamRig, followCamTarget, keys;
 
-// gameplay vars
-const jumpheight=10
+let camera2, goal, keys, follow;
 
+var temp = new THREE.Vector3;
+var dir = new THREE.Vector3;
+var a = new THREE.Vector3;
+var b = new THREE.Vector3;
+var coronaSafetyDistance = 0;
+var goalDistance = coronaSafetyDistance;
+var velocity = 0.0;
+var speed = 0.0;
 
 class Game {
 
@@ -67,25 +76,32 @@ class Game {
 
 		
 		// Camera
-		camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 )
-		camera.position.z = 400
-	
+		//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 )
+
+		
+		
 		// Initial camera position
-		camera.position.set(50,10,25)
+		
+		//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
+		//camera.position.set(0,10,10)
+		// shipModel.applyMatrix4( new THREE.Matrix4().makeScale(1.9,1.9,1.9) );
+		//camera.applyMatrix4( new THREE.Matrix4().makeTranslation(0,10,7.5) );
+		// shipModel.applyMatrix4( new THREE.Matrix4().makeRotationY(Math.PI) );
 
 
 		// Renderer
 		renderer = new THREE.WebGLRenderer( { antialias: true } );
 		renderer.setClearColor(blue)
 		renderer.setPixelRatio( window.devicePixelRatio );
-		renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3)
+		renderer.setSize(window.innerWidth, window.innerHeight)
+		//renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3)
 		window.addEventListener( 'resize', onWindowResize, false );
 		document.body.appendChild(renderer.domElement)
 
 
 		// Orbit Controls
-		const controls = new OrbitControls(camera, renderer.domElement)
-		controls.update()
+		//const controls = new OrbitControls(camera, renderer.domElement)
+		//controls.update()
 		
 		// Axes Helper
 		const axes = new THREE.AxesHelper(100)
@@ -133,6 +149,8 @@ class Game {
 		sphereMesh = new THREE.Mesh(geometry, material)
 
 		scene.add(sphereMesh)
+
+
 
 		
 		// Create sphere body in physics world
@@ -253,14 +271,18 @@ class Game {
 		scene.add(gameboard)
 
 		shipModel = new THREE.Object3D
-		
 		shipModel = await loadModel(shipPath)
+	
+		shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
+		shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
 
 		shipModel.applyMatrix4( new THREE.Matrix4().makeScale(1.9,1.9,1.9) );
 		shipModel.applyMatrix4( new THREE.Matrix4().makeTranslation(-5,0,-5) );
-		shipModel.applyMatrix4( new THREE.Matrix4().makeRotationY(Math.PI) );
+		//shipModel.applyMatrix4( new THREE.Matrix4().makeRotationY(Math.PI) );
+		//shipModel.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
 
-		scene.add(shipModel)
+		
+		//shipModel.add(camera)
 		//console.log(shipModel)
 
 		// create cannon body for ship
@@ -269,37 +291,73 @@ class Game {
 			shape: threeToCannon(shipModel).shape,
 		})
 		shipBody.position.set(25, 5, 25)
-		var axis = new CANNON.Vec3(0,1,0);
-		var angle = Math.PI;
+
 		shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
 		world.addBody(shipBody)
 		//console.log(shipBody)
+		
+		// Initialze followCam (height of camera, follow distance behind ship)
+		//initFollowCam(0.3,0.3)
+
+		// Add followCam target to ship & place followCam in rig
+		// shipModel.add( followCamTarget )
+    	// followCamRig.add( followCam )
+		//scene.add(shipModel)
+
+		// Initialize ship key control
+		//initShipControls()
 
 
-		document.body.addEventListener('keydown', keyPressed);
+		// document.body.addEventListener('keydown', keyPressed);
 
-		function keyPressed(e){
-			switch(e.key) {
-			case 'ArrowUp':
-				snakeobj.position.z+=1;
-				break;
-			case 'ArrowDown':
-				snakeobj.position.z+=-1;
-				break;
-			case 'ArrowLeft':
-				snakeobj.position.x+=1;
-				break;
-			case 'ArrowRight':
-				snakeobj.position.x+=-1;
-				break;
-			}
-			e.preventDefault();
+		// function keyPressed(e){
+		// 	switch(e.key) {
+		// 	case 'ArrowUp':
+		// 		shipBody.position.z+=1;
+		// 		break;
+		// 	case 'ArrowDown':
+		// 		shipBody.position.z+=-1;
+		// 		break;
+		// 	case 'ArrowLeft':
+		// 		shipBody.position.x+=1;
+		// 		break;
+		// 	case 'ArrowRight':
+		// 		shipBody.position.x+=-1;
+		// 		break;
+		// 	}
+		// 	e.preventDefault();
 
-		}
+		// }
+
+
+		// other cam
+		camera2 = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 2000 );
+    	camera2.position.set( 0, 50, 0 );
+    	camera2.lookAt( scene.position );
+
+		//var geom = new THREE.BoxBufferGeometry( 10, 10, 10 );
+    	//var mat = new THREE.MeshNormalMaterial();
+
+    	//mesh = new THREE.Mesh( geom, mat );
+    
+    	goal = new THREE.Object3D;
+    	follow = new THREE.Object3D;
+    	follow.position.z = -coronaSafetyDistance;
+    	//mesh.add( follow );
+		shipModel.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
+		shipModel.add( follow );
+    
+    	goal.add( camera2 );
+    	scene.add( shipModel);
+		//shipModel.applyMatrix4( new THREE.Matrix4().makeRotationY(Math.PI) );
+		
+
+
+		initShipControls()
+
 		
 		clock = new THREE.Clock()
-		
-		//initCannon()
+
 		
 		animate()
 
@@ -316,43 +374,103 @@ async function loadModel(path){
 }
 
 
+function initFollowCam(camHeight, newFollowingDistance){
+    followingDistance = newFollowingDistance
+    
+    followCam = new THREE.PerspectiveCamera( 100, window.innerWidth / window.innerHeight, 1, 1000 );
+    followCam.position.set( 0, camHeight, 0 );
+    followCam.lookAt( scene.position );
+
+    followCamRig = new THREE.Object3D;
+    followCamTarget = new THREE.Object3D;
+    followCamTarget.position.z = -followingDistance;
+}
+
+
+
 function animate() {
 	
+	requestAnimationFrame(animate) //request render scene at every frame
+
 	// cannon-es world stepping
-	updatePhysics()
+	//followShip()
+
+
+	speed = 0.0;
+  
+	if ( keys.w )
+	  speed = 0.1;
+	else if ( keys.s )
+	  speed = -0.1;
+  
+	velocity += ( speed - velocity ) * .1;
+	shipModel.translateZ( velocity );
+  
+	if ( keys.a )
+	  shipModel.rotateY(0.05);
+	else if ( keys.d )
+	  shipModel.rotateY(-0.05);
+		  
 	
+	
+	a.lerp(shipModel.position, 0.4);
+	b.copy(goal.position);
+	
+	temp.setFromMatrixPosition(camera2.matrixWorld);
+	
+	
+	
+	dir.copy( a ).sub( b ).normalize();
 
-	// three.js model positions updates using cannon-es simulation
-	sphereMesh.position.copy(sphereBody.position)
-	sphereMesh.quaternion.copy(sphereBody.quaternion)
+	var distance = coronaSafetyDistance;
 
-	shipModel.position.copy(shipBody.position)
-	shipModel.quaternion.copy(shipBody.quaternion)
+	goalDistance += ( distance - goalDistance ) * 0.2;
+
+	let dis = a.distanceTo( b ) - goalDistance;
+
+	goal.position.addScaledVector( dir, dis );
+	temp.setFromMatrixPosition(follow.matrixWorld);
+	goal.position.lerp(temp, 0.02);
+
+	stepPhysicsWorld()
+
+	updatePhysicsBodies()
+
 	
 	// models animations
 	const delta = clock.getDelta()
-	if (dancerMixer) dancerMixer.update(delta)
-	if (snakeMixer) snakeMixer.update(delta)
+	// if (dancerMixer) dancerMixer.update(delta)
+	// if (snakeMixer) snakeMixer.update(delta)
   
 	// render three.js
 
-	renderer.clear()
-	requestAnimationFrame(animate) //request render scene at every frame
-	renderer.render(scene, camera)
+	//renderer.clear()
+
+	// const shipWorldPos = new THREE.Vector3( 0, 0, 0 );
+	// shipModel.getWorldPosition(shipWorldPos)
+	// camera.lookAt(shipWorldPos)
+	//requestAnimationFrame(animate) //request render scene at every frame
+
+	////renderer.render(scene, camera)
+	//followCam.lookAt( shipModel.position );
+	//renderer.render(scene, followCam)
+	camera2.lookAt( shipModel.position );
+    
+    renderer.render( scene, camera2 );
 	stats.update()
 }
 
 
 function onWindowResize() {
 
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
+	camera2.aspect = window.innerWidth / window.innerHeight;
+	camera2.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
 
 
-function updatePhysics(){
+function stepPhysicsWorld(){
 	
 	const time = performance.now() / 1000
 	if (!lastCallTime) {
@@ -362,6 +480,42 @@ function updatePhysics(){
 		world.step(timeStep, dt)
 	}
 	lastCallTime = time	
+}
+
+function updatePhysicsBodies(){
+	// three.js model positions updates using cannon-es simulation
+	sphereMesh.position.copy(sphereBody.position)
+	sphereMesh.quaternion.copy(sphereBody.quaternion)
+
+	// shipModel.position.copy(shipBody.position)
+	// shipModel.quaternion.copy(shipBody.quaternion)
+}
+
+
+function initShipControls(){
+    
+    keys = {
+        a: false,
+        s: false,
+        d: false,
+        w: false
+    };
+
+    document.body.addEventListener( 'keydown', function(e) {
+    
+        const key = e.code.replace('Key', '').toLowerCase();
+        if ( keys[ key ] !== undefined )
+            keys[ key ] = true;
+        
+    });
+
+    document.body.addEventListener( 'keyup', function(e) {
+        
+        const key = e.code.replace('Key', '').toLowerCase();
+        if ( keys[ key ] !== undefined )
+            keys[ key ] = false;
+        
+    });
 }
 
 

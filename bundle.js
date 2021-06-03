@@ -46482,85 +46482,6 @@
 
 	}
 
-	/*!
-	fflate - fast JavaScript compression/decompression
-	<https://101arrowz.github.io/fflate>
-	Licensed under MIT. https://github.com/101arrowz/fflate/blob/master/LICENSE
-	version 0.6.9
-	*/
-	var durl = function (c) { return URL.createObjectURL(new Blob([c], { type: 'text/javascript' })); };
-	try {
-	    URL.revokeObjectURL(durl(''));
-	}
-	catch (e) {
-	    // We're in Deno or a very old browser
-	    durl = function (c) { return 'data:application/javascript;charset=UTF-8,' + encodeURI(c); };
-	}
-
-	// aliases for shorter compressed code (most minifers don't do this)
-	var u8 = Uint8Array, u16 = Uint16Array, u32 = Uint32Array;
-	// fixed length extra bits
-	var fleb = new u8([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, /* unused */ 0, 0, /* impossible */ 0]);
-	// fixed distance extra bits
-	// see fleb note
-	var fdeb = new u8([0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, /* unused */ 0, 0]);
-	// get base, reverse index map from extra bits
-	var freb = function (eb, start) {
-	    var b = new u16(31);
-	    for (var i = 0; i < 31; ++i) {
-	        b[i] = start += 1 << eb[i - 1];
-	    }
-	    // numbers here are at max 18 bits
-	    var r = new u32(b[30]);
-	    for (var i = 1; i < 30; ++i) {
-	        for (var j = b[i]; j < b[i + 1]; ++j) {
-	            r[j] = ((j - b[i]) << 5) | i;
-	        }
-	    }
-	    return [b, r];
-	};
-	var _a = freb(fleb, 2), fl = _a[0], revfl = _a[1];
-	// we can ignore the fact that the other numbers are wrong; they never happen anyway
-	fl[28] = 258, revfl[258] = 28;
-	freb(fdeb, 0);
-	// map of value to reverse (assuming 16 bits)
-	var rev = new u16(32768);
-	for (var i = 0; i < 32768; ++i) {
-	    // reverse table algorithm from SO
-	    var x$1 = ((i & 0xAAAA) >>> 1) | ((i & 0x5555) << 1);
-	    x$1 = ((x$1 & 0xCCCC) >>> 2) | ((x$1 & 0x3333) << 2);
-	    x$1 = ((x$1 & 0xF0F0) >>> 4) | ((x$1 & 0x0F0F) << 4);
-	    rev[i] = (((x$1 & 0xFF00) >>> 8) | ((x$1 & 0x00FF) << 8)) >>> 1;
-	}
-	// fixed length tree
-	var flt = new u8(288);
-	for (var i = 0; i < 144; ++i)
-	    flt[i] = 8;
-	for (var i = 144; i < 256; ++i)
-	    flt[i] = 9;
-	for (var i = 256; i < 280; ++i)
-	    flt[i] = 7;
-	for (var i = 280; i < 288; ++i)
-	    flt[i] = 8;
-	// fixed distance tree
-	var fdt = new u8(32);
-	for (var i = 0; i < 32; ++i)
-	    fdt[i] = 5;
-	// empty
-	var et = /*#__PURE__*/ new u8(0);
-	// text decoder
-	var td = typeof TextDecoder != 'undefined' && /*#__PURE__*/ new TextDecoder();
-	// text decoder stream
-	var tds = 0;
-	try {
-	    td.decode(et, { stream: true });
-	    tds = 1;
-	}
-	catch (e) { }
-
-	new Euler();
-	new Vector3();
-
 	class BufferGeometryUtils {
 
 		static computeTangents( geometry ) {
@@ -57281,22 +57202,37 @@
 	// three.js global vars
 	let camera, scene, stats, renderer, clock;
 	let sphereMesh, shipModel;
-	const shipPath = '/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf';
 
-	//three.js textures
-	let skyBoxtexture;
+
+	// global asset paths
+	const shipPath = '/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf';
 	const blue = 'rgb(110,197,233)';
 
-	// cannon-es global vars
+	// cannon-es global variables
 	let world;
 	let sphereBody, shipBody;
 	const timeStep = 1 / 60; 
 	let lastCallTime;
 
 
+	// player control global variables
+	let keys;
+
+	// followCam global variables
+	let followCam, followCamRig, followCamTarget;
+	let lerpedShipPos = new Vector3;
+	let followingDistance = 15;
+	let rigToTargetDist = followingDistance;
+	let shipVelocity = 0.0;
+
+
 	class Game {
 
 		async init() {
+
+
+			////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+
 
 			// Scene
 			scene = new Scene();
@@ -57305,7 +57241,7 @@
 
 			//Skybox
 			const skyBoxLoader = new CubeTextureLoader();
-			skyBoxtexture = skyBoxLoader.load([
+			const skyBoxtexture = skyBoxLoader.load([
 			  'textures/skybox/indigo_ft.jpg',
 			  'textures/skybox/indigo_bk.jpg',
 			  'textures/skybox/indigo_up.jpg',
@@ -57326,24 +57262,25 @@
 			document.body.appendChild(stats.dom);
 
 			
-			// Camera
-			camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-			camera.position.z = 400;
-		
-			// Initial camera position
-			camera.position.set(50,10,25);
+			// Normale camera
+			camera = new PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 );
+
+			// Normal camera initial position and orientation
+			camera.quaternion.setFromAxisAngle(new Vec3(0,1,0), Math.PI);
+			camera.position.set(0,10,10);
 
 
 			// Renderer
 			renderer = new WebGLRenderer( { antialias: true } );
 			renderer.setClearColor(blue);
 			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			//renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3)
 			window.addEventListener( 'resize', onWindowResize, false );
 			document.body.appendChild(renderer.domElement);
 
 
-			// Orbit Controls
+			// Orbit Controls for normal camera (currently does nothing)
 			const controls = new OrbitControls(camera, renderer.domElement);
 			controls.update();
 			
@@ -57357,10 +57294,8 @@
 			const gridHelper = new GridHelper( gridSize, gridDivisions );
 			scene.add( gridHelper );
 
-
 			// Size of one unit for world coordinates if Grid used as basis
 			const gridSquareSize =gridSize/gridDivisions;
-
 
 			// Lights
 			const ambientLight = new AmbientLight(0xffffff,0.6);
@@ -57375,7 +57310,6 @@
 			dirLight.shadow.camera.right = 120;
 			scene.add(dirLight);
 
-			
 
 			// Create a static ground plane for the ground
 			const groundBody = new Body({
@@ -57391,20 +57325,20 @@
 			const geometry = new SphereGeometry(radius,20,20);
 			const material = new MeshLambertMaterial({ color: blue });
 			sphereMesh = new Mesh(geometry, material);
-
 			scene.add(sphereMesh);
 
 			
 			// Create sphere body in physics world
-			
 			sphereBody = new Body({
 				mass: 50, // kg
 				//shape: new CANNON.Sphere(radius),
 				shape: S(sphereMesh, {type: P.SPHERE}).shape,
 			});
-			sphereBody.position.set(21, 50, 21); // m
+			sphereBody.position.set(21, 50, 21);
 			world.addBody(sphereBody);
 
+
+			//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
 
 			// Function to create a platform of size legth by width in world units
 			// out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
@@ -57511,17 +57445,22 @@
 			// Add gameboard to world
 			const gameboard = createGameBoard();
 			scene.add(gameboard);
+			
+
+			//////////////// ADD PLAYER SHIP //////////////////////////
+
 
 			shipModel = new Object3D;
-			
 			shipModel = await loadModel(shipPath);
-
+			//console.log(shipModel)
+			
+			// Rotate children of ship model to correct their orientation
+			shipModel.children[0].quaternion.setFromAxisAngle(new Vector3(0,1,0), Math.PI);
+			shipModel.children[1].quaternion.setFromAxisAngle(new Vector3(0,1,0), Math.PI);
+			
 			shipModel.applyMatrix4( new Matrix4().makeScale(1.9,1.9,1.9) );
 			shipModel.applyMatrix4( new Matrix4().makeTranslation(-5,0,-5) );
-			shipModel.applyMatrix4( new Matrix4().makeRotationY(Math.PI) );
 
-			scene.add(shipModel);
-			//console.log(shipModel)
 
 			// create cannon body for ship
 			shipBody = new Body({
@@ -57529,87 +57468,114 @@
 				shape: S(shipModel).shape,
 			});
 			shipBody.position.set(25, 5, 25);
-			new Vec3(0,1,0);
 			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), Math.PI);
 			world.addBody(shipBody);
 			//console.log(shipBody)
+			
+			// Initialze followCam (height of camera above the ship, following distance behind ship)
+			initFollowCam(10,15);
 
+			// Place the target of the followCam on the ship model & place the followCam itself in a rig above the ship
+			shipModel.add( followCamTarget );
+	    	followCamRig.add( followCam );
+			scene.add(shipModel);
 
-			document.body.addEventListener('keydown', keyPressed);
-
-			function keyPressed(e){
-				switch(e.key) {
-				case 'ArrowUp':
-					snakeobj.position.z+=1;
-					break;
-				case 'ArrowDown':
-					snakeobj.position.z+=-1;
-					break;
-				case 'ArrowLeft':
-					snakeobj.position.x+=1;
-					break;
-				case 'ArrowRight':
-					snakeobj.position.x+=-1;
-					break;
-				}
-				e.preventDefault();
-
-			}
+			// Initialize ship keyboard control
+			initShipControls();
 			
 			clock = new Clock();
-			
-			//initCannon()
-			
+
 			animate();
 
 		}
 	}
 
 
-	async function loadModel(path){
-		const loader = new GLTFLoader();	
+	function followShip(){
+	    
+	    let shipSpeed = 0.0;
+	    let camRigPos = new Vector3;
+	    let camWorldPos = new Vector3;
+	    let shipToRigDir = new Vector3;
 
-		const model = await loader.loadAsync(path);
+	    if ( keys.w )
+	        shipSpeed = 0.25;
+	    else if ( keys.s )
+	        shipSpeed = -0.25;
 
-		return model.scene.children[0]
+	    shipVelocity += ( shipSpeed - shipVelocity ) * .1;
+	    shipModel.translateZ( shipVelocity );
+		//shipBody.position.x+=shipVelocity
+		//shipBody.applyImpulse(new CANNON.Vec3(0,0,shipVelocity))
+	    if ( keys.a )
+	        shipModel.rotateY(0.05);
+			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), 0.05);
+	    else if ( keys.d )
+	        shipModel.rotateY(-0.05);
+			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), -0.05);
+
+		//shipModel.position.copy(shipBody.position)
+		//shipModel.quaternion.copy(shipBody.quaternion)
+		
+		lerpedShipPos.lerp(shipModel.position, 0.4);
+		//lerpedShipPos.lerp(shipBody.position, 0.4);
+	    
+	    camRigPos.copy(followCamRig.position);
+
+	    camWorldPos.setFromMatrixPosition(followCam.matrixWorld);
+	  
+	    shipToRigDir.copy( lerpedShipPos ).sub( camRigPos ).normalize();
+	  
+	    rigToTargetDist += ( followingDistance - rigToTargetDist ) * 0.2;
+	  
+	    let camToRigDist = lerpedShipPos.distanceTo( camRigPos ) - rigToTargetDist;
+	  
+	    followCamRig.position.addScaledVector( shipToRigDir, camToRigDist );
+	    camWorldPos.setFromMatrixPosition(followCamTarget.matrixWorld);
+	    followCamRig.position.lerp(camWorldPos, 0.02);
+
 	}
 
 
 	function animate() {
 		
-		// cannon-es world stepping
-		updatePhysics();
+		//request render scene at every frame
+		requestAnimationFrame(animate); 
 		
+		// update followCam
+		followShip();
 
-		// three.js model positions updates using cannon-es simulation
-		sphereMesh.position.copy(sphereBody.position);
-		sphereMesh.quaternion.copy(sphereBody.quaternion);
+		// take timestep in physics simulation
+		stepPhysicsWorld();
+		
+		// update three.js meshes according to cannon-es simulations
+		updatePhysicsBodies();
 
-		shipModel.position.copy(shipBody.position);
-		shipModel.quaternion.copy(shipBody.quaternion);
 		
 		// models animations
 		clock.getDelta();
+		// if (dancerMixer) dancerMixer.update(delta)
+		// if (snakeMixer) snakeMixer.update(delta)
 	  
-		// render three.js
-
-		renderer.clear();
-		requestAnimationFrame(animate); //request render scene at every frame
-		renderer.render(scene, camera);
+		//// render three.js
+		//renderer.clear()
+		//renderer.render(scene, camera)
+		followCam.lookAt( shipModel.position );
+		renderer.render(scene, followCam);
 		stats.update();
 	}
 
-
+	// Update projection when viewing window is resized
 	function onWindowResize() {
 
-		camera.aspect = window.innerWidth / window.innerHeight;
-		camera.updateProjectionMatrix();
+		followCam.aspect = window.innerWidth / window.innerHeight;
+		followCam.updateProjectionMatrix();
 		renderer.setSize( window.innerWidth, window.innerHeight );
 
 	}
 
-
-	function updatePhysics(){
+	// Make time step in physics simulation
+	function stepPhysicsWorld(){
 		
 		const time = performance.now() / 1000;
 		if (!lastCallTime) {
@@ -57619,6 +57585,66 @@
 			world.step(timeStep, dt);
 		}
 		lastCallTime = time;	
+	}
+
+	// Update the positions and orientations of the dynamic three.js objects according to the current
+	// physics properties of their corresponding bodies in the physics sim
+	function updatePhysicsBodies(){
+		// three.js model positions updates using cannon-es simulation
+		sphereMesh.position.copy(sphereBody.position);
+		sphereMesh.quaternion.copy(sphereBody.quaternion);
+
+		//shipModel.position.copy(shipBody.position)
+		//shipModel.quaternion.copy(shipBody.quaternion)
+	}
+
+	// load up gltf model asynchronously
+	async function loadModel(path){
+		const loader = new GLTFLoader();	
+
+		const model = await loader.loadAsync(path);
+
+		return model.scene.children[0]
+	}
+
+	// Initialize the variables for the followCam
+	function initFollowCam(camHeight, newFollowingDistance){
+	    followingDistance = newFollowingDistance;
+	    
+	    followCam = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+	    followCam.position.set( 0, camHeight, 0 );
+	    followCam.lookAt( scene.position );
+
+	    followCamRig = new Object3D;
+	    followCamTarget = new Object3D;
+	    followCamTarget.position.z = -followingDistance;
+	}
+
+	// Initialise and create listeners for the keyboard controls
+	function initShipControls(){
+	    
+	    keys = {
+	        a: false,
+	        s: false,
+	        d: false,
+	        w: false
+	    };
+
+	    document.body.addEventListener( 'keydown', function(e) {
+	    
+	        const key = e.code.replace('Key', '').toLowerCase();
+	        if ( keys[ key ] !== undefined )
+	            keys[ key ] = true;
+	        
+	    });
+
+	    document.body.addEventListener( 'keyup', function(e) {
+	        
+	        const key = e.code.replace('Key', '').toLowerCase();
+	        if ( keys[ key ] !== undefined )
+	            keys[ key ] = false;
+	        
+	    });
 	}
 
 	const game = new Game();
