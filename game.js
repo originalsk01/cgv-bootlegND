@@ -50,20 +50,21 @@ const direction = new THREE.Vector3();
 const vertex = new THREE.Vector3();
 const color = new THREE.Color();
 
-var minutes, seconds, milliseconds, gameStart,gameLoad
+var tokensArray = []; //Array containing tokens
+var boxArray = []; // Array containing box for tokens
+var playerGeometry;
+var playerBox;
+var playerMaterial;
+var playerCustom;
+//var playerBox;
+//var playerCustom;
 
-var timer = document.createElement('div');
-timer.style.position = 'absolute';
-timer.style.color = 'white';
-timer.style.top = '0%';
-timer.style.textAlign = 'center';
-timer.style.width = '100%';
-timer.style.margin = '0 auto';
-timer.innerHTML = '<div id = "timer"></div>';
+var tokenScore = 0;
+
+var renderFrames = 0;
 
 init();
 function init() {
-  gameLoad=new Date().getTime();
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xa0a0a0);
   camera = new THREE.PerspectiveCamera(
@@ -144,26 +145,24 @@ function init() {
   //blocker and instructions is used to pause and start game
   const blocker = document.getElementById("blocker");
   const instructions = document.getElementById("instructions");
-  const timer = document.getElementById("timer");
 
-  instructions.addEventListener("click", function () {
+  instructions.addEventListener("click", function() {
     controls.lock();
   });
 
-  controls.addEventListener("lock", function () {
+  controls.addEventListener("lock", function() {
     instructions.style.display = "none";
     blocker.style.display = "none";
-    // gameLoad = new Date().getTime();
   });
 
-  controls.addEventListener("unlock", function () {
+  controls.addEventListener("unlock", function() {
     blocker.style.display = "block";
     instructions.style.display = "";
   });
 
   scene.add(controls.getObject());
 
-  const onKeyDown = function (event) {
+  const onKeyDown = function(event) {
     switch (event.code) {
       case "ArrowUp":
       case "KeyW":
@@ -192,7 +191,7 @@ function init() {
     }
   };
 
-  const onKeyUp = function (event) {
+  const onKeyUp = function(event) {
     switch (event.code) {
       case "ArrowUp":
       case "KeyW":
@@ -240,7 +239,7 @@ function loadModels() {
     const action = mixer.clipAction(fbx.animations[0]);
     action.play();
 
-    fbx.traverse(function (child) {
+    fbx.traverse(function(child) {
       if (child.isMesh) {
         child.castShadow = true;
         child.receiveShadow = true;
@@ -251,7 +250,7 @@ function loadModels() {
   });
 
   //Snake
-  newLoader.load("./resources/snake/scene.gltf", function (gltf) {
+  newLoader.load("./resources/snake/scene.gltf", function(gltf) {
     mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
     gltf.animations.forEach((clip) => {
       mixer2.clipAction(clip).play();
@@ -262,23 +261,21 @@ function loadModels() {
   scene.add(snakeobj);
 
   //Starship
-  shipLoader.load("character/LPSP_SmallStarfigher.gltf", function (gltfModel) {
+  shipLoader.load("character/LPSP_SmallStarfigher.gltf", function(gltfModel) {
     gltfModel.scene.scale.multiplyScalar(1.9);
-    gltfModel.scene.traverse(function (child) {
+    gltfModel.scene.traverse(function(child) {
       //console.log(child);
     });
     shipModel.add(gltfModel.scene);
-
   });
-
 
   scene.add(shipModel);
 
   
   //Token that the playr collects
-  tokenLoader.load("character/token.gltf", function (gltfModel) {
+  tokenLoader.load("character/token.gltf", function(gltfModel) {
     gltfModel.scene.scale.multiplyScalar(0.1);
-    gltfModel.scene.traverse(function (child) {
+    gltfModel.scene.traverse(function(child) {
       //console.log(child);
     });
     tokenModel.add(gltfModel.scene);
@@ -286,19 +283,26 @@ function loadModels() {
   scene.add(tokenModel);
 
   //Create tokens
-  for (let i = 0; i < 2; i++) {
-    const tokenGeometry = new THREE.BoxGeometry(20,20,20);
-    const tokenBox = new THREE.Box3(); //bounding box
+  for (let i = 0; i < 20; i++) {
+    const tokenGeometry = new THREE.BoxGeometry(5,5,5);
     const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
     const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
 
     //Generate random positions for each of the tokens
     var randomX = Math.floor(Math.random() * 100);
     var randomZ = Math.floor(Math.random() * 100);
-    tokenCustom.position.set(randomX, -300, randomZ)
+    tokenCustom.position.set(randomX, 5, randomZ)
+    const tokenBox = new THREE.Box3(); //bounding box
     // ensure the bounding box is computed for its geometry
     // this should be done only once (assuming static geometries)
     tokenCustom.geometry.computeBoundingBox();
+    console.log(tokenCustom.geometry.boundingBox);
+    //tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
+
+    //Calculate center of token just for debugging
+    var tokenCenter = new THREE.Vector3();
+    tokenCenter = tokenBox.getCenter();
+    console.log(tokenCenter);
 
     scene.add(tokenCustom);
     
@@ -308,20 +312,21 @@ function loadModels() {
     tokensArray.push(tokenCustom);
     boxArray.push(tokenBox);
   }
-  console.log(boxArray)
-
-  //Create Player bounding box
-  // playerBox = new THREE.Box3();
-  // playerMesh = new THREE.Mesh(
-  //   new THREE.SphereGeometry(),
-  //   new THREE.MeshBasicMaterial()
-  // );
+  
+  //Create a transparent box around the player in order to detect collisions with tokens
   playerGeometry = new THREE.BoxGeometry(5, 5, 5);
   playerBox = new THREE.Box3(); //bounding box
-  playerMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+  playerMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000, transparent: true, opacity: 0 });
   playerCustom = new THREE.Mesh(playerGeometry, playerMaterial);
+  playerCustom.position.set(camera.position.x, camera.position.y, camera.position.Z)
   //Compute initial bounding box
   playerCustom.geometry.computeBoundingBox();
+  //playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
+
+  var playerCenter = new THREE.Vector3(2,5,8);
+  playerCenter = playerBox.getCenter();
+  console.log('playerCenter:');
+  console.log(playerCenter);
 
   scene.add(playerCustom);
 
@@ -335,7 +340,7 @@ renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 //when window resizes
-window.addEventListener("resize", function () {
+window.addEventListener("resize", function() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.aspect = window.innerWidth / window.innerHeight;
 });
@@ -382,17 +387,7 @@ window.addEventListener("resize", function () {
 
 
 function renderScene() {
-  gameStart=new Date().getTime();
-
-  var distance=gameStart-gameLoad
-  minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  seconds = Math.floor((distance % (1000 * 60)) / 1000);
-  milliseconds = Math.floor((distance % (1000 * 60)) * 1000 / 1000);
-
-  document.getElementById("timer").innerHTML ="<h1>Snake Invader</h1><h2>Snake Invader</h2>"
-  +'<div class ="timerSec">'+ minutes + " Minutes" +"</div><div class ='timerSec'>"+ seconds + " Seconds"+'</div></div>';
-
-
+  renderFrames += 1; //count number of frames
   renderer.clear();
 
   const delta = clock.getDelta();
@@ -425,26 +420,38 @@ function renderScene() {
   
   //playerBox.position.set(camera.position.x, camera.position.y, camera.position.z);
 
-  //Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
-  for (let k = 0; k < tokensArray.length; k++) {
-    boxArray[k].copy(tokensArray[k].geometry.boundingBox).applyMatrix4(tokensArray[k].matrixWorld);
-    //Determine if player touches token
-    if (playerBox.intersectsBox(boxArray[k])) {
-      tokenScore += 1;
-      //tokensArray[k].position.set(tokensArray[k].position.x, tokensArray[k].position.y-100,tokensArray[k].position.z);
+  //We have a counter to count the number of frames that have passed and after a certain 
+  //number of frames, we only there after will be start checking if the player intersects with tokens 
+  //if we calculate the adjusted bounding box immediately then it is broken, so we create a small delay
+  //before creating checks.
+  if (renderFrames >= 10) {
+    //Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
+    for (let k = 0; k < tokensArray.length; k++) {
+      boxArray[k]
+        .copy(tokensArray[k].geometry.boundingBox)
+        .applyMatrix4(tokensArray[k].matrixWorld);
+      //Determine if player touches token
+      const blue = new THREE.Color( 0x0000ff );
+      if (playerBox.intersectsBox(boxArray[k]) &&  !(tokensArray[k].material.color.equals(blue))) {
+        tokenScore += 1;
+        tokensArray[k].material.transparent = true;
+        tokensArray[k].material.opacity = 0;
+        //boxArray.splice(k,1);
+        //tokensArray[k].position.set(tokensArray[k].position.x, tokensArray[k].position.y-100,tokensArray[k].position.z);
 
-      //Now we dispose the token if it was touched
-      // tokensArray[k].traverse(function(child) {
-      //   if (child.geometry !== undefined) {
-      //     child.geometry.dispose();
-      //     child.material.dispose();
-      //     console.log('disposed token')
-      //   }
-      // });
+        //Now we dispose the token if it was touched
+        // tokensArray[k].traverse(function(child) {
+        //   if (child.geometry !== undefined) {
+        //     child.geometry.dispose();
+        //     child.material.dispose();
+        //     console.log('disposed token')
+        //   }
+        // });
 
-      tokensArray[k].material.color.setHex(0x000000ff); //Trying to set to transparent when in contact, but failing so it is blue for now
-      console.log(tokenScore);
-    }  
+        tokensArray[k].material.color.setHex(0x0000ff); //Trying to set to transparent when in contact, but failing so it is blue for now
+        console.log(tokenScore);
+      }
+    }
   }
 
 
