@@ -7,6 +7,7 @@ import { PointerLockControls } from "./js/libs/PointerLockControls.js";
 //import { RGBDEncoding } from './js/three.module.js';
 
 var jumpheight = 10;
+var maxScore=20// setting the score limit
 var scene, camera;
 var snakeobj, mixer2;
 var spotlight = new THREE.SpotLight(0xffffff);
@@ -75,7 +76,7 @@ timer.style.textAlign = 'center';
 timer.style.width = '100%';
 timer.style.margin = '0 auto';
 timer.innerHTML = '<div id = "timer"></div>';
-
+var congratsDisplay;
 
 var tokenScore = 0;
 
@@ -164,6 +165,7 @@ function init() {
   //blocker and instructions is used to pause and start game
   const blocker = document.getElementById("blocker");
   const instructions = document.getElementById("instructions");
+  const timer = document.getElementById("timer");
 
   instructions.addEventListener("click", function () {
     controls.lock();
@@ -172,6 +174,7 @@ function init() {
   controls.addEventListener("lock", function () {
     instructions.style.display = "none";
     blocker.style.display = "none";
+    // timer.style.display="block"
   });
 
   controls.addEventListener("unlock", function () {
@@ -322,13 +325,13 @@ function loadModels() {
     // ensure the bounding box is computed for its geometry
     // this should be done only once (assuming static geometries)
     tokenCustom.geometry.computeBoundingBox();
-    console.log(tokenCustom.geometry.boundingBox);
+    // console.log(tokenCustom.geometry.boundingBox);
     //tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
 
     //Calculate center of token just for debugging
     var tokenCenter = new THREE.Vector3();
     tokenCenter = tokenBox.getCenter();
-    console.log(tokenCenter);
+    // console.log(tokenCenter);
 
     scene.add(tokenCustom);
 
@@ -351,8 +354,8 @@ function loadModels() {
 
   var playerCenter = new THREE.Vector3(2, 5, 8);
   playerCenter = playerBox.getCenter();
-  console.log('playerCenter:');
-  console.log(playerCenter);
+  // console.log('playerCenter:');
+  // console.log(playerCenter);
 
   scene.add(playerCustom);
 
@@ -423,7 +426,7 @@ function createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerCo
 
   outerCustom.add(innerCustom);
   innerCustomArray.push(innerCustom);// use separate array for innerCustom which will be global so that we can access them
-  console.log(outerCustom);
+  // console.log(outerCustom);
   return outerCustom;
 }
 
@@ -436,7 +439,7 @@ function renderScene() {
   const delta = clock.getDelta();
   //Animate snake and person
   if (mixer) mixer.update(delta);
-  if (mixer2) mixer2.update(delta);
+  // if (mixer2) mixer2.update(delta);
 
   //let cameraDirectionNormalised = new THREE.Vector3();
   // shipModel.position.set(camera.position.x, camera.position.y-10, camera.position.z);
@@ -463,9 +466,11 @@ function renderScene() {
   seconds = Math.floor((distance % (1000 * 60)) / 1000);
   milliseconds = Math.floor((distance % (1000 * 60)) * 1000 / 1000);
 
-  document.getElementById("timer").innerHTML = "<h1>Snake Invader</h1><h2>Snake Invader</h2>"
-    + '<div class ="timerSec">' + minutes + " Minutes" + "</div><div class ='timerSec'>" + seconds + " Seconds"+ '<div> Score: ' +tokenScore+'</div>'+'</div></div>';
-
+  document.getElementById("timer").innerHTML = "<h1>Snake Invader</h1>"
+    + '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '<div> Score: ' +tokenScore+'</div>'+'</div></div>';
+  if(tokenScore==maxScore){ // checking if they have won the game
+    document.getElementById("congratsDisplay").style.display="block" //congrats screen
+  }
   //Compute bounding box for player
   playerCustom.position.set(camera.position.x, camera.position.y, camera.position.z)
   playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
@@ -497,7 +502,7 @@ function renderScene() {
         //tokensArray[k].material.color.lerp();
 
         tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
-        console.log(tokenScore);
+        // console.log(tokenScore);
       }
     }
   }

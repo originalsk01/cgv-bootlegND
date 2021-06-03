@@ -16,8 +16,19 @@
             background-color: rgba(0, 0, 0, 0.5);
             color: white;
         }
+         body{
+            font-family: 'Sigmar One', cursive;
+         }
+        #timer {
+           font-size: larger;
+           line-height: 3rem;
+            color: white;
+            position: absolute; 
+        }
 
-        #timer {}
+        #well-done-page{
+
+        }
 
         #instructions {
             width: 100%;
@@ -40,18 +51,24 @@
 <body>
     <div id="blocker">
         <div id="instructions">
-            <p style="font-size:36px; color:white ">
+            <p style="font-size:50px; color:white ">
                 Click to play
             </p>
-            <p>
-                Move: WASD<br />
+            <p style="font-size: 36px;">
+                Move: W A S D<br />
                 Jump: SPACE<br />
                 Look: MOUSE
             </p>
         </div>
     </div>
+    <p id="congratsDisplay" style="display: none; position: absolute; margin:25rem;
+    width: 50%;
+    border: 3px solid rgb(255, 255, 255);
+    padding: 50px; font-size: 60px; ; color: rgb(255, 255, 255);">Congrats you passed Level 1!!!
+    
+    </p>
     <div id="timer">
-
+        
     </div>
 
     <div id='gameCanvas'></div>
