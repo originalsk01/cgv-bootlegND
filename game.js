@@ -272,15 +272,15 @@ function loadModels() {
   });
 
   //Snake
-  newLoader.load("./resources/snake/scene.gltf", function (gltf) {
-    mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
-    gltf.animations.forEach((clip) => {
-      mixer2.clipAction(clip).play();
-    });
-    // mixer2.clipAction(gltf.animations[0]).play()
-    snakeobj.add(gltf.scene);
-  });
-  scene.add(snakeobj);
+  // newLoader.load("./resources/snake/scene.gltf", function (gltf) {
+  //   mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
+  //   gltf.animations.forEach((clip) => {
+  //     mixer2.clipAction(clip).play();
+  //   });
+  //   // mixer2.clipAction(gltf.animations[0]).play()
+  //   snakeobj.add(gltf.scene);
+  // });
+  // scene.add(snakeobj);
 
   //Starship
   shipLoader.load("character/LPSP_SmallStarfigher.gltf", function (gltfModel) {
