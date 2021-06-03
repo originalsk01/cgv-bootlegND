@@ -21,12 +21,12 @@ var green = "rgb(10,200,10)";
 var blue = "rgb(100,177,255)";
 
 //Models and loaders
-const loader   = new FBXLoader();
-var snakeobj   = new THREE.Object3D();
-var newLoader  = new GLTFLoader();
-var shipModel  = new THREE.Object3D();
+const loader = new FBXLoader();
+var snakeobj = new THREE.Object3D();
+var newLoader = new GLTFLoader();
+var shipModel = new THREE.Object3D();
 var shipLoader = new GLTFLoader();
-var tokenModel  = new THREE.Object3D();
+var tokenModel = new THREE.Object3D();
 var tokenLoader = new GLTFLoader();
 
 var mixer;
@@ -50,6 +50,17 @@ const direction = new THREE.Vector3();
 const vertex = new THREE.Vector3();
 const color = new THREE.Color();
 
+var tokensArray = []; //Array containing tokens
+var boxArray = []; // Array containing box for tokens
+var playerGeometry;
+var playerBox;
+var playerMaterial;
+var playerCustom;
+//var playerBox;
+//var playerCustom;
+
+var tokenScore = 0;
+
 init();
 function init() {
   scene = new THREE.Scene();
@@ -60,7 +71,7 @@ function init() {
     1,
     2000
   );
-  // camera.position.set( 0, 50, - 10 );
+  camera.position.set(0, 50, -10);
   // camera.lookAt(shipModel.position);
 
   //spotlight
@@ -127,7 +138,7 @@ function init() {
   scene.background = texture;
 
   //Create first person controls
-  controls = new PointerLockControls(shipModel, document.body);
+  controls = new PointerLockControls(camera, document.body);
 
   //blocker and instructions is used to pause and start game
   const blocker = document.getElementById("blocker");
@@ -205,12 +216,12 @@ function init() {
   document.addEventListener("keydown", onKeyDown);
   document.addEventListener("keyup", onKeyUp);
 
-  raycaster = new THREE.Raycaster(
-    new THREE.Vector3(),
-    new THREE.Vector3(0, -1, 0),
-    0,
-    10
-  );
+  // raycaster = new THREE.Raycaster(
+  //   new THREE.Vector3(),
+  //   new THREE.Vector3(0, -1, 0),
+  //   0,
+  //   10
+  // );
 
   loadModels();
 }
@@ -254,12 +265,11 @@ function loadModels() {
       //console.log(child);
     });
     shipModel.add(gltfModel.scene);
-    
   });
 
-  
   scene.add(shipModel);
 
+  
   //Token that the playr collects
   tokenLoader.load("character/token.gltf", function(gltfModel) {
     gltfModel.scene.scale.multiplyScalar(0.1);
@@ -267,10 +277,51 @@ function loadModels() {
       //console.log(child);
     });
     tokenModel.add(gltfModel.scene);
-    
   });
-
   scene.add(tokenModel);
+
+  //Create tokens
+  for (let i = 0; i < 20; i++) {
+    const tokenGeometry = new THREE.BoxGeometry(20,20,20);
+    const tokenBox = new THREE.Box3(); //bounding box
+    const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+    const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
+
+    //Generate random positions for each of the tokens
+    var randomX = Math.floor(Math.random() * 100);
+    var randomZ = Math.floor(Math.random() * 100);
+    tokenCustom.position.set(randomX, 0, randomZ)
+    // ensure the bounding box is computed for its geometry
+    // this should be done only once (assuming static geometries)
+    tokenCustom.geometry.computeBoundingBox();
+
+    scene.add(tokenCustom);
+    
+
+    //Since the bounding box for each token must be computed within the animation loop,
+    //we create the tokens and boxes as empty here and add them to their respective arrays,
+    //which can be looped through and each token and box can be accessed within the animation loop.
+    tokensArray.push(tokenCustom);
+    boxArray.push(tokenBox);
+    console.log(boxArray)
+  }
+
+  //Create Player bounding box
+  // playerBox = new THREE.Box3();
+  // playerMesh = new THREE.Mesh(
+  //   new THREE.SphereGeometry(),
+  //   new THREE.MeshBasicMaterial()
+  // );
+  playerGeometry = new THREE.BoxGeometry(5, 5, 5);
+  playerBox = new THREE.Box3(); //bounding box
+  playerMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+  playerCustom = new THREE.Mesh(playerGeometry, playerMaterial);
+  //Compute initial bounding box
+  playerCustom.geometry.computeBoundingBox();
+
+  scene.add(playerCustom);
+
+  //console.log(scene.children);
 }
 
 var renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -286,43 +337,45 @@ window.addEventListener("resize", function() {
 });
 
 //Add boxes to the world
-const boxGeometry = new THREE.BoxGeometry(50, 10, 30).toNonIndexed();
+// const boxGeometry = new THREE.BoxGeometry(50, 10, 30).toNonIndexed();
 
-// position = boxGeometry.attributes.position;
-const colorsBox = [];
+// // position = boxGeometry.attributes.position;
+// const colorsBox = [];
 
-for (let i = 0, l = 36; i < l; i++) {
-  color.setHSL(Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75);
-  colorsBox.push(color.r, color.g, color.b);
-}
+// for (let i = 0, l = 36; i < l; i++) {
+//   color.setHSL(Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75);
+//   colorsBox.push(color.r, color.g, color.b);
+// }
 
-boxGeometry.setAttribute(
-  "color",
-  new THREE.Float32BufferAttribute(colorsBox, 3)
-);
+// boxGeometry.setAttribute(
+//   "color",
+//   new THREE.Float32BufferAttribute(colorsBox, 3)
+// );
 
-for (let i = 0; i < 2000; i++) {
-  const boxMaterial = new THREE.MeshPhongMaterial({
-    specular: 0xffffff,
-    flatShading: true,
-    vertexColors: true,
-  });
-  boxMaterial.color.setHSL(
-    Math.random() * 0.2 + 0.5,
-    0.75,
-    Math.random() * 0.25 + 0.75
-  );
+// for (let i = 0; i < 2000; i++) {
+//   const boxMaterial = new THREE.MeshPhongMaterial({
+//     specular: 0xffffff,
+//     flatShading: true,
+//     vertexColors: true,
+//   });
+//   boxMaterial.color.setHSL(
+//     Math.random() * 0.2 + 0.5,
+//     0.75,
+//     Math.random() * 0.25 + 0.75
+//   );
 
-  const box = new THREE.Mesh(boxGeometry, boxMaterial);
-  box.position.x =
-    Math.floor(Math.random() * 20 - 10) * 135 + Math.random() * 100;
-  box.position.y = 10;
-  box.position.z =
-    Math.floor(Math.random() * 20 - 10) * 100 + Math.random() * 100;
+//   const box = new THREE.Mesh(boxGeometry, boxMaterial);
+//   box.position.x =
+//     Math.floor(Math.random() * 20 - 10) * 135 + Math.random() * 100;
+//   box.position.y = 10;
+//   box.position.z =
+//     Math.floor(Math.random() * 20 - 10) * 100 + Math.random() * 100;
 
-  scene.add(box);
-  // objects.push(box)
-}
+//   scene.add(box);
+// objects.push(box)
+//}
+
+
 
 function renderScene() {
   renderer.clear();
@@ -343,22 +396,41 @@ function renderScene() {
   //var temp = new THREE.Vector3();
   //goal.position.set( 0, 50, - 10 );
   //temp.setFromMatrixPosition(goal.matrixWorld);
-  camera.position.set( shipModel.position.x-5, shipModel.position.y+10, shipModel.position.x - 10 );
-  camera.position.lerp(shipModel.position, 0.2);
-  camera.lookAt(shipModel.position);
+  //camera.position.set( shipModel.position.x-5, shipModel.position.y+10, shipModel.position.x - 10 );
+  //camera.position.lerp(shipModel.position, 0.2);
+  //camera.lookAt(shipModel.position);
 
   requestAnimationFrame(renderScene); //request render scene at every frame
   const time = performance.now();
 
+ 
+  //Compute bounding box for player
+  playerCustom.position.set(camera.position.x, camera.position.y, camera.position.z)
+  playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
+  
+  //playerBox.position.set(camera.position.x, camera.position.y, camera.position.z);
+
+  //Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
+  for (let k = 0; k < tokensArray.length; k++) {
+    boxArray[k].copy(tokensArray[k].geometry.boundingBox).applyMatrix4(tokensArray[k].matrixWorld);
+    //Determine if player touches token
+    if (playerBox.intersectsBox(boxArray[k])) {
+      tokenScore += 1;
+      tokensArray[k].material.color.setHex(0x000000ff); //Trying to set to transparent when in contact, but failing so it is blue for now
+      console.log(tokenScore);
+    }
+  }
+
+
   if (controls.isLocked === true) {
     // const delta = (time - prevTime) / 1000;
-    
+
     //Set movement velocity in each direction
     velocity.x -= velocity.x * 10.0 * delta;
     velocity.z -= velocity.z * 10.0 * delta;
     velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
 
-    //Determine direction since Number(direction) evaluates to true or false since 
+    //Determine direction since Number(direction) evaluates to true or false since
     //moveForward, moveBackwards, moveLeft and moveRight are all boolean values
     //and so if moveForward is True(1) and moveBackward is false(0) then 1-0=1 and so we
     //move in the positive z direction
