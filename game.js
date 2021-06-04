@@ -1,486 +1,623 @@
-import { GLTFLoader } from "./js/libs/GLTFLoader.js";
-import { FBXLoader } from "./js/libs/FBXLoader.js";
-import { OrbitControls } from "./js/libs/OrbitControls.js";
-import * as THREE from "./js/libs/three.module.js";
-import { PointerLockControls } from "./js/libs/PointerLockControls.js";
+import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import Stats from "three/examples/jsm/libs/stats.module.js";
+import * as CANNON from "cannon-es";
 
-//import { RGBDEncoding } from './js/three.module.js';
+import { threeToCannon, ShapeType } from "three-to-cannon";
 
-var jumpheight = 10;
-var maxScore=20// setting the score limit
-var scene, camera;
-var snakeobj, mixer2;
-var spotlight = new THREE.SpotLight(0xffffff);
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.1);
-const hemiLight = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
-const dirLight = new THREE.DirectionalLight(0xffffff);
-//colours
-var black = "rgb(0,0,0)";
-var white = "rgb(255,255,255)";
-var red = "rgb(255,0,0)";
-var green = "rgb(10,200,10)";
-var blue = "rgb(100,177,255)";
+// three.js global vars
+let camera, scene, stats, renderer, clock, controls;
+let sphereMesh, shipModel;
 
-//Models and loaders
-const loader = new FBXLoader();
-var snakeobj = new THREE.Object3D();
-var newLoader = new GLTFLoader();
-var shipModel = new THREE.Object3D();
-var shipLoader = new GLTFLoader();
-var tokenModel = new THREE.Object3D();
-var tokenLoader = new GLTFLoader();
+// global asset paths
+const shipPath =
+  "/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
 
-var mixer;
-var clock = new THREE.Clock();
-var step = 0;
+// global colour variables
+const black = "rgb(0,0,0)";
+const white = "rgb(255,255,255)";
+const red = "rgb(255,0,0)";
+const green = "rgb(10,200,10)";
+const blue = "rgb(110,197,233)";
+const vibrantYellow = new THREE.Color(0xf49f1c);
+const darkBlue = new THREE.Color(0x003380);
 
-let controls;
+// cannon-es global variables
+let world;
+let sphereBody, shipBody;
+const timeStep = 1 / 60;
+let lastCallTime;
 
-let raycaster;
+// player control global variables
+let keys;
 
-//Movement
-let moveForward = false;
-let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
-let canJump = false;
+// followCam global variables
+let followCam, followCamRig, followCamTarget;
+let lerpedShipPos = new THREE.Vector3();
+let followingDistance = 15;
+let rigToTargetDist = followingDistance;
+let shipVelocity = 0.0;
+let shipRotationRad = 0;
 
-let prevTime = performance.now();
-const velocity = new THREE.Vector3();
-const direction = new THREE.Vector3();
-const vertex = new THREE.Vector3();
-const color = new THREE.Color();
-
+//token global variables
 var tokensArray = []; //Array containing tokens
 var boxArray = []; // Array containing box for tokens'
-var innerCustomArray = []
+var innerCustomArray = []; //Array conatining the inner meh of the tokens
+
+//ship model bounding box global vairables
 var playerGeometry;
 var playerBox;
 var playerMaterial;
 var playerCustom;
-//var playerBox;
-//var playerCustom;
 
-//Colours
-const vibrantYellow = new THREE.Color(0xF49F1C);
-const darkBlue = new THREE.Color(0x003380);
-
-
-var minutes, seconds, milliseconds, gameStart, gameLoad
-
-var timer = document.createElement('div');
-timer.style.position = 'absolute';
-timer.style.color = 'white';
-timer.style.top = '0%';
-timer.style.textAlign = 'center';
-timer.style.width = '100%';
-timer.style.margin = '0 auto';
-timer.innerHTML = '<div id = "timer"></div>';
-var congratsDisplay;
-
-var tokenScore = 0;
-
+//global variable to keep track of the number of frames that havebeen rendered
 var renderFrames = 0;
 
-init();
-function init() {
-  gameLoad = new Date().getTime();
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xa0a0a0);
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    1,
-    2000
-  );
-  camera.position.set(0, 50, -10);
-  // camera.lookAt(shipModel.position);
+//timer variables
+var minutes, seconds, milliseconds, gameStart, gameLoad
 
-  //spotlight
-  // spotlight.position.set(-40, 60, 40)
-  // scene.add(spotlight)
-  //directionalLight light
-  directionalLight.position.set(0, 10, 10);
-  scene.add(directionalLight);
+//score variable
+var tokenScore = 0;
+var maxScore = 5;
 
-  //Ambient Light
-  const light = new THREE.AmbientLight(0x808080); // soft white light
-  scene.add(light);
+class Game {
+  async init() {
+	gameLoad = new Date().getTime();
+    ////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+//get html elements
+	const timer = document.getElementById("timer");
+   
+    // Scene
+    scene = new THREE.Scene();
+    //scene.background = new THREE.Color(0xa0a0a0)
 
-  //HEMILIGHT??
-  hemiLight.position.set(0.5, 1, 0.75);
-  scene.add(hemiLight);
+    //Skybox
+    const skyBoxLoader = new THREE.CubeTextureLoader();
+    const skyBoxtexture = skyBoxLoader.load([
+      "textures/skybox/indigo_ft.jpg",
+      "textures/skybox/indigo_bk.jpg",
+      "textures/skybox/indigo_up.jpg",
+      "textures/skybox/indigo_dn.jpg",
+      "textures/skybox/indigo_rt.jpg",
+      "textures/skybox/indigo_lf.jpg",
+    ]);
+    // console.log(skyBoxtexture)
+    scene.background = skyBoxtexture;
 
-  dirLight.position.set(0, 200, 100);
-  dirLight.castShadow = true;
-  dirLight.shadow.camera.top = 180;
-  dirLight.shadow.camera.bottom = -100;
-  dirLight.shadow.camera.left = -120;
-  dirLight.shadow.camera.right = 120;
-  scene.add(dirLight);
+    // Physics world
+    world = new CANNON.World({
+      gravity: new CANNON.Vec3(0, -20, 0), // m/s²
+    });
+    //world.gravity.set(0, -20, 0)
+    //world.gravity.set(0, 0, 0)
+    //world.broadphase.useBoundingBoxes = true
 
-  var axes = new THREE.AxesHelper(30);
-  scene.add(axes);
+    stats = new Stats();
+    document.body.appendChild(stats.dom);
 
-  //Load textures
-  // var groundTexture = new THREE.TextureLoader().load('./textures/Rock_041_SD/Rock_041_ambientOcclusion.jpg');
-  // //plane
-  // var planeGeometry = new THREE.PlaneGeometry(1000, 1000, 1, 1)
-  // //using standard material so its got the same properties as unity rendering
-  // //meaning its affected by lights , basic means its unaffected by lights
-  // var planeMaterial = new THREE.MeshBasicMaterial({ map: groundTexture })
-  // var plane = new THREE.Mesh(planeGeometry, planeMaterial)
-  // plane.rotation.x = -0.5 * Math.PI
-  // scene.add(plane)
+    // Normale camera
+    camera = new THREE.PerspectiveCamera(
+      80,
+      window.innerWidth / window.innerHeight,
+      1,
+      1000
+    );
 
-  //Create Floor
-  // var meshPlane = new THREE.Mesh(
-  //   new THREE.PlaneBufferGeometry(10000, 10000),
-  //   new THREE.MeshPhongMaterial({ color: 0x111111, depthWrite: false })
-  // );
-  // meshPlane.rotation.x = -Math.PI / 2;
-  // meshPlane.receiveShadow = true;
-  // scene.add(meshPlane);
-  // //Grid for floor
-  // var grid = new THREE.GridHelper(5000, 40, 0xff0000, 0x0000ff);
-  // grid.material.opacity = 0.7;
-  // grid.material.transparent = true;
-  // scene.add(grid);
+    // Normal camera initial position and orientation
+    //camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
+    //camera.position.set(0,10,10)
 
-  //Skybox
-  const loader = new THREE.CubeTextureLoader();
-  const texture = loader.load([
-    "textures/skybox/indigo_ft.jpg",
-    "textures/skybox/indigo_bk.jpg",
-    "textures/skybox/indigo_up.jpg",
-    "textures/skybox/indigo_dn.jpg",
-    "textures/skybox/indigo_rt.jpg",
-    "textures/skybox/indigo_lf.jpg",
-  ]);
-  scene.background = texture;
+    // Renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setClearColor(blue);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    //renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3)
+    window.addEventListener("resize", onWindowResize, false);
+    document.body.appendChild(renderer.domElement);
 
-  //Create first person controls
-  controls = new PointerLockControls(camera, document.body);
+    // Orbit Controls for normal camera (currently does nothing)
+    //const controls = new OrbitControls(camera, renderer.domElement)
+    //controls.update()
 
-  //blocker and instructions is used to pause and start game
-  const blocker = document.getElementById("blocker");
-  const instructions = document.getElementById("instructions");
-  const timer = document.getElementById("timer");
+    // Axes Helper
+    const axes = new THREE.AxesHelper(100);
+    scene.add(axes);
 
-  instructions.addEventListener("click", function () {
-    controls.lock();
-  });
+    // X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
+    const gridSize = 500;
+    const gridDivisions = 50;
+    const gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
+    scene.add(gridHelper);
 
-  controls.addEventListener("lock", function () {
-    instructions.style.display = "none";
-    blocker.style.display = "none";
-    // timer.style.display="block"
-  });
+    // Size of one unit for world coordinates if Grid used as basis
+    const gridSquareSize = gridSize / gridDivisions;
 
-  controls.addEventListener("unlock", function () {
-    blocker.style.display = "block";
-    instructions.style.display = "";
-  });
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
 
-  scene.add(controls.getObject());
+    const dirLight = new THREE.DirectionalLight(0xffffff);
+    dirLight.position.set(0, 200, 100);
+    dirLight.castShadow = true;
+    dirLight.shadow.camera.top = 180;
+    dirLight.shadow.camera.bottom = -100;
+    dirLight.shadow.camera.left = -120;
+    dirLight.shadow.camera.right = 120;
+    scene.add(dirLight);
 
-  const onKeyDown = function (event) {
-    switch (event.code) {
-      case "ArrowUp":
-      case "KeyW":
-        moveForward = true;
-        break;
+    // Materials
+    const groundMaterial = new CANNON.Material("groundMaterial");
 
-      case "ArrowLeft":
-      case "KeyA":
-        moveLeft = true;
-        break;
-
-      case "ArrowDown":
-      case "KeyS":
-        moveBackward = true;
-        break;
-
-      case "ArrowRight":
-      case "KeyD":
-        moveRight = true;
-        break;
-
-      case "Space":
-        if (canJump === true) velocity.y += 350;
-        canJump = false;
-        break;
-    }
-  };
-
-  const onKeyUp = function (event) {
-    switch (event.code) {
-      case "ArrowUp":
-      case "KeyW":
-        moveForward = false;
-        break;
-
-      case "ArrowLeft":
-      case "KeyA":
-        moveLeft = false;
-        break;
-
-      case "ArrowDown":
-      case "KeyS":
-        moveBackward = false;
-        break;
-
-      case "ArrowRight":
-      case "KeyD":
-        moveRight = false;
-        break;
-    }
-  };
-
-  document.addEventListener("keydown", onKeyDown);
-  document.addEventListener("keyup", onKeyUp);
-
-  // raycaster = new THREE.Raycaster(
-  //   new THREE.Vector3(),
-  //   new THREE.Vector3(0, -1, 0),
-  //   0,
-  //   10
-  // );
-
-  loadModels();
-}
-
-//Function to load all models
-function loadModels() {
-  //Samba Dancer
-  loader.load("character/Samba Dancing.fbx", (fbx) => {
-    mixer = new THREE.AnimationMixer(fbx);
-    fbx.scale.set(0.15, 0.15, 0.15);
-    fbx.position.set(25, 0, 0);
-
-    const action = mixer.clipAction(fbx.animations[0]);
-    action.play();
-
-    fbx.traverse(function (child) {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
+    // Adjust constraint equation parameters for ground/ground contact
+    const ground_ground_cm = new CANNON.ContactMaterial(
+      groundMaterial,
+      groundMaterial,
+      {
+        friction: 0.4,
+        restitution: 0.3,
+        contactEquationStiffness: 1e8,
+        contactEquationRelaxation: 3,
+        frictionEquationStiffness: 1e8,
+        frictionEquationRegularizationTime: 3,
       }
+    );
+
+    // Add contact material to the world
+    world.addContactMaterial(ground_ground_cm);
+
+    // Create a slippery material (friction coefficient = 0.0)
+    const slipperyMaterial = new CANNON.Material("slipperyMaterial");
+
+    // The ContactMaterial defines what happens when two materials meet.
+    // In this case we want friction coefficient = 0.0 when the slippery material touches ground.
+    const slippery_ground_cm = new CANNON.ContactMaterial(
+      groundMaterial,
+      slipperyMaterial,
+      {
+        friction: 0.0,
+        restitution: 0.3,
+        contactEquationStiffness: 1e8,
+        contactEquationRelaxation: 3,
+      }
+    );
+
+    // We must add the contact materials to the world
+    world.addContactMaterial(slippery_ground_cm);
+
+    // Create a static ground plane for the ground
+    const groundBody = new CANNON.Body({
+      type: CANNON.Body.STATIC, // can also be achieved by setting the mass to 0
+      shape: new CANNON.Plane(),
+      material: groundMaterial,
     });
+    groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
+    //world.addBody(groundBody)
 
-    scene.add(fbx);
-  });
+    // Add sphere model to three scene
+    const radius = 5; // m
+    const geometry = new THREE.SphereGeometry(radius, 20, 20);
+    const material = new THREE.MeshLambertMaterial({ color: blue });
+    sphereMesh = new THREE.Mesh(geometry, material);
+    scene.add(sphereMesh);
 
-  //Snake
-  // newLoader.load("./resources/snake/scene.gltf", function (gltf) {
-  //   mixer2 = new THREE.AnimationMixer(gltf.scene.children[0]);
-  //   gltf.animations.forEach((clip) => {
-  //     mixer2.clipAction(clip).play();
-  //   });
-  //   // mixer2.clipAction(gltf.animations[0]).play()
-  //   snakeobj.add(gltf.scene);
-  // });
-  // scene.add(snakeobj);
+    //////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
 
-  //Starship
-  shipLoader.load("character/LPSP_SmallStarfigher.gltf", function (gltfModel) {
-    gltfModel.scene.scale.multiplyScalar(1.9);
-    gltfModel.scene.traverse(function (child) {
-      //console.log(child);
+    // Function to create a platform of size legth by width in world units
+    // out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
+    // your machine would otherwise die if it tried to render this many grouped objects normally
+    const createPlatform = (length, width, height, tileColorMap) => {
+      const tiles = [];
+
+      const tileGeometry = new THREE.BoxGeometry(1, 1, 1);
+
+      //const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
+      const tileMaterial = new THREE.MeshPhongMaterial({ map: tileColorMap });
+
+      const midpointOffset = 0.5;
+
+      for (let y = 0; y < height; y++) {
+        const ypos = y + midpointOffset;
+        for (let x = 0; x < length; x++) {
+          const xpos = x + midpointOffset;
+          for (let z = 0; z < width; z++) {
+            const zpos = z + midpointOffset;
+            // instead of creating a new geometry, we just clone the bufferGeometry instance
+            const newTile = tileGeometry.clone();
+            //const y =  0 //getRandomInt(0,5)
+            newTile.applyMatrix4(
+              new THREE.Matrix4().makeTranslation(xpos, ypos, zpos)
+            );
+            // then, we push this bufferGeometry instance in our array
+            tiles.push(newTile);
+          }
+        }
+      }
+
+      // merge into single super buffer geometry;
+      const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
+      // centre super geometry at local origin
+      //geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
+      geometriesTiles.applyMatrix4(
+        new THREE.Matrix4().makeTranslation(
+          -length / 2,
+          -height / 2,
+          -width / 2
+        )
+      );
+      geometriesTiles.applyMatrix4(
+        new THREE.Matrix4().makeScale(
+          gridSquareSize,
+          gridSquareSize,
+          gridSquareSize
+        )
+      );
+
+      // create one mega big platform mesh from super geometry
+      const platform = new THREE.Mesh(geometriesTiles, tileMaterial);
+
+      // place lower left corner of platform mesh  at X-Z (0,0)
+      platform.translateX((gridSquareSize * length) / 2);
+      platform.translateZ((gridSquareSize * width) / 2);
+      platform.translateY((gridSquareSize * height) / 2);
+      return platform;
+    };
+
+    // Function to set platform postition in gameboard coordinates in world
+    const placePlatform = (platform, x, y, z) => {
+      // translate platform in world coordinates
+      x = x * gridSquareSize;
+      y = y * gridSquareSize;
+      z = z * gridSquareSize;
+      platform.applyMatrix4(new THREE.Matrix4().makeTranslation(x, y, z));
+
+      // create cannon body for platform
+      const platformBody = new CANNON.Body({
+        type: CANNON.Body.STATIC,
+        material: groundMaterial,
+        shape: threeToCannon(platform, { type: ShapeType.BOX }).shape,
+      });
+      const platformPos = new THREE.Vector3();
+      platform.getWorldPosition(platformPos);
+      platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
+
+      return {
+        threePlatform: platform,
+        cannonPlatform: platformBody,
+      };
+    };
+
+    // Function to add multiple platforms into a gameboard
+    // allow different textures/colours for different sections
+    const createGameBoard = () => {
+      const board = new THREE.Group();
+      const platformGeometries = [];
+      const platformBodies = [];
+      let newPlatform;
+      let colorMap;
+
+      colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
+      newPlatform = placePlatform(
+        createPlatform(10, 10, 1, colorMap),
+        20,
+        5,
+        0
+      );
+      platformGeometries.push(newPlatform.threePlatform);
+      platformBodies.push(newPlatform.cannonPlatform);
+      colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
+      newPlatform = placePlatform(
+        createPlatform(20, 10, 1, colorMap),
+        0,
+        20,
+        0
+      );
+      platformGeometries.push(newPlatform.threePlatform);
+      platformBodies.push(newPlatform.cannonPlatform);
+      colorMap = new THREE.TextureLoader().load("./textures/pink_floor.png");
+      newPlatform = placePlatform(
+        createPlatform(10, 20, 1, colorMap),
+        -10,
+        40,
+        0
+      );
+      platformGeometries.push(newPlatform.threePlatform);
+      platformBodies.push(newPlatform.cannonPlatform);
+
+      //create a wall
+      colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
+      newPlatform = placePlatform(createPlatform(5, 1, 5, colorMap), 10, 1, 10);
+      platformGeometries.push(newPlatform.threePlatform);
+      platformBodies.push(newPlatform.cannonPlatform);
+
+      colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
+      newPlatform = placePlatform(
+        createPlatform(50, 50, 1, colorMap),
+        -25,
+        0,
+        -25
+      );
+      platformGeometries.push(newPlatform.threePlatform);
+      platformBodies.push(newPlatform.cannonPlatform);
+      for (var i = 0; i < 30; i++) {
+        var randX = getRandomInt(-25, 0);
+        var randY = getRandomInt(0, 50);
+        var randZ = getRandomInt(-25, 0);
+        colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
+        newPlatform = placePlatform(
+          createPlatform(1, 1, 1, colorMap),
+          randX,
+          randY,
+          randY
+        );
+        platformGeometries.push(newPlatform.threePlatform);
+        platformBodies.push(newPlatform.cannonPlatform);
+      }
+
+      //ceiling
+      colorMap = new THREE.TextureLoader().load("./textures/pink_floor.png");
+      newPlatform = placePlatform(
+        createPlatform(50, 50, 1, colorMap),
+        -25,
+        50,
+        -25
+      );
+      platformGeometries.push(newPlatform.threePlatform);
+      platformBodies.push(newPlatform.cannonPlatform);
+
+      //world boundaries
+      colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
+      newPlatform = placePlatform(
+        createPlatform(51, 1, 51, colorMap),
+        -26,
+        0,
+        25
+      );
+      platformGeometries.push(newPlatform.threePlatform);
+      platformBodies.push(newPlatform.cannonPlatform);
+
+      colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
+      newPlatform = placePlatform(
+        createPlatform(51, 1, 51, colorMap),
+        -25,
+        0,
+        -25
+      );
+      platformGeometries.push(newPlatform.threePlatform);
+      platformBodies.push(newPlatform.cannonPlatform);
+
+      // //guide wall block
+      // colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
+      // newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2)
+      // platformGeometries.push(newPlatform.threePlatform)
+      // platformBodies.push(newPlatform.cannonPlatform)
+
+      for (let i = 0; i < platformGeometries.length; i++) {
+        board.add(platformGeometries[i]);
+        world.addBody(platformBodies[i]);
+      }
+
+      return board;
+    };
+
+    // Add gameboard to world
+
+    const gameboard = createGameBoard();
+    scene.add(gameboard);
+
+    //////////////// ADD PLAYER SHIP //////////////////////////
+
+    shipModel = new THREE.Object3D();
+    shipModel = await loadModel(shipPath);
+    //console.log(shipModel)
+
+    // Rotate children of ship model to correct their orientation
+    shipModel.children[0].quaternion.setFromAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      Math.PI
+    );
+    shipModel.children[1].quaternion.setFromAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      Math.PI
+    );
+
+    shipModel.applyMatrix4(new THREE.Matrix4().makeScale(1.9, 1.9, 1.9));
+    shipModel.applyMatrix4(new THREE.Matrix4().makeTranslation(-5, 0, -5));
+
+    // create cannon body for ship
+    shipBody = new CANNON.Body({
+      mass: 10,
+      material: slipperyMaterial,
+      angularFactor: new CANNON.Vec3(0, 1, 0),
+      shape: threeToCannon(shipModel).shape,
+      linearDamping: 0.5,
+      angularDamping: 0.9,
     });
-    shipModel.add(gltfModel.scene);
-  });
+    shipBody.position.set(25, 10, 25);
+    //shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
+    world.addBody(shipBody);
+    //console.log(shipBody)
+    //updatePhysicsBodies()
 
-  scene.add(shipModel);
+    console.log(shipBody);
+    console.log(shipModel);
 
+    // Initialze followCam (height of camera above the ship, following distance behind ship)
+    initFollowCam(15, 20);
+    //controls = new OrbitControls(followCam, renderer.domElement)
+    //controls.target=new THREE.Vector3( shipModel.position.x, shipModel.position.y, shipModel.position.z)
 
-  //Token that the playr collects
-  // tokenLoader.load("character/token.gltf", function(gltfModel) {
-  //   gltfModel.scene.scale.multiplyScalar(0.1);
-  //   gltfModel.scene.traverse(function(child) {
-  //     //console.log(child);
-  //   });
-  //   tokenModel.add(gltfModel.scene);
-  // });
-  // scene.add(tokenModel);
+    // Place the target of the followCam on the ship model & place the followCam itself in a rig above the ship
+    shipModel.add(followCamTarget);
+    followCamRig.add(followCam);
+    scene.add(shipModel);
 
-  //Create tokens
-  for (let i = 0; i < 20; i++) {
-    //const tokenGeometry = new THREE.BoxGeometry(5,5,5);
-    // const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
-    // const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-    // const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
+    // Initialize ship keyboard control
+    initShipControls();
 
-    //createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
-    var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-    //console.log('Inner',innerTokenCustom);
-    //console.log('Outer',outerTokenCustom);
+    //////////////// CREATE SHIP BOUNDING BOX //////////////////
+    playerGeometry = new THREE.BoxGeometry(2, 2, 2);
+    playerBox = new THREE.Box3(); //bounding box
+    playerMaterial = new THREE.MeshLambertMaterial({
+      color: 0xff0000,
+      transparent: true,
+      opacity: 0,
+    });
+    playerCustom = new THREE.Mesh(playerGeometry, playerMaterial);
+    playerCustom.position.set(
+      shipModel.position.x,
+      shipModel.position.y,
+      shipModel.position.z
+    );
+    //Compute initial bounding box
+    playerCustom.geometry.computeBoundingBox();
+    //playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
 
+    var playerCenter = new THREE.Vector3(2, 5, 8);
+    playerCenter = playerBox.getCenter();
+    // console.log('playerCenter:');
+    // console.log(playerCenter);
 
-    //Generate random positions for each of the tokens
-    var randomX = Math.floor(Math.random() * 100);
-    var randomZ = Math.floor(Math.random() * 100);
-    tokenCustom.position.set(randomX, 5, randomZ)
-    const tokenBox = new THREE.Box3(); //bounding box
-    // ensure the bounding box is computed for its geometry
-    // this should be done only once (assuming static geometries)
-    tokenCustom.geometry.computeBoundingBox();
-    // console.log(tokenCustom.geometry.boundingBox);
-    //tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
+    scene.add(playerCustom);
+    playerBox
+      .copy(playerCustom.geometry.boundingBox)
+      .applyMatrix4(playerCustom.matrixWorld);
 
-    //Calculate center of token just for debugging
-    var tokenCenter = new THREE.Vector3();
-    tokenCenter = tokenBox.getCenter();
-    // console.log(tokenCenter);
+    //////////////// ADD THE TOKENS //////////////////
+    //Create tokens
+    for (let i = 0; i < 20; i++) {
+      //const tokenGeometry = new THREE.BoxGeometry(5,5,5);
+      // const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
+      // const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+      // const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
 
-    scene.add(tokenCustom);
+      //createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
+      var tokenCustom = createToken(
+        3,
+        5,
+        0,
+        0,
+        vibrantYellow,
+        darkBlue,
+        1,
+        0.3
+      );
+      //console.log('Inner',innerTokenCustom);
+      //console.log('Outer',outerTokenCustom);
 
-    //Since the bounding box for each token must be computed within the animation loop,
-    //we create the tokens and boxes as empty here and add them to their respective arrays,
-    //which can be looped through and each token and box can be accessed within the animation loop.
-    tokensArray.push(tokenCustom);
-    boxArray.push(tokenBox);
+      //Generate random positions for each of the tokens
+      var randomX = Math.floor(Math.random() * 250);
+      var randomZ = Math.floor(Math.random() * 250);
+	  var randomY = Math.floor(Math.random() * 100) + 10;
+      tokenCustom.position.set(randomX, randomY, randomZ);
+      const tokenBox = new THREE.Box3(); //bounding box
+      // ensure the bounding box is computed for its geometry
+      // this should be done only once (assuming static geometries)
+      tokenCustom.geometry.computeBoundingBox();
+      // console.log(tokenCustom.geometry.boundingBox);
+      //tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
+
+      //Calculate center of token just for debugging
+      var tokenCenter = new THREE.Vector3();
+      tokenCenter = tokenBox.getCenter();
+      // console.log(tokenCenter);
+
+      scene.add(tokenCustom);
+
+      //Since the bounding box for each token must be computed within the animation loop,
+      //we create the tokens and boxes as empty here and add them to their respective arrays,
+      //which can be looped through and each token and box can be accessed within the animation loop.
+      tokensArray.push(tokenCustom);
+      boxArray.push(tokenBox);
+    }
+
+    clock = new THREE.Clock();
+
+    animate();
   }
-
-  //Create a transparent box around the player in order to detect collisions with tokens
-  playerGeometry = new THREE.BoxGeometry(5, 5, 5);
-  playerBox = new THREE.Box3(); //bounding box
-  playerMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000, transparent: true, opacity: 0 });
-  playerCustom = new THREE.Mesh(playerGeometry, playerMaterial);
-  playerCustom.position.set(camera.position.x, camera.position.y, camera.position.Z)
-  //Compute initial bounding box
-  playerCustom.geometry.computeBoundingBox();
-  //playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
-
-  var playerCenter = new THREE.Vector3(2, 5, 8);
-  playerCenter = playerBox.getCenter();
-  // console.log('playerCenter:');
-  // console.log(playerCenter);
-
-  scene.add(playerCustom);
-
-  //console.log(scene.children);
 }
 
-var renderer = new THREE.WebGLRenderer({ antialias: true });
+function followShip() {
+  //shipBody.applyLocalImpulse(new CANNON.Vec3(0,0.1,0))
+  //shipBody.velocity.set(0,0.08,0)
+  let shipSpeed = 0.0;
+  //let shipSpeed = 1;
+  let camRigPos = new THREE.Vector3();
+  let camWorldPos = new THREE.Vector3();
+  let shipToRigDir = new THREE.Vector3();
 
-renderer.setClearColor(blue);
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.setSize(window.innerWidth, window.innerHeight);
+  if (keys.w) shipSpeed = 20;
+  else if (keys.s) shipSpeed = -20;
 
-//when window resizes
-window.addEventListener("resize", function () {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  camera.aspect = window.innerWidth / window.innerHeight;
-});
+  shipVelocity += (shipSpeed - shipVelocity) * 0.01;
+  //updatePhysicsBodies()
+  //shipModel.translateZ( shipVelocity );
+  //shipBody.position.z+=shipVelocity
+  //shipBody.velocity.set(0,0,shipVelocity)
+  shipBody.applyLocalImpulse(new CANNON.Vec3(0, 0, shipVelocity));
+  //shipModel.position.copy(shipBody.position)
+  //shipBody.position.copy(shipModel.position)
 
-//Add boxes to the world
-// const boxGeometry = new THREE.BoxGeometry(50, 10, 30).toNonIndexed();
+  //shipBody.applyImpulse(new CANNON.Vec3(0,0,shipVelocity))
+  if (keys.a) {
+    //updatePhysicsBodies()
+    //shipModel.rotateY(0.05);
+    shipRotationRad += 0.05;
+    shipBody.quaternion.setFromAxisAngle(
+      new CANNON.Vec3(0, 1, 0),
+      shipRotationRad
+    );
+    //shipModel.quaternion.copy(shipBody.quaternion)
+    //shipBody.quaternion.copy(shipModel.quaternion)
+  } else if (keys.d) {
+    //updatePhysicsBodies()
+    //shipModel.rotateY(-0.05);
+    shipRotationRad -= 0.05;
+    shipBody.quaternion.setFromAxisAngle(
+      new CANNON.Vec3(0, 1, 0),
+      shipRotationRad
+    );
+    //shipModel.quaternion.copy(shipBody.quaternion)
+    //shipBody.quaternion.copy(shipModel.quaternion)
+  }
 
-// // position = boxGeometry.attributes.position;
-// const colorsBox = [];
+  if (keys.space) {
+    shipBody.applyImpulse(new CANNON.Vec3(0, 20, 0));
+  }
+  updatePhysicsBodies();
 
-// for (let i = 0, l = 36; i < l; i++) {
-//   color.setHSL(Math.random() * 0.3 + 0.5, 0.75, Math.random() * 0.25 + 0.75);
-//   colorsBox.push(color.r, color.g, color.b);
-// }
+  // update three.js meshes according to cannon-es simulations
 
-// boxGeometry.setAttribute(
-//   "color",
-//   new THREE.Float32BufferAttribute(colorsBox, 3)
-// );
+  //shipModel.position.copy(shipBody.position)
+  //shipModel.quaternion.copy(shipBody.quaternion)
 
-// for (let i = 0; i < 2000; i++) {
-//   const boxMaterial = new THREE.MeshPhongMaterial({
-//     specular: 0xffffff,
-//     flatShading: true,
-//     vertexColors: true,
-//   });
-//   boxMaterial.color.setHSL(
-//     Math.random() * 0.2 + 0.5,
-//     0.75,
-//     Math.random() * 0.25 + 0.75
-//   );
+  //lerpedShipPos.lerp(shipModel.position, 0.4);
+  lerpedShipPos.lerp(shipModel.position, 0.6);
+  //lerpedShipPos.lerp(shipBody.position, 0.6);
 
-//   const box = new THREE.Mesh(boxGeometry, boxMaterial);
-//   box.position.x =
-//     Math.floor(Math.random() * 20 - 10) * 135 + Math.random() * 100;
-//   box.position.y = 10;
-//   box.position.z =
-//     Math.floor(Math.random() * 20 - 10) * 100 + Math.random() * 100;
+  camRigPos.copy(followCamRig.position);
 
-//   scene.add(box);
-// objects.push(box)
-//}
+  camWorldPos.setFromMatrixPosition(followCam.matrixWorld);
 
-function createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity) {
-  //createToken creates a token consisting of 2 objects, one within the other.
-  //Opacities may be set in order to alter the appearance as well as make the inner object visible
-  var innerGeometry = new THREE.OctahedronBufferGeometry(innerRadius, innerDetail)
-  var innerMaterial = new THREE.MeshLambertMaterial({ color: innerColour, transparent: true, opacity: innerOpacity });
-  var innerCustom = new THREE.Mesh(innerGeometry, innerMaterial);
+  shipToRigDir.copy(lerpedShipPos).sub(camRigPos).normalize();
 
-  var outerGeometry = new THREE.OctahedronBufferGeometry(outerRadius, outerDetail)
-  var outerMaterial = new THREE.MeshLambertMaterial({ color: outerColour, transparent: true, opacity: outerOpacity });
-  var outerCustom = new THREE.Mesh(outerGeometry, outerMaterial);
+  rigToTargetDist += (followingDistance - rigToTargetDist) * 0.2;
 
-  outerCustom.add(innerCustom);
-  innerCustomArray.push(innerCustom);// use separate array for innerCustom which will be global so that we can access them
-  // console.log(outerCustom);
-  return outerCustom;
+  let camToRigDist = lerpedShipPos.distanceTo(camRigPos) - rigToTargetDist;
+
+  followCamRig.position.addScaledVector(shipToRigDir, camToRigDist);
+  camWorldPos.setFromMatrixPosition(followCamTarget.matrixWorld);
+  followCamRig.position.lerp(camWorldPos, 0.02);
 }
 
+function animate() {
+  renderFrames += 1;
+  //request render scene at every frame
+  requestAnimationFrame(animate);
 
-
-function renderScene() {
-  renderFrames += 1; //count number of frames
-  renderer.clear();
-
-  const delta = clock.getDelta();
-  //Animate snake and person
-  if (mixer) mixer.update(delta);
-  // if (mixer2) mixer2.update(delta);
-
-  //let cameraDirectionNormalised = new THREE.Vector3();
-  // shipModel.position.set(camera.position.x, camera.position.y-10, camera.position.z);
-  //shipModel.translateZ(camera.position.x, camera.position.y-10, camera.position.z+10);
-  //camera.getWorldDirection(cameraDirectionNormalised);
-  //let cameraDirection = new THREE.Vector3(camera.position.x + cameraDirectionNormalised.x, shipModel.position.y , camera.position.z + cameraDirectionNormalised.z);
-  //shipModel.lookAt(cameraDirection);
-
-  //var goal = new THREE.Object3D;
-  //var temp = new THREE.Vector3();
-  //goal.position.set( 0, 50, - 10 );
-  //temp.setFromMatrixPosition(goal.matrixWorld);
-  //camera.position.set( shipModel.position.x-5, shipModel.position.y+10, shipModel.position.x - 10 );
-  //camera.position.lerp(shipModel.position, 0.2);
-  //camera.lookAt(shipModel.position);
-
-  requestAnimationFrame(renderScene); //request render scene at every frame
-  const time = performance.now();
-
-  gameStart = new Date().getTime();
-
-  var distance = gameStart - gameLoad
-  minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  seconds = Math.floor((distance % (1000 * 60)) / 1000);
-  milliseconds = Math.floor((distance % (1000 * 60)) * 1000 / 1000);
-
-  document.getElementById("timer").innerHTML = "<h1>Snake Invader</h1>"
-    + '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '<div> Score: ' +tokenScore+'</div>'+'</div></div>';
-  if(tokenScore==maxScore){ // checking if they have won the game
-    document.getElementById("congratsDisplay").style.display="block" //congrats screen
-  }
-  //Compute bounding box for player
-  playerCustom.position.set(camera.position.x, camera.position.y, camera.position.z)
-  playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
-
-  //playerBox.position.set(camera.position.x, camera.position.y, camera.position.z);
-
-  //We have a counter to count the number of frames that have passed and after a certain 
-  //number of frames, we only there after will be start checking if the player intersects with tokens 
-  //if we calculate the adjusted bounding box immediately then it is broken, so we create a small delay
-  //before creating checks.
+  //check for token intersection
   if (renderFrames >= 10) {
     //Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
     for (let k = 0; k < tokensArray.length; k++) {
@@ -489,7 +626,10 @@ function renderScene() {
         .applyMatrix4(tokensArray[k].matrixWorld);
       //Determine if player touches token
       const blue = new THREE.Color(0x0000ff);
-      if (playerBox.intersectsBox(boxArray[k]) && (tokensArray[k].material.color.equals(darkBlue))) {
+      if (
+        playerBox.intersectsBox(boxArray[k]) &&
+        tokensArray[k].material.color.equals(darkBlue)
+      ) {
         tokenScore += 1;
 
         //Make outer shape of token transparent
@@ -502,60 +642,182 @@ function renderScene() {
         //tokensArray[k].material.color.lerp();
 
         tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
-        // console.log(tokenScore);
+        console.log(tokenScore);
       }
     }
   }
+	  //update timer
+  gameStart = new Date().getTime();
 
+  var distance = gameStart - gameLoad
+  minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  milliseconds = Math.floor((distance % (1000 * 60)) * 1000 / 1000);
 
-  if (controls.isLocked === true) {
-    // const delta = (time - prevTime) / 1000;
-
-    //Set movement velocity in each direction
-    velocity.x -= velocity.x * 10.0 * delta;
-    velocity.z -= velocity.z * 10.0 * delta;
-    velocity.y -= 9.8 * 100.0 * delta; // 100.0 = mass
-
-    //Determine direction since Number(direction) evaluates to true or false since
-    //moveForward, moveBackwards, moveLeft and moveRight are all boolean values
-    //and so if moveForward is True(1) and moveBackward is false(0) then 1-0=1 and so we
-    //move in the positive z direction
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
-    direction.normalize(); // this ensures consistent movements in all directions
-
-    //Move in direction
-    if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-
-    if (moveLeft) {
-      velocity.x -= direction.x * 400.0 * delta;
-      shipModel.rotateY(0.2);
-    }
-
-    if (moveRight) {
-      velocity.x -= direction.x * 400.0 * delta;
-      shipModel.rotateY(-0.2);
-    }
-
-    controls.moveRight(-velocity.x * delta);
-    controls.moveForward(-velocity.z * delta);
-
-    controls.getObject().position.y += velocity.y * delta; // new behavior
-
-    //If player height is below 10 then set vertical velocity to 0,
-    //without this the player falls through the map
-    if (controls.getObject().position.y < 10) {
-      velocity.y = 0;
-      controls.getObject().position.y = 10;
-      canJump = true;
-    }
+  document.getElementById("timer").innerHTML = "<h1>Snake Invader</h1>"
+    + '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '<div> Score: ' +tokenScore+'</div>'+'</div></div>';
+  if(tokenScore==maxScore){ // checking if they have won the game
+    //document.getElementById("congratsDisplay").style.display="block" //congrats screen
   }
 
-  prevTime = time;
-  renderer.render(scene, camera);
+  // take timestep in physics simulation
+  stepPhysicsWorld();
+
+  // update followCam
+  followShip();
+
+  // // update three.js meshes according to cannon-es simulations
+  // updatePhysicsBodies()
+
+  // models animations
+  const delta = clock.getDelta();
+  // if (dancerMixer) dancerMixer.update(delta)
+  // if (snakeMixer) snakeMixer.update(delta)
+
+  //// render three.js
+  //renderer.clear()
+  //renderer.render(scene, camera)
+  //controls.update()
+  followCam.lookAt(shipModel.position);
+  //followCam.lookAt( shipBody.position );
+  renderer.render(scene, followCam);
+  stats.update();
 }
 
-$("#gameCanvas").append(renderer.domElement);
-// var controls = new THREE.OrbitControls(camera, renderer.domElement)
-// controls.update()
-renderScene();
+// Update projection when viewing window is resized
+function onWindowResize() {
+  followCam.aspect = window.innerWidth / window.innerHeight;
+  followCam.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// Make time step in physics simulation
+function stepPhysicsWorld() {
+  const time = performance.now() / 1000;
+  if (!lastCallTime) {
+    world.step(timeStep);
+  } else {
+    const dt = time - lastCallTime;
+    world.step(timeStep, dt);
+  }
+  lastCallTime = time;
+}
+
+// Update the positions and orientations of the dynamic three.js objects according to the current
+// physics properties of their corresponding bodies in the physics sim
+function updatePhysicsBodies() {
+  // three.js model positions updates using cannon-es simulation
+  // sphereMesh.position.copy(sphereBody.position)
+  // sphereMesh.quaternion.copy(sphereBody.quaternion)
+
+  shipModel.position.copy(shipBody.position);
+  shipModel.quaternion.copy(shipBody.quaternion);
+  playerCustom.position.copy(shipBody.position);
+  playerCustom.quaternion.copy(shipBody.quaternion);
+  playerBox
+    .copy(playerCustom.geometry.boundingBox)
+    .applyMatrix4(playerCustom.matrixWorld);
+}
+
+// load up gltf model asynchronously
+async function loadModel(path) {
+  const loader = new GLTFLoader();
+
+  const model = await loader.loadAsync(path);
+
+  return model.scene.children[0];
+}
+
+// Initialize the variables for the followCam
+function initFollowCam(camHeight, newFollowingDistance) {
+  followingDistance = newFollowingDistance;
+
+  followCam = new THREE.PerspectiveCamera(
+    70,
+    window.innerWidth / window.innerHeight,
+    1,
+    1000
+  );
+  followCam.position.set(0, camHeight, 0);
+  followCam.lookAt(scene.position);
+
+  followCamRig = new THREE.Object3D();
+  followCamTarget = new THREE.Object3D();
+  followCamTarget.position.z = -followingDistance;
+}
+
+// Initialise and create listeners for the keyboard controls
+function initShipControls() {
+  keys = {
+    a: false,
+    s: false,
+    d: false,
+    w: false,
+    space: false,
+  };
+
+  document.body.addEventListener("keydown", function (e) {
+    const key = e.code.replace("Key", "").toLowerCase();
+    if (keys[key] !== undefined) keys[key] = true;
+  });
+
+  document.body.addEventListener("keyup", function (e) {
+    const key = e.code.replace("Key", "").toLowerCase();
+    if (keys[key] !== undefined) keys[key] = false;
+  });
+}
+
+// Randomizers that can be used for building Bufffer geometries
+
+// random integer within range
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+}
+
+// random float within range
+function getRandomArbitrary(min, max) {
+  return Math.random() * (max - min) + min;
+}
+function createToken(
+  innerRadius,
+  outerRadius,
+  innerDetail,
+  outerDetail,
+  innerColour,
+  outerColour,
+  innerOpacity,
+  outerOpacity
+) {
+  //createToken creates a token consisting of 2 objects, one within the other.
+  //Opacities may be set in order to alter the appearance as well as make the inner object visible
+  var innerGeometry = new THREE.OctahedronBufferGeometry(
+    innerRadius,
+    innerDetail
+  );
+  var innerMaterial = new THREE.MeshLambertMaterial({
+    color: innerColour,
+    transparent: true,
+    opacity: innerOpacity,
+  });
+  var innerCustom = new THREE.Mesh(innerGeometry, innerMaterial);
+
+  var outerGeometry = new THREE.OctahedronBufferGeometry(
+    outerRadius,
+    outerDetail
+  );
+  var outerMaterial = new THREE.MeshLambertMaterial({
+    color: outerColour,
+    transparent: true,
+    opacity: outerOpacity,
+  });
+  var outerCustom = new THREE.Mesh(outerGeometry, outerMaterial);
+
+  outerCustom.add(innerCustom);
+  innerCustomArray.push(innerCustom); // use separate array for innerCustom which will be global so that we can access them
+  // console.log(outerCustom);
+  return outerCustom;
+}
+
+export default Game;
