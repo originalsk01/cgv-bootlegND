@@ -55,8 +55,16 @@ var playerCustom;
 //global variable to keep track of the number of frames that havebeen rendered
 var renderFrames = 0;
 
+//timer variables
+var minutes, seconds, milliseconds, gameStart, gameLoad
+
+//score variable
+var tokenScore = 0;
+var maxScore = 5;
+
 class Game {
   async init() {
+	gameLoad = new Date().getTime();
     ////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
 //get html elements
 	const timer = document.getElementById("timer");
@@ -450,7 +458,6 @@ class Game {
     initShipControls();
 
     //////////////// CREATE SHIP BOUNDING BOX //////////////////
-    console.log("fuck this");
     playerGeometry = new THREE.BoxGeometry(2, 2, 2);
     playerBox = new THREE.Box3(); //bounding box
     playerMaterial = new THREE.MeshLambertMaterial({
@@ -525,7 +532,6 @@ class Game {
       tokensArray.push(tokenCustom);
       boxArray.push(tokenBox);
     }
-    console.log("ahhhhhhhhhhh", tokensArray);
 
     clock = new THREE.Clock();
 
@@ -624,7 +630,7 @@ function animate() {
         playerBox.intersectsBox(boxArray[k]) &&
         tokensArray[k].material.color.equals(darkBlue)
       ) {
-        //tokenScore += 1;
+        tokenScore += 1;
 
         //Make outer shape of token transparent
         tokensArray[k].material.transparent = true;
@@ -636,7 +642,7 @@ function animate() {
         //tokensArray[k].material.color.lerp();
 
         tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
-        // console.log(tokenScore);
+        console.log(tokenScore);
       }
     }
   }
