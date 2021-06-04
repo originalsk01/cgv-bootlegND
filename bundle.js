@@ -56109,11 +56109,11 @@
 			// Function to create a platform of size legth by width in world units
 			// out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
 			// your machine would otherwise die if it tried to render this many grouped objects normally
-			const createPlatform =(length,width,tileColorMap)=>{
+			const createPlatform =(length,width,height,tileColorMap)=>{
 				
 				const tiles = [];
 
-				const tileGeometry = new BoxGeometry(1,0.25, 1);
+				const tileGeometry = new BoxGeometry(1,1, 1);
 				
 				//const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
 				const tileMaterial = new MeshPhongMaterial({ map: tileColorMap });
@@ -56121,24 +56121,28 @@
 				const midpointOffset=0.5;
 
 				
-				for(let x=0;x<length;x++){
-					const xpos=x+midpointOffset;
-					for(let z=0;z<width;z++){
-						const zpos=z+midpointOffset;
-						// instead of creating a new geometry, we just clone the bufferGeometry instance
-						const newTile = tileGeometry.clone();
-						const y =  0; //getRandomInt(0,5)
-						newTile.applyMatrix4( new Matrix4().makeTranslation(xpos,y,zpos) );
-						// then, we push this bufferGeometry instance in our array
-						tiles.push(newTile);
+				for(let y=0;y<height;y++){
+					const ypos=y+midpointOffset;
+					for(let x=0;x<length;x++){
+						const xpos=x+midpointOffset;
+						for(let z=0;z<width;z++){
+							const zpos=z+midpointOffset;
+							// instead of creating a new geometry, we just clone the bufferGeometry instance
+							const newTile = tileGeometry.clone();
+							//const y =  0 //getRandomInt(0,5)
+							newTile.applyMatrix4( new Matrix4().makeTranslation(xpos,ypos,zpos) );
+							// then, we push this bufferGeometry instance in our array
+							tiles.push(newTile);
+						}
+					
 					}
-				
 				}
 
 				// merge into single super buffer geometry;
 				const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
 				// centre super geometry at local origin
-				geometriesTiles.applyMatrix4( new Matrix4().makeTranslation(-length/2,0,-width/2 ) );
+				//geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
+				geometriesTiles.applyMatrix4( new Matrix4().makeTranslation(-length/2,-height/2,-width/2 ) );
 				geometriesTiles.applyMatrix4( new Matrix4().makeScale(gridSquareSize,gridSquareSize,gridSquareSize) );
 
 
@@ -56148,7 +56152,7 @@
 				// place lower left corner of platform mesh  at X-Z (0,0)
 				platform.translateX(gridSquareSize*length/2);
 				platform.translateZ(gridSquareSize*width/2);
-			
+				platform.translateY(gridSquareSize*height/2);
 				return platform
 			};
 
@@ -56158,11 +56162,13 @@
 				
 				// translate platform in world coordinates
 				x=x*gridSquareSize;
-				y=y*gridSquareSize*0.25;
+				y=y*gridSquareSize;
 				z=z*gridSquareSize;
 				platform.applyMatrix4( new Matrix4().makeTranslation(x,y,z));
 
-				
+
+
+
 				// create cannon body for platform
 				const platformBody = new Body({
 					type: Body.STATIC,
@@ -56190,18 +56196,18 @@
 				let colorMap;
 
 				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,2,colorMap),0,5,0);
+				newPlatform = placePlatform(createPlatform(2,2,1,colorMap),0,5,0);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 
 				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(50,50,colorMap),-25,0,-25);
+				newPlatform = placePlatform(createPlatform(50,50,1,colorMap),-25,0,-25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,2,colorMap),2,1,2);
+				newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
@@ -56242,7 +56248,7 @@
 				material: slipperyMaterial,
 				angularFactor: new Vec3(0,1,0),
 				shape: S(shipModel).shape,
-				linearDamping: 0.75,
+				linearDamping: 0.5,
 				angularDamping: 0.9,
 			});
 			shipBody.position.set(25, 10, 25);
@@ -56286,9 +56292,9 @@
 	    let shipToRigDir = new Vector3;
 
 	    if ( keys.w )
-	        shipSpeed = 10;
+	        shipSpeed = 20;
 	    else if ( keys.s )
-	        shipSpeed = -10;
+	        shipSpeed = -20;
 
 	    shipVelocity += ( shipSpeed - shipVelocity ) * .01;
 	    //updatePhysicsBodies()
@@ -56303,7 +56309,7 @@
 	    if ( keys.a ){
 	        //updatePhysicsBodies()
 			//shipModel.rotateY(0.05);
-			shipRotationRad += 0.025;
+			shipRotationRad += 0.05;
 			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
 			//shipModel.quaternion.copy(shipBody.quaternion)
 			//shipBody.quaternion.copy(shipModel.quaternion)
@@ -56311,7 +56317,7 @@
 	    else if ( keys.d ){
 	        //updatePhysicsBodies()
 			//shipModel.rotateY(-0.05);
-			shipRotationRad -= 0.025;
+			shipRotationRad -= 0.05;
 			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
 			//shipModel.quaternion.copy(shipBody.quaternion)
 			//shipBody.quaternion.copy(shipModel.quaternion)
