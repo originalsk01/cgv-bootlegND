@@ -55963,7 +55963,6 @@
 	let followingDistance = 15;
 	let rigToTargetDist = followingDistance;
 	let shipVelocity = 0.0;
-	let shipRotationRad = 0;
 
 
 	class Game {
@@ -56251,17 +56250,15 @@
 				material: slipperyMaterial,
 				angularFactor: new Vec3(0,1,0),
 				shape: S(shipModel).shape,
-				linearDamping: 0.9,
+				linearDamping: 0.1,
 				angularDamping: 0.99,
 			});
 			shipBody.position.set(25, 10, 25);
 			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
 			world.addBody(shipBody);
 			//console.log(shipBody)
-			//updatePhysicsBodies()
+			updatePhysicsBodies();
 			
-			console.log(shipBody);
-			console.log(shipModel);
 			
 			// Initialze followCam (height of camera above the ship, following distance behind ship)
 			initFollowCam(15,20);
@@ -56295,35 +56292,35 @@
 	    let shipToRigDir = new Vector3;
 
 	    if ( keys.w )
-	        shipSpeed = 10;
+	        shipSpeed = 1;
 	    else if ( keys.s )
-	        shipSpeed = -10;
+	        shipSpeed = -1;
 
 	    shipVelocity += ( shipSpeed - shipVelocity ) * .01;
-	    //updatePhysicsBodies()
-		//shipModel.translateZ( shipVelocity );
+	    updatePhysicsBodies();
+		shipModel.translateZ( shipVelocity );
 		//shipBody.position.z+=shipVelocity
 		//shipBody.velocity.set(0,0,shipVelocity)
-		shipBody.applyLocalImpulse(new Vec3(0,0,shipVelocity));
+		//shipBody.applyLocalImpulse(new CANNON.Vec3(0,0,shipVelocity))
 		//shipModel.position.copy(shipBody.position)
-		//shipBody.position.copy(shipModel.position)
+		shipBody.position.copy(shipModel.position);
 		
 		//shipBody.applyImpulse(new CANNON.Vec3(0,0,shipVelocity))
 	    if ( keys.a ){
-	        //updatePhysicsBodies()
-			//shipModel.rotateY(0.05);
-			shipRotationRad += 0.05;
-			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
+	        updatePhysicsBodies();
+			shipModel.rotateY(0.05);
+			//shipRotationRad += 0.05
+			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), shipRotationRad);
 			//shipModel.quaternion.copy(shipBody.quaternion)
-			//shipBody.quaternion.copy(shipModel.quaternion)
+			shipBody.quaternion.copy(shipModel.quaternion);
 		}
 	    else if ( keys.d ){
-	        //updatePhysicsBodies()
-			//shipModel.rotateY(-0.05);
-			shipRotationRad -= 0.05;
-			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
+	        updatePhysicsBodies();
+			shipModel.rotateY(-0.05);
+			//shipRotationRad -= 0.05
+			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), shipRotationRad);
 			//shipModel.quaternion.copy(shipBody.quaternion)
-			//shipBody.quaternion.copy(shipModel.quaternion)
+			shipBody.quaternion.copy(shipModel.quaternion);
 		}
 
 		if (keys.space);
@@ -56336,8 +56333,7 @@
 		//shipModel.quaternion.copy(shipBody.quaternion)
 		
 		//lerpedShipPos.lerp(shipModel.position, 0.4);
-		//lerpedShipPos.lerp(shipModel.position, 0.6);
-		lerpedShipPos.lerp(shipBody.position, 0.6);
+		lerpedShipPos.lerp(shipModel.position, 0.6);
 	    
 	    camRigPos.copy(followCamRig.position);
 
@@ -56380,7 +56376,6 @@
 		//renderer.render(scene, camera)
 		//controls.update()
 		followCam.lookAt( shipModel.position );
-		//followCam.lookAt( shipBody.position );
 		renderer.render(scene, followCam);
 		stats.update();
 	}
