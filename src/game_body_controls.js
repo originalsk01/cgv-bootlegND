@@ -21,6 +21,8 @@ const white = "rgb(255,255,255)";
 const red = "rgb(255,0,0)";
 const green = "rgb(10,200,10)";
 const blue = "rgb(110,197,233)";
+const vibrantYellow = new THREE.Color(0xf49f1c);
+const darkBlue = new THREE.Color(0x003380);
 
 // cannon-es global variables
 let world;
