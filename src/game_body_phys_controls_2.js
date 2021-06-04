@@ -42,6 +42,10 @@ let shipVelocity = 0.0
 let shipRotationRad = 0
 
 
+// physics cam
+let camRig
+
+
 class Game {
 
 	async init() {
@@ -86,7 +90,7 @@ class Game {
 
 		// Normal camera initial position and orientation
 		//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
-		//camera.position.set(0,10,10)
+		camera.position.set(50,50,25)
 
 
 		// Renderer
@@ -100,8 +104,8 @@ class Game {
 
 
 		// Orbit Controls for normal camera (currently does nothing)
-		//const controls = new OrbitControls(camera, renderer.domElement)
-		//controls.update()
+		const controls = new OrbitControls(camera, renderer.domElement)
+		controls.update()
 		
 		// Axes Helper
 		const axes = new THREE.AxesHelper(100)
@@ -179,14 +183,14 @@ class Game {
 		scene.add(sphereMesh)
 
 		
-		// Create sphere body in physics world
-		// sphereBody = new CANNON.Body({
-		// 	mass: 50, // kg
-		// 	//shape: new CANNON.Sphere(radius),
-		// 	shape: threeToCannon(sphereMesh, {type: ShapeType.SPHERE}).shape,
-		// })
-		// sphereBody.position.set(20, 50, 20)
-		// world.addBody(sphereBody)
+		//Create sphere body in physics world
+		sphereBody = new CANNON.Body({
+			mass: 50, // kg
+			//shape: new CANNON.Sphere(radius),
+			shape: threeToCannon(sphereMesh, {type: ShapeType.SPHERE}).shape,
+		})
+		sphereBody.position.set(20, 50, 20)
+		world.addBody(sphereBody)
 
 
 		//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
@@ -331,24 +335,21 @@ class Game {
 			angularDamping: 0.99,
 		})
 		shipBody.position.set(25, 10, 25)
-		//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
 		world.addBody(shipBody)
-		//console.log(shipBody)
-		//updatePhysicsBodies()
-		
-		console.log(shipBody)
-		console.log(shipModel)
-		
-		// Initialze followCam (height of camera above the ship, following distance behind ship)
-		initFollowCam(15,20)
-		//controls = new OrbitControls(followCam, renderer.domElement)
-		//controls.target=new THREE.Vector3( shipModel.position.x, shipModel.position.y, shipModel.position.z)
+
+
+		followCam = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+		followCam.lookAt( shipModel );
+
+		camRig = new THREE.Object3D;
+		camRig.position.set(0,10,-15)
+		camRig.add(followCam)
 
 
 		// Place the target of the followCam on the ship model & place the followCam itself in a rig above the ship
-		shipModel.add( followCamTarget )
-    	followCamRig.add( followCam )
+		shipModel.add( camRig )
 		scene.add(shipModel)
+
 
 		// Initialize ship keyboard control
 		initShipControls()
@@ -405,31 +406,8 @@ class Game {
 	if (keys.space){
 		//shipBody.applyImpulse(new CANNON.Vec3(0,20,0))		
 	}
+
 	updatePhysicsBodies()
-
-	// update three.js meshes according to cannon-es simulations
-
-	
-	//shipModel.position.copy(shipBody.position)
-	//shipModel.quaternion.copy(shipBody.quaternion)
-	
-	//lerpedShipPos.lerp(shipModel.position, 0.4);
-	//lerpedShipPos.lerp(shipModel.position, 0.6);
-	lerpedShipPos.lerp(shipBody.position, 0.6);
-    
-    camRigPos.copy(followCamRig.position);
-
-    camWorldPos.setFromMatrixPosition(followCam.matrixWorld);
-  
-    shipToRigDir.copy( lerpedShipPos ).sub( camRigPos ).normalize();
-  
-    rigToTargetDist += ( followingDistance - rigToTargetDist ) * 0.2;
-  
-    let camToRigDist = lerpedShipPos.distanceTo( camRigPos ) - rigToTargetDist
-  
-    followCamRig.position.addScaledVector( shipToRigDir, camToRigDist );
-    camWorldPos.setFromMatrixPosition(followCamTarget.matrixWorld);
-    followCamRig.position.lerp(camWorldPos, 0.02);
 
 }
 
@@ -460,6 +438,7 @@ class Game {
 	followCam.lookAt( shipModel.position );
 	//followCam.lookAt( shipBody.position );
 	renderer.render(scene, followCam)
+	//renderer.render(scene, camera)
 	stats.update()
 }
 
@@ -469,6 +448,9 @@ function onWindowResize() {
 	followCam.aspect = window.innerWidth / window.innerHeight;
 	followCam.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
+	// camera.aspect = window.innerWidth / window.innerHeight;
+	// camera.updateProjectionMatrix();
+	// renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
 
@@ -489,12 +471,14 @@ function stepPhysicsWorld(){
 // physics properties of their corresponding bodies in the physics sim
 function updatePhysicsBodies(){
 	// three.js model positions updates using cannon-es simulation
-	// sphereMesh.position.copy(sphereBody.position)
-	// sphereMesh.quaternion.copy(sphereBody.quaternion)
+	sphereMesh.position.copy(sphereBody.position)
+	sphereMesh.quaternion.copy(sphereBody.quaternion)
 
 	shipModel.position.copy(shipBody.position)
 	shipModel.quaternion.copy(shipBody.quaternion)
+
 }
+
 
 // load up gltf model asynchronously
 async function loadModel(path){
@@ -505,18 +489,6 @@ async function loadModel(path){
 	return model.scene.children[0]
 }
 
-// Initialize the variables for the followCam
-function initFollowCam(camHeight, newFollowingDistance){
-    followingDistance = newFollowingDistance
-    
-    followCam = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-    followCam.position.set( 0, camHeight, 0 );
-    followCam.lookAt( scene.position );
-
-    followCamRig = new THREE.Object3D;
-    followCamTarget = new THREE.Object3D;
-    followCamTarget.position.z = -followingDistance;
-}
 
 // Initialise and create listeners for the keyboard controls
 function initShipControls(){
