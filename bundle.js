@@ -55963,6 +55963,7 @@
 	let followingDistance = 15;
 	let rigToTargetDist = followingDistance;
 	let shipVelocity = 0.0;
+	let shipRotationRad = 0;
 
 
 	class Game {
@@ -55994,7 +55995,7 @@
 
 			// Physics world
 			world = new World({
-				gravity: new Vec3(0, -10, 0), // m/s²
+				gravity: new Vec3(0, -20, 0), // m/s²
 			});
 			//world.gravity.set(0, -20, 0)
 			//world.gravity.set(0, 0, 0)
@@ -56101,15 +56102,6 @@
 			sphereMesh = new Mesh(geometry, material);
 			scene.add(sphereMesh);
 
-			
-			// Create sphere body in physics world
-			// sphereBody = new CANNON.Body({
-			// 	mass: 50, // kg
-			// 	//shape: new CANNON.Sphere(radius),
-			// 	shape: threeToCannon(sphereMesh, {type: ShapeType.SPHERE}).shape,
-			// })
-			// sphereBody.position.set(20, 50, 20)
-			// world.addBody(sphereBody)
 
 
 			//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
@@ -56250,15 +56242,17 @@
 				material: slipperyMaterial,
 				angularFactor: new Vec3(0,1,0),
 				shape: S(shipModel).shape,
-				linearDamping: 0.1,
-				angularDamping: 0.99,
+				linearDamping: 0.75,
+				angularDamping: 0.9,
 			});
 			shipBody.position.set(25, 10, 25);
 			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
 			world.addBody(shipBody);
 			//console.log(shipBody)
-			updatePhysicsBodies();
+			//updatePhysicsBodies()
 			
+			console.log(shipBody);
+			console.log(shipModel);
 			
 			// Initialze followCam (height of camera above the ship, following distance behind ship)
 			initFollowCam(15,20);
@@ -56292,38 +56286,41 @@
 	    let shipToRigDir = new Vector3;
 
 	    if ( keys.w )
-	        shipSpeed = 1;
+	        shipSpeed = 10;
 	    else if ( keys.s )
-	        shipSpeed = -1;
+	        shipSpeed = -10;
 
 	    shipVelocity += ( shipSpeed - shipVelocity ) * .01;
-	    updatePhysicsBodies();
-		shipModel.translateZ( shipVelocity );
+	    //updatePhysicsBodies()
+		//shipModel.translateZ( shipVelocity );
 		//shipBody.position.z+=shipVelocity
 		//shipBody.velocity.set(0,0,shipVelocity)
-		//shipBody.applyLocalImpulse(new CANNON.Vec3(0,0,shipVelocity))
+		shipBody.applyLocalImpulse(new Vec3(0,0,shipVelocity));
 		//shipModel.position.copy(shipBody.position)
-		shipBody.position.copy(shipModel.position);
+		//shipBody.position.copy(shipModel.position)
 		
 		//shipBody.applyImpulse(new CANNON.Vec3(0,0,shipVelocity))
 	    if ( keys.a ){
-	        updatePhysicsBodies();
-			shipModel.rotateY(0.05);
-			//shipRotationRad += 0.05
-			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), shipRotationRad);
+	        //updatePhysicsBodies()
+			//shipModel.rotateY(0.05);
+			shipRotationRad += 0.025;
+			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
 			//shipModel.quaternion.copy(shipBody.quaternion)
-			shipBody.quaternion.copy(shipModel.quaternion);
+			//shipBody.quaternion.copy(shipModel.quaternion)
 		}
 	    else if ( keys.d ){
-	        updatePhysicsBodies();
-			shipModel.rotateY(-0.05);
-			//shipRotationRad -= 0.05
-			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), shipRotationRad);
+	        //updatePhysicsBodies()
+			//shipModel.rotateY(-0.05);
+			shipRotationRad -= 0.025;
+			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
 			//shipModel.quaternion.copy(shipBody.quaternion)
-			shipBody.quaternion.copy(shipModel.quaternion);
+			//shipBody.quaternion.copy(shipModel.quaternion)
 		}
 
-		if (keys.space);
+		if (keys.space){
+			shipBody.applyImpulse(new Vec3(0,20,0));
+
+		}
 		updatePhysicsBodies();
 
 		// update three.js meshes according to cannon-es simulations
@@ -56334,6 +56331,7 @@
 		
 		//lerpedShipPos.lerp(shipModel.position, 0.4);
 		lerpedShipPos.lerp(shipModel.position, 0.6);
+		//lerpedShipPos.lerp(shipBody.position, 0.6);
 	    
 	    camRigPos.copy(followCamRig.position);
 
@@ -56376,6 +56374,7 @@
 		//renderer.render(scene, camera)
 		//controls.update()
 		followCam.lookAt( shipModel.position );
+		//followCam.lookAt( shipBody.position );
 		renderer.render(scene, followCam);
 		stats.update();
 	}
