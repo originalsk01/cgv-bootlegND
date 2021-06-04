@@ -499,9 +499,10 @@ class Game {
       //console.log('Outer',outerTokenCustom);
 
       //Generate random positions for each of the tokens
-      var randomX = Math.floor(Math.random() * 100);
-      var randomZ = Math.floor(Math.random() * 100);
-      tokenCustom.position.set(randomX, 30, randomZ);
+      var randomX = Math.floor(Math.random() * 250);
+      var randomZ = Math.floor(Math.random() * 250);
+	  var randomY = Math.floor(Math.random() * 100) + 10;
+      tokenCustom.position.set(randomX, randomY, randomZ);
       const tokenBox = new THREE.Box3(); //bounding box
       // ensure the bounding box is computed for its geometry
       // this should be done only once (assuming static geometries)
