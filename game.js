@@ -58,7 +58,9 @@ var renderFrames = 0;
 class Game {
   async init() {
     ////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
-
+//get html elements
+	const timer = document.getElementById("timer");
+   
     // Scene
     scene = new THREE.Scene();
     //scene.background = new THREE.Color(0xa0a0a0)
@@ -637,6 +639,19 @@ function animate() {
         // console.log(tokenScore);
       }
     }
+  }
+	  //update timer
+  gameStart = new Date().getTime();
+
+  var distance = gameStart - gameLoad
+  minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  milliseconds = Math.floor((distance % (1000 * 60)) * 1000 / 1000);
+
+  document.getElementById("timer").innerHTML = "<h1>Snake Invader</h1>"
+    + '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '<div> Score: ' +tokenScore+'</div>'+'</div></div>';
+  if(tokenScore==maxScore){ // checking if they have won the game
+    //document.getElementById("congratsDisplay").style.display="block" //congrats screen
   }
 
   // take timestep in physics simulation
