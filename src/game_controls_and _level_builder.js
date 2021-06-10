@@ -42,10 +42,18 @@ let shipVelocity = 0.0
 let shipRotationRad = 0
 
 
+
 class Game {
 
 	async init() {
 
+
+
+		lerpedShipPos = new THREE.Vector3
+		followingDistance = 15
+		rigToTargetDist = followingDistance
+		shipVelocity = 0.0
+		shipRotationRad = 0
 
 		////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
 
@@ -87,7 +95,7 @@ class Game {
 		// Normal camera initial position and orientation
 		//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
 		//camera.position.set(0,10,10)
-
+		
 
 		// Renderer
 		renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -98,6 +106,9 @@ class Game {
 		window.addEventListener( 'resize', onWindowResize, false );
 		document.body.appendChild(renderer.domElement)
 
+
+		//var pmremGenerator = new THREE.PMREMGenerator( renderer);
+		//pmremGenerator.fromScene
 
 		// Orbit Controls for normal camera (currently does nothing)
 		//const controls = new OrbitControls(camera, renderer.domElement)
@@ -191,10 +202,10 @@ class Game {
 
 			const tileGeometry = new THREE.BoxGeometry(1,1, 1)
 			
-			//const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
+			const tileEmissiveMap = new THREE.TextureLoader().load('./textures/Sci-fi_Floor_001_emission.jpg')
 			const tileMaterial = new THREE.MeshPhongMaterial({ 
 				map: tileColorMap,
-				emissiveMap: "./textures/tech_floor/Sci-fi_Floor_001_emission.jpg",
+				emissiveMap: tileEmissiveMap,
 				emissive: "#ffffff"
 			})
 		
@@ -408,6 +419,9 @@ class Game {
 		shipBody.applyImpulse(new CANNON.Vec3(0,20,0))
 
 	}
+	if(keys.r){
+		init()
+	}
 	updatePhysicsBodies()
 
 	// update three.js meshes according to cannon-es simulations
@@ -530,6 +544,7 @@ function initShipControls(){
         d: false,
         w: false,
 		space: false,
+		r:false,
     };
 
     document.body.addEventListener( 'keydown', function(e) {

@@ -29394,121 +29394,6 @@
 
 	}
 
-	class SphereGeometry extends BufferGeometry {
-
-		constructor( radius = 1, widthSegments = 8, heightSegments = 6, phiStart = 0, phiLength = Math.PI * 2, thetaStart = 0, thetaLength = Math.PI ) {
-
-			super();
-			this.type = 'SphereGeometry';
-
-			this.parameters = {
-				radius: radius,
-				widthSegments: widthSegments,
-				heightSegments: heightSegments,
-				phiStart: phiStart,
-				phiLength: phiLength,
-				thetaStart: thetaStart,
-				thetaLength: thetaLength
-			};
-
-			widthSegments = Math.max( 3, Math.floor( widthSegments ) );
-			heightSegments = Math.max( 2, Math.floor( heightSegments ) );
-
-			const thetaEnd = Math.min( thetaStart + thetaLength, Math.PI );
-
-			let index = 0;
-			const grid = [];
-
-			const vertex = new Vector3();
-			const normal = new Vector3();
-
-			// buffers
-
-			const indices = [];
-			const vertices = [];
-			const normals = [];
-			const uvs = [];
-
-			// generate vertices, normals and uvs
-
-			for ( let iy = 0; iy <= heightSegments; iy ++ ) {
-
-				const verticesRow = [];
-
-				const v = iy / heightSegments;
-
-				// special case for the poles
-
-				let uOffset = 0;
-
-				if ( iy == 0 && thetaStart == 0 ) {
-
-					uOffset = 0.5 / widthSegments;
-
-				} else if ( iy == heightSegments && thetaEnd == Math.PI ) {
-
-					uOffset = - 0.5 / widthSegments;
-
-				}
-
-				for ( let ix = 0; ix <= widthSegments; ix ++ ) {
-
-					const u = ix / widthSegments;
-
-					// vertex
-
-					vertex.x = - radius * Math.cos( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );
-					vertex.y = radius * Math.cos( thetaStart + v * thetaLength );
-					vertex.z = radius * Math.sin( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );
-
-					vertices.push( vertex.x, vertex.y, vertex.z );
-
-					// normal
-
-					normal.copy( vertex ).normalize();
-					normals.push( normal.x, normal.y, normal.z );
-
-					// uv
-
-					uvs.push( u + uOffset, 1 - v );
-
-					verticesRow.push( index ++ );
-
-				}
-
-				grid.push( verticesRow );
-
-			}
-
-			// indices
-
-			for ( let iy = 0; iy < heightSegments; iy ++ ) {
-
-				for ( let ix = 0; ix < widthSegments; ix ++ ) {
-
-					const a = grid[ iy ][ ix + 1 ];
-					const b = grid[ iy ][ ix ];
-					const c = grid[ iy + 1 ][ ix ];
-					const d = grid[ iy + 1 ][ ix + 1 ];
-
-					if ( iy !== 0 || thetaStart > 0 ) indices.push( a, b, d );
-					if ( iy !== heightSegments - 1 || thetaEnd < Math.PI ) indices.push( b, c, d );
-
-				}
-
-			}
-
-			// build geometry
-
-			this.setIndex( indices );
-			this.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
-			this.setAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
-			this.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
-
-		}
-
-	}
-
 	/**
 	 * parameters = {
 	 *  color: <THREE.Color>
@@ -55939,7 +55824,7 @@
 
 	// three.js global vars
 	let scene, stats, renderer, clock;
-	let sphereMesh, shipModel;
+	let shipModel;
 
 
 	// global asset paths
@@ -55949,22 +55834,23 @@
 	// cannon-es global variables
 	let world;
 	let shipBody;
-	const timeStep = 1 / 60; 
+	const timeStep = 1.0 / 60.0; 
 	let lastCallTime;
+
 
 
 	// player control global variables
 	let keys;
 
 
-	// followCam global variables
-	let followCam, followCamRig, followCamTarget;
-	let lerpedShipPos = new Vector3;
-	let followingDistance = 15;
-	let rigToTargetDist = followingDistance;
-	let shipVelocity = 0.0;
-	let shipRotationRad = 0;
+	// flight camera a& controls global variables
 
+	let flightCamera;
+	let acceleration = 0; 
+	let pitchSpeed = 0;
+	let rollSpeed = 0;
+	let yawSpeed = 0;
+	let accelerationImpulse;
 
 	class Game {
 
@@ -55995,22 +55881,31 @@
 
 			// Physics world
 			world = new World({
-				gravity: new Vec3(0, -20, 0), // m/s²
+				// gravity: new CANNON.Vec3(0, -9.81, 0), // m/s²
 			});
 			//world.gravity.set(0, -20, 0)
-			//world.gravity.set(0, 0, 0)
-	        //world.broadphase.useBoundingBoxes = true
+			world.gravity.set(0, 0, 0);
+			world.broadphase = new NaiveBroadphase(); // Detect coilliding objects
+			world.solver.iterations = 5; // collision detection sampling rate
+
 
 			stats = new Stats();
 			document.body.appendChild(stats.dom);
 
 			
 			// Normale camera
-			new PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 );
+			//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 )
 
 			// Normal camera initial position and orientation
 			//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
 			//camera.position.set(0,10,10)
+			
+
+			// Initialise flight camera
+			const fcFielOfView = 75;
+			const fcNear = 0.1;
+			const fcFar = 1000;
+			flightCamera = new PerspectiveCamera( fcFielOfView, window.innerWidth / window.innerHeight, fcNear, fcFar );
 
 
 			// Renderer
@@ -56022,6 +55917,9 @@
 			window.addEventListener( 'resize', onWindowResize, false );
 			document.body.appendChild(renderer.domElement);
 
+
+			//var pmremGenerator = new THREE.PMREMGenerator( renderer);
+			//pmremGenerator.fromScene
 
 			// Orbit Controls for normal camera (currently does nothing)
 			//const controls = new OrbitControls(camera, renderer.domElement)
@@ -56089,19 +55987,10 @@
 			const groundBody = new Body({
 				type: Body.STATIC, // can also be achieved by setting the mass to 0
 				shape: new Plane(),
-				material: groundMaterial ,
+				//material: groundMaterial ,
 			});
 			groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
-			//world.addBody(groundBody)
-
-
-			// Add sphere model to three scene
-			const radius = 5; // m
-			const geometry = new SphereGeometry(radius,20,20);
-			const material = new MeshLambertMaterial({ color: blue });
-			sphereMesh = new Mesh(geometry, material);
-			scene.add(sphereMesh);
-
+			world.addBody(groundBody);
 
 
 			//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
@@ -56115,8 +56004,13 @@
 
 				const tileGeometry = new BoxGeometry(1,1, 1);
 				
-				//const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
-				const tileMaterial = new MeshPhongMaterial({ map: tileColorMap });
+				const tileEmissiveMap = new TextureLoader().load('./textures/Sci-fi_Floor_001_emission.jpg');
+				const tileMaterial = new MeshPhongMaterial({ 
+					map: tileColorMap,
+					emissiveMap: tileEmissiveMap,
+					emissive: "#ffffff"
+				});
+			
 				
 				const midpointOffset=0.5;
 
@@ -56196,18 +56090,18 @@
 				let colorMap;
 
 				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,2,1,colorMap),0,5,0);
+				newPlatform = placePlatform(createPlatform(2,2,1,colorMap),-5,5,0);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 
 				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(50,50,1,colorMap),-25,0,-25);
+				newPlatform = placePlatform(createPlatform(2,5,1,colorMap),-15,2,-15);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2);
+				newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,2,2);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
@@ -56234,42 +56128,43 @@
 			//console.log(shipModel)
 			
 			// Rotate children of ship model to correct their orientation
-			shipModel.children[0].quaternion.setFromAxisAngle(new Vector3(0,1,0), Math.PI);
-			shipModel.children[1].quaternion.setFromAxisAngle(new Vector3(0,1,0), Math.PI);
+			//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
+			//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
 			
 			shipModel.applyMatrix4( new Matrix4().makeScale(1.9,1.9,1.9) );
 			shipModel.applyMatrix4( new Matrix4().makeTranslation(-5,0,-5) );
 
-			
-			
+			scene.add(shipModel);
+			shipModel.add(flightCamera);
+			flightCamera.position.set(0,4,7.5);
+
 			// create cannon body for ship
 			shipBody = new Body({
-				mass: 10,
+				mass: 1,
 				material: slipperyMaterial,
-				angularFactor: new Vec3(0,1,0),
+				//angularFactor: new CANNON.Vec3(0,1,0),
 				shape: S(shipModel).shape,
-				linearDamping: 0.5,
-				angularDamping: 0.9,
+				//linearDamping: 0.5,
+				//angularDamping: 0.9,
 			});
-			shipBody.position.set(25, 10, 25);
-			//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
+			shipBody.position.set(0, 3, 0);
+			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), Math.PI);
 			world.addBody(shipBody);
 			//console.log(shipBody)
-			//updatePhysicsBodies()
-			
-			console.log(shipBody);
-			console.log(shipModel);
-			
-			// Initialze followCam (height of camera above the ship, following distance behind ship)
-			initFollowCam(15,20);
-			//controls = new OrbitControls(followCam, renderer.domElement)
-			//controls.target=new THREE.Vector3( shipModel.position.x, shipModel.position.y, shipModel.position.z)
 
 
-			// Place the target of the followCam on the ship model & place the followCam itself in a rig above the ship
-			shipModel.add( followCamTarget );
-	    	followCamRig.add( followCam );
-			scene.add(shipModel);
+			// var objMaterial = new THREE.MeshNormalMaterial();
+			// cubeMesh = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 1 ), objMaterial );
+			// scene.add( cubeMesh );
+			// cubeMesh.add( flightCamera );
+			// flightCamera.position.set(0,2,5);
+			
+			// var shape1 = new CANNON.Box(new CANNON.Vec3(0.5,0.5,0.5));
+			// cubeBody = new CANNON.Body({mass: 1});
+			// cubeBody.addShape(shape1);
+			// cubeBody.position.set(0,2,0);
+			// world.addBody(cubeBody);
+
 
 			// Initialize ship keyboard control
 			initShipControls();
@@ -56282,77 +56177,37 @@
 	}
 
 
-	 function followShip(){
-	    //shipBody.applyLocalImpulse(new CANNON.Vec3(0,0.1,0))
-		//shipBody.velocity.set(0,0.08,0)
-	    let shipSpeed = 0.0;
-		//let shipSpeed = 1;
-	    let camRigPos = new Vector3;
-	    let camWorldPos = new Vector3;
-	    let shipToRigDir = new Vector3;
+	function fly(){
 
-	    if ( keys.w )
-	        shipSpeed = 20;
-	    else if ( keys.s )
-	        shipSpeed = -20;
-
-	    shipVelocity += ( shipSpeed - shipVelocity ) * .01;
-	    //updatePhysicsBodies()
-		//shipModel.translateZ( shipVelocity );
-		//shipBody.position.z+=shipVelocity
-		//shipBody.velocity.set(0,0,shipVelocity)
-		shipBody.applyLocalImpulse(new Vec3(0,0,shipVelocity));
-		//shipModel.position.copy(shipBody.position)
-		//shipBody.position.copy(shipModel.position)
+		if (keys.arrowup){acceleration = -1;}
+		if (keys.arrowdown){acceleration = 1;}
+		if (keys.arrowup||keys.arrowdown){
+			let accelerationImpulseDirection = new Vec3(0,0,acceleration);
+			accelerationImpulse = shipBody.quaternion.vmult( accelerationImpulseDirection );
+			shipBody.applyImpulse ( accelerationImpulse); 	
 		
-		//shipBody.applyImpulse(new CANNON.Vec3(0,0,shipVelocity))
-	    if ( keys.a ){
-	        //updatePhysicsBodies()
-			//shipModel.rotateY(0.05);
-			shipRotationRad += 0.05;
-			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
-			//shipModel.quaternion.copy(shipBody.quaternion)
-			//shipBody.quaternion.copy(shipModel.quaternion)
-		}
-	    else if ( keys.d ){
-	        //updatePhysicsBodies()
-			//shipModel.rotateY(-0.05);
-			shipRotationRad -= 0.05;
-			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), shipRotationRad);
-			//shipModel.quaternion.copy(shipBody.quaternion)
-			//shipBody.quaternion.copy(shipModel.quaternion)
 		}
 
-		if (keys.space){
-			shipBody.applyImpulse(new Vec3(0,20,0));
+		if( keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright ){
+			if (keys.w) { pitchSpeed = -0.5; }	else if (keys.s) { pitchSpeed = 0.5; } else { pitchSpeed = 0; }
+			if (keys.a) { rollSpeed = 1; } else if (keys.d){ rollSpeed = -1; } else { rollSpeed = 0; }
+			if (keys.arrowleft) { yawSpeed = 1; } else if (keys.arrowright){ yawSpeed = -1; } else { yawSpeed = 0; }
+			// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
+			// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
+			// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
 
+			var directionVector = new Vec3(pitchSpeed, yawSpeed, rollSpeed);
+			var directionVector = shipBody.quaternion.vmult( directionVector );
+
+			shipBody.angularVelocity.set(
+				directionVector.x,
+				directionVector.y,
+				directionVector.z
+			);
 		}
-		updatePhysicsBodies();
 
-		// update three.js meshes according to cannon-es simulations
-
-		
-		//shipModel.position.copy(shipBody.position)
-		//shipModel.quaternion.copy(shipBody.quaternion)
-		
-		//lerpedShipPos.lerp(shipModel.position, 0.4);
-		lerpedShipPos.lerp(shipModel.position, 0.6);
-		//lerpedShipPos.lerp(shipBody.position, 0.6);
-	    
-	    camRigPos.copy(followCamRig.position);
-
-	    camWorldPos.setFromMatrixPosition(followCam.matrixWorld);
-	  
-	    shipToRigDir.copy( lerpedShipPos ).sub( camRigPos ).normalize();
-	  
-	    rigToTargetDist += ( followingDistance - rigToTargetDist ) * 0.2;
-	  
-	    let camToRigDist = lerpedShipPos.distanceTo( camRigPos ) - rigToTargetDist;
-	  
-	    followCamRig.position.addScaledVector( shipToRigDir, camToRigDist );
-	    camWorldPos.setFromMatrixPosition(followCamTarget.matrixWorld);
-	    followCamRig.position.lerp(camWorldPos, 0.02);
-
+		shipBody.linearDamping = 0.5;
+		shipBody.angularDamping = 0.9;
 	}
 
 
@@ -56364,32 +56219,38 @@
 		// take timestep in physics simulation
 		stepPhysicsWorld();
 
-		// update followCam
-		followShip();
-
 		// // update three.js meshes according to cannon-es simulations
-		// updatePhysicsBodies()
+		updatePhysicsBodies();
+
+		// update flight camera
+		fly();
+		// let fp= new CANNON.Vec3(0,0,-3);
+		// flightCamera.position.lerp(fp,0.01)
 		
 		// models animations
 		clock.getDelta();
 		// if (dancerMixer) dancerMixer.update(delta)
 		// if (snakeMixer) snakeMixer.update(delta)
 	  
+		stats.update();
 		//// render three.js
 		//renderer.clear()
 		//renderer.render(scene, camera)
 		//controls.update()
-		followCam.lookAt( shipModel.position );
-		//followCam.lookAt( shipBody.position );
-		renderer.render(scene, followCam);
-		stats.update();
+		renderer.render(scene, flightCamera);
+		
+
 	}
 
 	// Update projection when viewing window is resized
 	function onWindowResize() {
 
-		followCam.aspect = window.innerWidth / window.innerHeight;
-		followCam.updateProjectionMatrix();
+		// followCam.aspect = window.innerWidth / window.innerHeight;
+		// followCam.updateProjectionMatrix();
+
+		flightCamera.aspect = window.innerWidth / window.innerHeight;
+		flightCamera.updateProjectionMatrix();
+
 		renderer.setSize( window.innerWidth, window.innerHeight );
 
 	}
@@ -56416,6 +56277,9 @@
 
 		shipModel.position.copy(shipBody.position);
 		shipModel.quaternion.copy(shipBody.quaternion);
+
+		// cubeMesh.position.copy(cubeBody.position)
+		// cubeMesh.quaternion.copy(cubeBody.quaternion)
 	}
 
 	// load up gltf model asynchronously
@@ -56427,29 +56291,23 @@
 		return model.scene.children[0]
 	}
 
-	// Initialize the variables for the followCam
-	function initFollowCam(camHeight, newFollowingDistance){
-	    followingDistance = newFollowingDistance;
-	    
-	    followCam = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-	    followCam.position.set( 0, camHeight, 0 );
-	    followCam.lookAt( scene.position );
-
-	    followCamRig = new Object3D;
-	    followCamTarget = new Object3D;
-	    followCamTarget.position.z = -followingDistance;
-	}
 
 	// Initialise and create listeners for the keyboard controls
 	function initShipControls(){
 	    
 	    keys = {
 	        a: false,
+	        w: false,
 	        s: false,
 	        d: false,
-	        w: false,
-			space: false,
+			q: false,
+			e: false,
+			arrowup :false,
+			arrowdown:false,
+			arrowleft: false,
+			arrowright: false
 	    };
+
 
 	    document.body.addEventListener( 'keydown', function(e) {
 	    
@@ -56466,6 +56324,7 @@
 	            keys[ key ] = false;
 	        
 	    });
+
 	}
 
 	const game = new Game();
