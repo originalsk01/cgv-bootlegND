@@ -56735,7 +56735,7 @@
 		renderer.autoClear = false;
 		renderer.setViewport( w - mapWidth - 20, h - mapHeight - 10, mapWidth, mapHeight);
 		//Change to minimapCamera 
-		renderer.render( scene, flightCamera );
+		renderer.render( scene, minimapCamera );
 		// minimap (overhead orthogonal camera)
 		//  lower_left_x, lower_left_y, viewport_width, viewport_height
 		
