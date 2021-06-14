@@ -56167,8 +56167,9 @@
 	// player control global variables
 	let keys;
 
+
 	// flight camera a& controls global variables
-	let flightCamera;
+	let flightCamera, minimapCamera, mapWidth = 240, mapHeight = 160;
 	let acceleration = 0; 
 	let pitchSpeed = 0;
 	let rollSpeed = 0;
@@ -56248,6 +56249,18 @@
 			const fcFar = 1000;
 			flightCamera = new PerspectiveCamera( fcFielOfView, window.innerWidth / window.innerHeight, fcNear, fcFar );
 
+			//Initialise Minimap Camera
+			minimapCamera = new OrthographicCamera(
+				window.innerWidth / -4,		// Left
+				window.innerWidth / 4,		// Right
+				window.innerHeight / 4,		// Top
+				window.innerHeight / -4,	// Bottom
+				-100,            			// Near 
+				10000 );           			// Far 
+				minimapCamera.up = new Vector3(0,0,-1);
+				minimapCamera.position.y = 5;
+				minimapCamera.lookAt( new Vector3(0,-1,0) );
+			scene.add(minimapCamera);
 			// Renderer
 			renderer = new WebGLRenderer({ antialias: true });
 			renderer.setClearColor(blue);
@@ -56708,10 +56721,24 @@
 	  
 		stats.update();
 		//// render three.js
-		//renderer.clear()
+		
 		//renderer.render(scene, camera)
 		//controls.update()
+		var w = window.innerWidth, h = window.innerHeight;
+		
+
+		renderer.setViewport( 0, 0, w, h);
+		// renderer.clear()
 		renderer.render(scene, flightCamera);
+
+		//Renderer automaitcally clear before rendering new image so disable temporarily
+		renderer.autoClear = false;
+		renderer.setViewport( w - mapWidth - 20, h - mapHeight - 10, mapWidth, mapHeight);
+		//Change to minimapCamera 
+		renderer.render( scene, flightCamera );
+		// minimap (overhead orthogonal camera)
+		//  lower_left_x, lower_left_y, viewport_width, viewport_height
+		
 	}
 
 	// Update projection when viewing window is resized
