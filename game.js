@@ -6,6 +6,7 @@ import Stats from "three/examples/jsm/libs/stats.module.js";
 import * as CANNON from "cannon-es";
 
 import { threeToCannon, ShapeType } from "three-to-cannon";
+import { DstColorFactor } from "three";
 
 // three.js global vars
 let camera, scene, stats, renderer, clock, controls;
@@ -62,7 +63,7 @@ var renderFrames = 0;
 //timer variables
 
 var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime,endTime
-var levelDuration = 0.1
+var levelDuration = 0.5
 var timeTaken = [0,0]
 var inprogress = true
 
@@ -80,9 +81,8 @@ var requestAnimationFrameID
 class Game {
 	async init() {
 
-		gameLoad = Date.parse(new Date());
-		gameStart = new Date();
-		endTime = new Date(gameLoad+ levelDuration*60*1000);
+		
+
 ////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
 
 		//get html elements
@@ -539,6 +539,9 @@ class Game {
 
 		clock = new THREE.Clock();
 
+		gameLoad = Date.parse(new Date());
+		gameStart = new Date();
+		endTime = new Date(gameLoad+ levelDuration*60*1000);
 		animate();
 	}
 }
@@ -589,7 +592,6 @@ function switchView() {
 }
 
 function animate() {
-
 	renderFrames += 1;
 	
 	if (inprogress==true) {
@@ -646,19 +648,23 @@ function animate() {
 		  
 	
 	  }
-	  if (minutes>0 && seconds> 30){
+	  if (minutes>0 && seconds> 30 && inprogress){
 		timer.innerHTML = "<h1>Snake Invader</h1>"
 		+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '</div>' + '<div> Tokens Collected: ' +tokenScore+' Out of '+ totalTokens +'</div>'+'</div>';
-		console.log("test1")
 	}
 
-	if(minutes==0 && seconds<= 30 && seconds>0){
+	if(minutes==0 && seconds<= 30 && seconds>0 && inprogress){
 		timer.innerHTML = "<h1>Snake Invader</h1>"
 		+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+'</div>'+ '<div> Tokens Collected: ' +tokenScore+ ' Out of '+ totalTokens +'</div>'+'</div>';
-		console.log("test2")
 	}
-		  if(tokenScore==maxScore){ // checking if they have won the game
-		//document.getElementById("congratsDisplay").style.display="block" //congrats screen
+	if(tokenScore==maxScore){ // checking if they have won the game
+			timeTaken = time_taken(gameStart);
+		  var minutes_taken = timeTaken["minutes"]
+		  var seconds_taken =timeTaken["seconds"]
+		  timeTaken[0] =minutes_taken
+		  timeTaken[1] =seconds_taken
+		  inprogress = false
+		
 	  }
 	  
 
@@ -772,7 +778,7 @@ function initShipControls() {
 		arrowleft: false,
 		arrowright: false
 	};
-
+	
 	document.body.addEventListener("keydown", function (e) {
 
 		const key = e.code.replace("Key", "").toLowerCase()

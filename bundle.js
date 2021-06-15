@@ -56170,6 +56170,7 @@
 	// flight camera a& controls global variables
 	let flightCamera, minimapCamera, mapWidth = 240, mapHeight = 160;
 	let acceleration = 0;
+
 	let pitchSpeed = 0;
 	let rollSpeed = 0;
 	let yawSpeed = 0;
@@ -56190,18 +56191,27 @@
 	var renderFrames = 0;
 
 	//timer variables
-	var minutes, seconds, gameStart, gameLoad;
+
+	var minutes, seconds, gameStart, gameLoad, endTime;
+	var levelDuration = 0.5;
+	var timeTaken = [0,0];
+	var inprogress = true;
 
 	//score variable
+	var totalTokens = 1;
 	var tokenScore = 0;
+	var maxScore = 1;
+
 
 
 
 	class Game {
 		async init() {
 
-			gameLoad = new Date().getTime();
-			////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+			
+
+	////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+
 			//get html elements
 			document.getElementById("timer");
 
@@ -56210,6 +56220,7 @@
 			//scene.background = new THREE.Color(0xa0a0a0)
 
 			//Skybox
+
 			const secondLevelLoader=new CubeTextureLoader();
 			const gloomyskyBoxtexture = secondLevelLoader.load([
 				"textures/penguins/arid_ft.jpg",
@@ -56231,7 +56242,9 @@
 				"textures/skybox/indigo_lf.jpg",
 			]);
 			// console.log(skyBoxtexture)
+
 			scene.background = gloomyskyBoxtexture;
+
 
 			// Physics world
 			world = new World({
@@ -56252,11 +56265,11 @@
 			//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
 			//camera.position.set(0,10,10)
 
-
 			// Initialise flight camera
 			const fcFielOfView = 75;
 			const fcNear = 0.1;
 			const fcFar = 1000;
+
 			flightCamera = new PerspectiveCamera(fcFielOfView, window.innerWidth / window.innerHeight, fcNear, fcFar);
 
 			//Initialise Minimap Camera
@@ -56271,6 +56284,7 @@
 			minimapCamera.position.y = 5;
 			minimapCamera.lookAt(new Vector3(0, -1, 0));
 			scene.add(minimapCamera);
+
 			// Renderer
 			renderer = new WebGLRenderer({ antialias: true });
 			renderer.setClearColor(blue);
@@ -56293,6 +56307,7 @@
 			const gridDivisions = 50;
 			const gridHelper = new GridHelper(gridSize, gridDivisions);
 			scene.add(gridHelper);
+
 
 			// Size of one unit for world coordinates if Grid used as basis
 			const gridSquareSize = gridSize / gridDivisions;
@@ -56318,12 +56333,14 @@
 				groundMaterial,
 				groundMaterial,
 				{
+
 					friction: 0.4,
 					restitution: 0.3,
 					contactEquationStiffness: 1e8,
 					contactEquationRelaxation: 3,
 					frictionEquationStiffness: 1e8,
 					frictionEquationRegularizationTime: 3,
+
 				}
 			);
 
@@ -56339,6 +56356,7 @@
 				groundMaterial,
 				slipperyMaterial,
 				{
+
 					friction: 0.0,
 					restitution: 0.3,
 					contactEquationStiffness: 1e8,
@@ -56375,6 +56393,7 @@
 
 				for (let y = 0; y < height; y++) {
 
+
 					const ypos = y + midpointOffset;
 					for (let x = 0; x < length; x++) {
 
@@ -56398,8 +56417,10 @@
 				const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
 				// centre super geometry at local origin
 				//geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
+
 				geometriesTiles.applyMatrix4(new Matrix4().makeTranslation(-length / 2, -height / 2, -width / 2));
 				geometriesTiles.applyMatrix4(new Matrix4().makeScale(gridSquareSize, gridSquareSize, gridSquareSize));
+
 
 				// create one mega big platform mesh from super geometry
 				const platform = new Mesh(geometriesTiles, tileMaterial);
@@ -56408,6 +56429,7 @@
 				platform.translateX((gridSquareSize * length) / 2);
 				platform.translateZ((gridSquareSize * width) / 2);
 				platform.translateY((gridSquareSize * height) / 2);
+
 
 				return platform;
 			};
@@ -56449,6 +56471,7 @@
 
 				colorMap = new TextureLoader().load("./textures/lime_floor.png");
 				newPlatform = placePlatform(
+
 					createPlatform(10, 10, 1, colorMap), 20, 5, 0);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
@@ -56462,6 +56485,7 @@
 				colorMap = new TextureLoader().load("./textures/pink_floor.png");
 				newPlatform = placePlatform(
 					createPlatform(10, 20, 1, colorMap), -10, 40, 0);
+
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
@@ -56470,6 +56494,7 @@
 				newPlatform = placePlatform(createPlatform(5, 1, 5, colorMap), 10, 1, 10);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
+
 
 				colorMap = new TextureLoader().load("./textures/lime_floor.png");
 				newPlatform = placePlatform(
@@ -56487,21 +56512,26 @@
 				// 	platformBodies.push(newPlatform.cannonPlatform);
 				// }
 
+
 				//ceiling
 				colorMap = new TextureLoader().load("./textures/pink_floor.png");
 				newPlatform = placePlatform(
+
 					createPlatform(50, 50, 1, colorMap), -25, 50, -25);
+
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 				//world boundaries
 				colorMap = new TextureLoader().load("./textures/light_floor.png");
 				newPlatform = placePlatform(
+
 					createPlatform(51, 1, 51, colorMap), -26, 0, 25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 				colorMap = new TextureLoader().load("./textures/dark_floor.png");
+
 				newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
@@ -56532,6 +56562,7 @@
 			shipModel = await loadModel(shipPath);
 			//console.log(shipModel)
 
+
 			// Rotate children of ship model to correct their orientation
 			//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
 			//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
@@ -56544,6 +56575,7 @@
 
 			flightCamera.position.set(0, 4, 7.5);
 
+
 			// create cannon body for ship
 			shipBody = new Body({
 				mass: 1,
@@ -56554,11 +56586,13 @@
 				//angularDamping: 0.9,
 			});
 			shipBody.position.set(0, 10, 0);
+
 			shipBody.quaternion.setFromAxisAngle(new Vec3(0, 1, 0), Math.PI);
 			world.addBody(shipBody);
 			//console.log(shipBody)
 
 			// Initialize ship keyboard control
+
 			initShipControls();
 
 
@@ -56591,7 +56625,9 @@
 
 			//////////////// ADD THE TOKENS //////////////////
 			//Create tokens
-			for (let i = 0; i < 20; i++) {
+
+			for (let i = 0; i < totalTokens; i++){
+
 				//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
 				// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
 				// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
@@ -56630,9 +56666,13 @@
 
 			clock = new Clock();
 
+			gameLoad = Date.parse(new Date());
+			gameStart = new Date();
+			endTime = new Date(gameLoad+ levelDuration*60*1000);
 			animate();
 		}
 	}
+
 
 	function fly() {
 		if (keys.h) { switchView(); }
@@ -56642,7 +56682,6 @@
 			let accelerationImpulseDirection = new Vec3(0, 0, acceleration);
 			accelerationImpulse = shipBody.quaternion.vmult(accelerationImpulseDirection);
 			shipBody.applyImpulse(accelerationImpulse);
-
 		}
 
 		if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
@@ -56650,19 +56689,23 @@
 			if (keys.a) { rollSpeed = 1; } else if (keys.d) { rollSpeed = -1; } else { rollSpeed = 0; }
 			if (keys.arrowleft) { yawSpeed = 1; } else if (keys.arrowright) { yawSpeed = -1; } else { yawSpeed = 0; }
 
+
 			// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 			// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
 			// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
 
 			var directionVector = new Vec3(pitchSpeed, yawSpeed, rollSpeed);
+
 			var directionVector = shipBody.quaternion.vmult(directionVector);
 
 			shipBody.angularVelocity.set(directionVector.x, directionVector.y, directionVector.z);
+
 		}
 
 		shipBody.linearDamping = 0.5;
 		shipBody.angularDamping = 0.9;
 	}
+
 
 	function switchView() {
 		let thirdPersonCam = new Vector3(0, 4, 7.5);
@@ -56676,12 +56719,18 @@
 	}
 
 	function animate() {
-
 		renderFrames += 1;
-		//request render scene at every frame
-		requestAnimationFrame(animate);
+		
+		if (inprogress==true) {
+	    //request render scene at every frame
+			requestAnimationFrame(animate);
+		}
+		else {
+			gameEnd();
+		}
 
 		/*************************************************************************************************************/
+
 
 		//check for token intersection
 		if (renderFrames >= 10) {
@@ -56710,17 +56759,44 @@
 			}
 		}
 
-		//update timer
-		gameStart = new Date().getTime();
 
-		var distance = gameStart - gameLoad;
-		minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-		seconds = Math.floor((distance % (1000 * 60)) / 1000);
+		  //update timer
+		  var timeRemaining = time_remaining(endTime);
+		  minutes = timeRemaining["minutes"];
+		  seconds = timeRemaining["seconds"];
+		  if(minutes <=0 && seconds <=0){
+			  timeTaken = time_taken(gameStart);
+			  var minutes_taken = timeTaken["minutes"];
+			  var seconds_taken =timeTaken["seconds"];
+			  timeTaken[0] =minutes_taken;
+			  timeTaken[1] =seconds_taken;
+			  inprogress = false;
+			
+			  
+		
+		  }
+		  if (minutes>0 && seconds> 30 && inprogress){
+			timer.innerHTML = "<h1>Snake Invader</h1>"
+			+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '</div>' + '<div> Tokens Collected: ' +tokenScore+' Out of '+ totalTokens +'</div>'+'</div>';
+		}
 
-		document.getElementById("timer").innerHTML = "<h1>Snake Invader</h1>"
-			+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '<div> Score: ' + tokenScore + '</div>' + '</div></div>';
+		if(minutes==0 && seconds<= 30 && seconds>0 && inprogress){
+			timer.innerHTML = "<h1>Snake Invader</h1>"
+			+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+'</div>'+ '<div> Tokens Collected: ' +tokenScore+ ' Out of '+ totalTokens +'</div>'+'</div>';
+		}
+		if(tokenScore==maxScore){ // checking if they have won the game
+				timeTaken = time_taken(gameStart);
+			  var minutes_taken = timeTaken["minutes"];
+			  var seconds_taken =timeTaken["seconds"];
+			  timeTaken[0] =minutes_taken;
+			  timeTaken[1] =seconds_taken;
+			  inprogress = false;
+			
+		  }
+		  
 
-		/************************************************************************************************************************** */
+	/************************************************************************************************************************** */
+
 
 		// take timestep in physics simulation
 		stepPhysicsWorld();
@@ -56730,7 +56806,9 @@
 
 		// update flight camera
 		fly();
+
 		// switchView()
+
 
 		// models animations
 		clock.getDelta();
@@ -56757,10 +56835,12 @@
 		// minimap (overhead orthogonal camera)
 		//  lower_left_x, lower_left_y, viewport_width, viewport_height
 
+
 	}
 
 	// Update projection when viewing window is resized
 	function onWindowResize() {
+
 
 		flightCamera.aspect = window.innerWidth / window.innerHeight;
 		flightCamera.updateProjectionMatrix();
@@ -56787,7 +56867,6 @@
 	// Update the positions and orientations of the dynamic three.js objects according to the current
 	// physics properties of their corresponding bodies in the physics sim
 	function updatePhysicsBodies() {
-
 		// update three.js model positions using cannon-es simulation
 
 		shipModel.position.copy(shipBody.position);
@@ -56813,7 +56892,6 @@
 
 	// Initialise and create listeners for the keyboard controls
 	function initShipControls() {
-
 		keys = {
 			a: false,
 			w: false,
@@ -56827,7 +56905,7 @@
 			arrowleft: false,
 			arrowright: false
 		};
-
+		
 		document.body.addEventListener("keydown", function (e) {
 
 			const key = e.code.replace("Key", "").toLowerCase();
@@ -56843,6 +56921,7 @@
 		});
 	}
 	function createToken(
+
 		innerRadius,
 		outerRadius,
 		innerDetail,
@@ -56883,7 +56962,66 @@
 		return outerCustom
 	}
 
-	const game = new Game();
-	game.init();
+	function time_remaining(endtime){
+		var t = Date.parse(endtime) - Date.parse(new Date());
+		var seconds = Math.floor( (t/1000) % 60 );
+		var minutes = Math.floor( (t/1000/60) % 60 );
+		var hours = Math.floor( (t/(1000*60*60)) % 24 );
+		var days = Math.floor( t/(1000*60*60*24) );
+		return {'total':t, 'days':days, 'hours':hours, 'minutes':minutes, 'seconds':seconds};
+	}
+
+	function time_taken(startTime){
+		var t =  Date.parse(new Date()) - Date.parse(startTime);
+		var seconds = Math.floor( (t/1000) % 60 );
+		var minutes = Math.floor( (t/1000/60) % 60 );
+		var hours = Math.floor( (t/(1000*60*60)) % 24 );
+		var days = Math.floor( t/(1000*60*60*24) );
+		return {'total':t, 'days':days, 'hours':hours, 'minutes':minutes, 'seconds':seconds};
+	}
+	  function gameEnd() {
+		if (tokenScore ==maxScore){
+			timer.innerHTML = "<h1>Level Complete</h1>"+"<h2>Time Taken</h2>"
+			+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds"+ '</div>';
+			console.log('hello');
+			console.log(timeTaken[0]);
+		}
+		else {
+			timer.innerHTML = "<h1>Level failed</h1>"+"<h2>Time Taken</h2>"
+			+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds"+ '</div>';
+			console.log('hello');
+			console.log(timeTaken[0]);
+
+		}
+		
+		
+	}
+
+	document.getElementById("instance");
+		instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
+	    "<h4> (Click anywhere to start)</h4>" +
+	    "<h2>Instructions</h2>"+ 
+	    "<div id='leftHandControls'> <h3> Left Hand controls </h3>" +
+	        "<div>Tilt Left: A</div>" +
+	        "<div>Tilt Right:D</div>"+
+	        "<div>Tilt Up:W</div>"+
+	        "<div>Tilt Down:S</div>"+
+	    "</div>"+
+	    "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
+	    "<div>Turn Left: &#8592</div>" +
+	    "<div>Turn Right:&#8594</div>"+
+	    "<div>Move Forward:&#8593</div>"+
+	    "<div>Move Back:&#8595</div>"+
+	    "</div>"+
+	    "<h4> (Click anywhere to start)</h4>"; 
+
+
+	document.addEventListener("click",startGame);
+	function startGame(){
+	    instructions.innerHTML = '';
+	    const game = new Game();
+	    game.init();
+
+	}
 
 })));
