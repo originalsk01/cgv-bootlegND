@@ -412,7 +412,7 @@ class Game {
 		world.addBody(shipBody)
 		//console.log(shipBody)
 
-		// Initialize ship keyboard control
+		// itialize ship keyboard control
 		initShipControls()
 
 
