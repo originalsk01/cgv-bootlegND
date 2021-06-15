@@ -56210,8 +56210,19 @@
 			//scene.background = new THREE.Color(0xa0a0a0)
 
 			//Skybox
+			const secondLevelLoader=new CubeTextureLoader();
+			const gloomyskyBoxtexture = secondLevelLoader.load([
+				"textures/penguins/arid_ft.jpg",
+				"textures/penguins/arid_bk.jpg",
+				"textures/penguins/arid_up.jpg",
+				"textures/penguins/arid_dn.jpg",
+				"textures/penguins/arid_rt.jpg",
+				"textures/penguins/arid_lf.jpg",
+			]);
+
+			//Skybox
 			const skyBoxLoader = new CubeTextureLoader();
-			const skyBoxtexture = skyBoxLoader.load([
+			skyBoxLoader.load([
 				"textures/skybox/indigo_ft.jpg",
 				"textures/skybox/indigo_bk.jpg",
 				"textures/skybox/indigo_up.jpg",
@@ -56220,7 +56231,7 @@
 				"textures/skybox/indigo_lf.jpg",
 			]);
 			// console.log(skyBoxtexture)
-			scene.background = skyBoxtexture;
+			scene.background = gloomyskyBoxtexture;
 
 			// Physics world
 			world = new World({

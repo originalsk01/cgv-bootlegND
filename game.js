@@ -78,6 +78,17 @@ class Game {
 		//scene.background = new THREE.Color(0xa0a0a0)
 
 		//Skybox
+		const secondLevelLoader=new THREE.CubeTextureLoader();
+		const gloomyskyBoxtexture = secondLevelLoader.load([
+			"textures/penguins/arid_ft.jpg",
+			"textures/penguins/arid_bk.jpg",
+			"textures/penguins/arid_up.jpg",
+			"textures/penguins/arid_dn.jpg",
+			"textures/penguins/arid_rt.jpg",
+			"textures/penguins/arid_lf.jpg",
+		]);
+
+		//Skybox
 		const skyBoxLoader = new THREE.CubeTextureLoader();
 		const skyBoxtexture = skyBoxLoader.load([
 			"textures/skybox/indigo_ft.jpg",
@@ -88,7 +99,7 @@ class Game {
 			"textures/skybox/indigo_lf.jpg",
 		]);
 		// console.log(skyBoxtexture)
-		scene.background = skyBoxtexture;
+		scene.background = gloomyskyBoxtexture;
 
 		// Physics world
 		world = new CANNON.World({
@@ -499,7 +510,6 @@ function fly() {
 		let accelerationImpulseDirection = new CANNON.Vec3(0, 0, acceleration)
 		accelerationImpulse = shipBody.quaternion.vmult(accelerationImpulseDirection)
 		shipBody.applyImpulse(accelerationImpulse)
-
 	}
 
 	if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
