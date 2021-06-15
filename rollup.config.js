@@ -11,6 +11,7 @@ export default {
 			name: 'BootlegSnek',
 			file: 'bundle.js'
 		}
+		
 	],
 	plugins: [ nodeResolve() ]
 

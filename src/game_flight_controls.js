@@ -13,8 +13,7 @@ let shipModel;
 
 // global asset paths
 const shipPath =
-	"/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
-
+  "/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
 
 // global colour variables
 const black = "rgb(0,0,0)";
@@ -34,12 +33,9 @@ let lastCallTime;
 // player control global variables
 let keys
 
-var firstPerson
-
 // flight camera a& controls global variables
-let flightCamera, minimapCamera, mapWidth = 240, mapHeight = 160;
-let acceleration = 0
-
+let flightCamera
+let acceleration = 0 
 let pitchSpeed = 0
 let rollSpeed = 0
 let yawSpeed = 0
@@ -60,49 +56,25 @@ var playerCustom;
 var renderFrames = 0;
 
 //timer variables
-
-var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime,endTime
-var levelDuration = 0.1
-var timeTaken = [0,0]
-var inprogress = true
+var minutes, seconds, milliseconds, gameStart, gameLoad
 
 //score variable
-var totalTokens = 1;
 var tokenScore = 0;
-var maxScore = 1;
-
-//animation variables
-var requestAnimationFrameID
-
+var maxScore = 5;
 
 
 
 class Game {
 	async init() {
-
-		gameLoad = Date.parse(new Date());
-		gameStart = new Date();
-		endTime = new Date(gameLoad+ levelDuration*60*1000);
-////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
-
+		
+		gameLoad = new Date().getTime();
+		////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
 		//get html elements
 		const timer = document.getElementById("timer");
 
 		// Scene
 		scene = new THREE.Scene();
 		//scene.background = new THREE.Color(0xa0a0a0)
-
-		//Skybox
-
-		const secondLevelLoader=new THREE.CubeTextureLoader();
-		const gloomyskyBoxtexture = secondLevelLoader.load([
-			"textures/penguins/arid_ft.jpg",
-			"textures/penguins/arid_bk.jpg",
-			"textures/penguins/arid_up.jpg",
-			"textures/penguins/arid_dn.jpg",
-			"textures/penguins/arid_rt.jpg",
-			"textures/penguins/arid_lf.jpg",
-		]);
 
 		//Skybox
 		const skyBoxLoader = new THREE.CubeTextureLoader();
@@ -115,9 +87,7 @@ class Game {
 			"textures/skybox/indigo_lf.jpg",
 		]);
 		// console.log(skyBoxtexture)
-
-		scene.background = gloomyskyBoxtexture;
-
+		scene.background = skyBoxtexture;
 
 		// Physics world
 		world = new CANNON.World({
@@ -137,26 +107,13 @@ class Game {
 		// Normal camera initial position and orientation
 		//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
 		//camera.position.set(0,10,10)
+		
 
 		// Initialise flight camera
 		const fcFielOfView = 75;
 		const fcNear = 0.1;
 		const fcFar = 1000;
-
-		flightCamera = new THREE.PerspectiveCamera(fcFielOfView, window.innerWidth / window.innerHeight, fcNear, fcFar);
-
-		//Initialise Minimap Camera
-		minimapCamera = new THREE.OrthographicCamera(
-			window.innerWidth / -4,		// Left
-			window.innerWidth / 4,		// Right
-			window.innerHeight / 4,		// Top
-			window.innerHeight / -4,	// Bottom
-			-100,            			// Near 
-			10000);           			// Far 
-		minimapCamera.up = new THREE.Vector3(0, 0, -1);
-		minimapCamera.position.y = 5;
-		minimapCamera.lookAt(new THREE.Vector3(0, -1, 0));
-		scene.add(minimapCamera)
+		flightCamera = new THREE.PerspectiveCamera( fcFielOfView, window.innerWidth / window.innerHeight, fcNear, fcFar );
 
 		// Renderer
 		renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -180,7 +137,6 @@ class Game {
 		const gridDivisions = 50;
 		const gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
 		scene.add(gridHelper);
-
 
 		// Size of one unit for world coordinates if Grid used as basis
 		const gridSquareSize = gridSize / gridDivisions;
@@ -206,14 +162,12 @@ class Game {
 			groundMaterial,
 			groundMaterial,
 			{
-
-				friction: 0.4,
-				restitution: 0.3,
-				contactEquationStiffness: 1e8,
-				contactEquationRelaxation: 3,
-				frictionEquationStiffness: 1e8,
-				frictionEquationRegularizationTime: 3,
-
+			friction: 0.4,
+			restitution: 0.3,
+			contactEquationStiffness: 1e8,
+			contactEquationRelaxation: 3,
+			frictionEquationStiffness: 1e8,
+			frictionEquationRegularizationTime: 3,
 			}
 		);
 
@@ -229,11 +183,10 @@ class Game {
 			groundMaterial,
 			slipperyMaterial,
 			{
-
-				friction: 0.0,
-				restitution: 0.3,
-				contactEquationStiffness: 1e8,
-				contactEquationRelaxation: 3,
+			friction: 0.0,
+			restitution: 0.3,
+			contactEquationStiffness: 1e8,
+			contactEquationRelaxation: 3,
 			}
 		);
 
@@ -265,14 +218,13 @@ class Game {
 			const midpointOffset = 0.5;
 
 			for (let y = 0; y < height; y++) {
-
-
+				
 				const ypos = y + midpointOffset;
 				for (let x = 0; x < length; x++) {
-
+					
 					const xpos = x + midpointOffset;
 					for (let z = 0; z < width; z++) {
-
+						
 						const zpos = z + midpointOffset;
 						// instead of creating a new geometry, we just clone the bufferGeometry instance
 						const newTile = tileGeometry.clone();
@@ -290,10 +242,8 @@ class Game {
 			const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
 			// centre super geometry at local origin
 			//geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
-
-			geometriesTiles.applyMatrix4(new THREE.Matrix4().makeTranslation(-length / 2, -height / 2, -width / 2));
-			geometriesTiles.applyMatrix4(new THREE.Matrix4().makeScale(gridSquareSize, gridSquareSize, gridSquareSize));
-
+			geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation( -length / 2, -height / 2, -width / 2) );
+			geometriesTiles.applyMatrix4( new THREE.Matrix4().makeScale( gridSquareSize, gridSquareSize, gridSquareSize) );
 
 			// create one mega big platform mesh from super geometry
 			const platform = new THREE.Mesh(geometriesTiles, tileMaterial);
@@ -302,8 +252,7 @@ class Game {
 			platform.translateX((gridSquareSize * length) / 2);
 			platform.translateZ((gridSquareSize * width) / 2);
 			platform.translateY((gridSquareSize * height) / 2);
-
-
+			
 			return platform;
 		};
 
@@ -321,7 +270,7 @@ class Game {
 				material: groundMaterial,
 				shape: threeToCannon(platform, { type: ShapeType.BOX }).shape,
 			});
-
+			
 			const platformPos = new THREE.Vector3();
 			platform.getWorldPosition(platformPos);
 			platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
@@ -335,7 +284,7 @@ class Game {
 		// Function to add multiple platforms into a gameboard
 		// allow different textures/colours for different sections
 		const createGameBoard = () => {
-
+			
 			const board = new THREE.Group();
 			const platformGeometries = [];
 			const platformBodies = [];
@@ -344,21 +293,19 @@ class Game {
 
 			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
 			newPlatform = placePlatform(
-
-				createPlatform(10, 10, 1, colorMap), 20, 5, 0);
+			createPlatform(10, 10, 1, colorMap), 20, 5, 0);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
-
+			
 			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
 			newPlatform = placePlatform(
-				createPlatform(20, 10, 1, colorMap), 0, 20, 0);
+			createPlatform(20, 10, 1, colorMap), 0, 20, 0);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
-
+			
 			colorMap = new THREE.TextureLoader().load("./textures/pink_floor.png");
 			newPlatform = placePlatform(
-				createPlatform(10, 20, 1, colorMap), -10, 40, 0);
-
+			createPlatform(10, 20, 1, colorMap), -10, 40, 0);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
@@ -368,43 +315,39 @@ class Game {
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
-
-			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
+			colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
 			newPlatform = placePlatform(
-				createPlatform(50, 50, 1, colorMap), -25, 0, -25);
+			createPlatform(50, 50, 1, colorMap), -25, 0, -25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
-
-			// for (var i = 0; i < 30; i++) {
-			// 	var randX = getRandomInt(-25, 0);
-			// 	var randY = getRandomInt(0, 50);
-			// 	var randZ = getRandomInt(-25, 0);
-			// 	colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
-			// 	newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
-			// 	platformGeometries.push(newPlatform.threePlatform);
-			// 	platformBodies.push(newPlatform.cannonPlatform);
-			// }
-
+			
+			for (var i = 0; i < 30; i++) {
+				
+				var randX = getRandomInt(-25, 0);
+				var randY = getRandomInt(0, 50);
+				var randZ = getRandomInt(-25, 0);
+				
+				colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
+				newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+			}
 
 			//ceiling
 			colorMap = new THREE.TextureLoader().load("./textures/pink_floor.png");
 			newPlatform = placePlatform(
-
-				createPlatform(50, 50, 1, colorMap), -25, 50, -25);
-
+			createPlatform(50, 50, 1, colorMap), -25, 50, -25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
 			//world boundaries
 			colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
 			newPlatform = placePlatform(
-
-				createPlatform(51, 1, 51, colorMap), -26, 0, 25);
+			createPlatform(51, 1, 51, colorMap), -26, 0, 25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
-			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-
+			colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
 			newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
@@ -434,20 +377,17 @@ class Game {
 		shipModel = new THREE.Object3D
 		shipModel = await loadModel(shipPath)
 		//console.log(shipModel)
-
-
+		
 		// Rotate children of ship model to correct their orientation
 		//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
 		//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-
-		shipModel.applyMatrix4(new THREE.Matrix4().makeScale(1.9, 1.9, 1.9));
-		shipModel.applyMatrix4(new THREE.Matrix4().makeTranslation(-5, 0, -5));
+		
+		shipModel.applyMatrix4( new THREE.Matrix4().makeScale(1.9,1.9,1.9) );
+		shipModel.applyMatrix4( new THREE.Matrix4().makeTranslation(-5,0,-5) );
 
 		scene.add(shipModel)
 		shipModel.add(flightCamera)
-
-		flightCamera.position.set(0, 4, 7.5)
-
+		flightCamera.position.set(0,4,7.5)
 
 		// create cannon body for ship
 		shipBody = new CANNON.Body({
@@ -459,13 +399,11 @@ class Game {
 			//angularDamping: 0.9,
 		})
 		shipBody.position.set(0, 10, 0)
-
-		shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI);
+		shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
 		world.addBody(shipBody)
 		//console.log(shipBody)
 
 		// Initialize ship keyboard control
-
 		initShipControls()
 
 
@@ -498,9 +436,7 @@ class Game {
 
 		//////////////// ADD THE TOKENS //////////////////
 		//Create tokens
-
-		for (let i = 0; i < totalTokens; i++){
-
+		for (let i = 0; i < 20; i++){
 			//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
 			// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
 			// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
@@ -543,33 +479,30 @@ class Game {
 	}
 }
 
+function fly(){
 
-function fly() {
-	if (keys.h) { switchView() }
-	if (keys.arrowup) { acceleration = -1 }
-	if (keys.arrowdown) { acceleration = 1 }
-	if (keys.arrowup || keys.arrowdown) {
-		let accelerationImpulseDirection = new CANNON.Vec3(0, 0, acceleration)
-		accelerationImpulse = shipBody.quaternion.vmult(accelerationImpulseDirection)
-		shipBody.applyImpulse(accelerationImpulse)
+	if (keys.arrowup){acceleration = -1}
+	if (keys.arrowdown){acceleration = 1}
+	if (keys.arrowup||keys.arrowdown){
+		let accelerationImpulseDirection = new CANNON.Vec3(0,0,acceleration)
+		accelerationImpulse = shipBody.quaternion.vmult( accelerationImpulseDirection )
+		shipBody.applyImpulse ( accelerationImpulse)
+	
 	}
 
-	if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
-		if (keys.w) { pitchSpeed = -0.5 } else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
-		if (keys.a) { rollSpeed = 1 } else if (keys.d) { rollSpeed = -1 } else { rollSpeed = 0 }
-		if (keys.arrowleft) { yawSpeed = 1 } else if (keys.arrowright) { yawSpeed = -1 } else { yawSpeed = 0 }
-
+	if( keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright ){
+		if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
+		if (keys.a) { rollSpeed = 1 } else if (keys.d){ rollSpeed = -1 } else { rollSpeed = 0 }
+		if (keys.arrowleft) { yawSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1 } else { yawSpeed = 0 }
 
 		// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 		// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
 		// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
 
 		var directionVector = new CANNON.Vec3(pitchSpeed, yawSpeed, rollSpeed)
+		var directionVector = shipBody.quaternion.vmult( directionVector )
 
-		var directionVector = shipBody.quaternion.vmult(directionVector)
-
-		shipBody.angularVelocity.set(directionVector.x, directionVector.y, directionVector.z)
-
+		shipBody.angularVelocity.set( directionVector.x, directionVector.y, directionVector.z)
 	}
 
 	shipBody.linearDamping = 0.5
@@ -577,39 +510,21 @@ function fly() {
 }
 
 
-function switchView() {
-	let thirdPersonCam = new THREE.Vector3(0, 4, 7.5);
-	let fp = new CANNON.Vec3(0, 0, -3);
-	if (flightCamera.position.x == fp.x && flightCamera.position.y == fp.y && flightCamera.position.z == fp.z) {
-		flightCamera.position.lerp(thirdPersonCam, 1)
-	}
-	else if (flightCamera.position.x == thirdPersonCam.x && flightCamera.position.y == thirdPersonCam.y && flightCamera.position.z == thirdPersonCam.z) {
-		flightCamera.position.lerp(fp, 1);
-	}
-}
-
 function animate() {
-
-	renderFrames += 1;
 	
-	if (inprogress==true) {
-    //request render scene at every frame
-		requestAnimationFrameID= requestAnimationFrame(animate);
-	}
-	else{
-		gameEnd();
-	}
+	renderFrames += 1;
+	//request render scene at every frame
+	requestAnimationFrame(animate);
 
-	/*************************************************************************************************************/
-
+/*************************************************************************************************************/
 
 	//check for token intersection
 	if (renderFrames >= 10) {
 		//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
 		for (let k = 0; k < tokensArray.length; k++) {
 			boxArray[k]
-				.copy(tokensArray[k].geometry.boundingBox)
-				.applyMatrix4(tokensArray[k].matrixWorld);
+			.copy(tokensArray[k].geometry.boundingBox)
+			.applyMatrix4(tokensArray[k].matrixWorld);
 			//Determine if player touches token
 			const blue = new THREE.Color(0x0000ff);
 			if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
@@ -630,40 +545,21 @@ function animate() {
 		}
 	}
 
-
 	  //update timer
-	  var timeRemaining = time_remaining(endTime)
-	  minutes = timeRemaining["minutes"]
-	  seconds = timeRemaining["seconds"]
-	  if(minutes <=0 && seconds <=0){
-		  timeTaken = time_taken(gameStart);
-		  var minutes_taken = timeTaken["minutes"]
-		  var seconds_taken =timeTaken["seconds"]
-		  timeTaken[0] =minutes_taken
-		  timeTaken[1] =seconds_taken
-		  inprogress = false
-		
-		  
-	
-	  }
-	  if (minutes>0 && seconds> 30){
-		timer.innerHTML = "<h1>Snake Invader</h1>"
-		+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '</div>' + '<div> Tokens Collected: ' +tokenScore+' Out of '+ totalTokens +'</div>'+'</div>';
-		console.log("test1")
-	}
+	gameStart = new Date().getTime();
 
-	if(minutes==0 && seconds<= 30 && seconds>0){
-		timer.innerHTML = "<h1>Snake Invader</h1>"
-		+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+'</div>'+ '<div> Tokens Collected: ' +tokenScore+ ' Out of '+ totalTokens +'</div>'+'</div>';
-		console.log("test2")
+	var distance = gameStart - gameLoad
+	minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+	seconds = Math.floor((distance % (1000 * 60)) / 1000);
+	milliseconds = Math.floor((distance % (1000 * 60)) * 1000 / 1000);
+
+	document.getElementById("timer").innerHTML = "<h1>Snake Invader</h1>"
+	+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '<div> Score: ' +tokenScore+'</div>'+'</div></div>';
+	if(tokenScore==maxScore){ // checking if they have won the game
+	//document.getElementById("congratsDisplay").style.display="block" //congrats screen
 	}
-		  if(tokenScore==maxScore){ // checking if they have won the game
-		//document.getElementById("congratsDisplay").style.display="block" //congrats screen
-	  }
-	  
 
 /************************************************************************************************************************** */
-
 
 	// take timestep in physics simulation
 	stepPhysicsWorld()
@@ -673,54 +569,37 @@ function animate() {
 
 	// update flight camera
 	fly()
-
-	// switchView()
-
-
+	// let fp= new CANNON.Vec3(0,0,-3);
+	// flightCamera.position.lerp(fp,0.01)
+	
 	// models animations
 	const delta = clock.getDelta()
 	// if (dancerMixer) dancerMixer.update(delta)
 	// if (snakeMixer) snakeMixer.update(delta)
-
+  
 	stats.update()
 	//// render three.js
-
+	//renderer.clear()
 	//renderer.render(scene, camera)
 	//controls.update()
-	var w = window.innerWidth, h = window.innerHeight;
-
-
-	renderer.setViewport(0, 0, w, h);
-	// renderer.clear()
-	renderer.render(scene, flightCamera);
-
-	//Renderer automaitcally clear before rendering new image so disable temporarily
-	renderer.autoClear = false;
-	renderer.setViewport(w - mapWidth - 20, h - mapHeight - 10, mapWidth, mapHeight);
-	//Change to minimapCamera 
-	renderer.render(scene, minimapCamera);
-	// minimap (overhead orthogonal camera)
-	//  lower_left_x, lower_left_y, viewport_width, viewport_height
-
-
+	renderer.render(scene, flightCamera)
 }
 
 // Update projection when viewing window is resized
 function onWindowResize() {
-
-
+	
 	flightCamera.aspect = window.innerWidth / window.innerHeight
 	flightCamera.updateProjectionMatrix()
 
-	renderer.setSize(window.innerWidth, window.innerHeight)
-
+	renderer.setSize( window.innerWidth, window.innerHeight )
+	
 }
 
 // Make time step in physics simulation
 function stepPhysicsWorld() {
-
+	
 	const time = performance.now() / 1000
-
+	
 	if (!lastCallTime) {
 		world.step(timeStep)
 	}
@@ -734,6 +613,7 @@ function stepPhysicsWorld() {
 // Update the positions and orientations of the dynamic three.js objects according to the current
 // physics properties of their corresponding bodies in the physics sim
 function updatePhysicsBodies() {
+  
 	// update three.js model positions using cannon-es simulation
 
 	shipModel.position.copy(shipBody.position)
@@ -748,7 +628,7 @@ function updatePhysicsBodies() {
 
 // load up gltf model asynchronously
 async function loadModel(path) {
-
+	
 	const loader = new GLTFLoader()
 
 	const model = await loader.loadAsync(path)
@@ -759,33 +639,33 @@ async function loadModel(path) {
 
 // Initialise and create listeners for the keyboard controls
 function initShipControls() {
+	
 	keys = {
-		a: false,
-		w: false,
-		s: false,
-		d: false,
+        a: false,
+        w: false,
+        s: false,
+        d: false,
 		q: false,
 		e: false,
-		h: false,
-		arrowup: false,
-		arrowdown: false,
+		arrowup :false,
+		arrowdown:false,
 		arrowleft: false,
 		arrowright: false
-	};
+    };
 
 	document.body.addEventListener("keydown", function (e) {
-
+		
 		const key = e.code.replace("Key", "").toLowerCase()
 		if (keys[key] !== undefined) keys[key] = true
 
 	})
 
 	document.body.addEventListener("keyup", function (e) {
-
+    	
 		const key = e.code.replace("Key", "").toLowerCase()
-		if (keys[key] !== undefined) keys[key] = false
+    	if (keys[key] !== undefined) keys[key] = false
 
-	})
+  	})
 }
 
 // Randomizers that can be used for building Bufffer geometries
@@ -802,86 +682,44 @@ function getRandomArbitrary(min, max) {
 	return Math.random() * (max - min) + min
 }
 function createToken(
-
-	innerRadius,
-	outerRadius,
-	innerDetail,
-	outerDetail,
-	innerColour,
-	outerColour,
-	innerOpacity,
-	outerOpacity
-) {
+					innerRadius,
+					outerRadius,
+					innerDetail,
+					outerDetail,
+					innerColour,
+					outerColour,
+					innerOpacity,
+					outerOpacity
+					){
 
 	//createToken creates a token consisting of 2 objects, one within the other.
 	//Opacities may be set in order to alter the appearance as well as make the inner object visible
 	var innerGeometry = new THREE.OctahedronBufferGeometry(innerRadius, innerDetail)
 
-	var innerMaterial = new THREE.MeshLambertMaterial({
-		color: innerColour,
-		transparent: true,
-		opacity: innerOpacity,
-	})
+    var innerMaterial = new THREE.MeshLambertMaterial({
+    	color: innerColour,
+    	transparent: true,
+    	opacity: innerOpacity,
+  	})
 
-	var innerCustom = new THREE.Mesh(innerGeometry, innerMaterial)
+    var innerCustom = new THREE.Mesh(innerGeometry, innerMaterial)
 
-	var outerGeometry = new THREE.OctahedronBufferGeometry(
-		outerRadius,
-		outerDetail
-	)
-	var outerMaterial = new THREE.MeshLambertMaterial({
-		color: outerColour,
-		transparent: true,
-		opacity: outerOpacity,
-	})
-
-	var outerCustom = new THREE.Mesh(outerGeometry, outerMaterial)
-
-	outerCustom.add(innerCustom)
-	innerCustomArray.push(innerCustom) // use separate array for innerCustom which will be global so that we can access them
-	// console.log(outerCustom);
-	return outerCustom
-}
-function AddMinutesToDate(date, minutes) {
-	return new Date(date.getTime() + minutes * 60000);
+  	var outerGeometry = new THREE.OctahedronBufferGeometry(
+    	outerRadius,
+    	outerDetail
+  	)
+  var outerMaterial = new THREE.MeshLambertMaterial({
+    color: outerColour,
+    transparent: true,
+    opacity: outerOpacity,
+  })
   
-  
-  }
+  var outerCustom = new THREE.Mesh(outerGeometry, outerMaterial)
 
-function time_remaining(endtime){
-	var t = Date.parse(endtime) - Date.parse(new Date());
-	var seconds = Math.floor( (t/1000) % 60 );
-	var minutes = Math.floor( (t/1000/60) % 60 );
-	var hours = Math.floor( (t/(1000*60*60)) % 24 );
-	var days = Math.floor( t/(1000*60*60*24) );
-	return {'total':t, 'days':days, 'hours':hours, 'minutes':minutes, 'seconds':seconds};
+  outerCustom.add(innerCustom)
+  innerCustomArray.push(innerCustom) // use separate array for innerCustom which will be global so that we can access them
+  // console.log(outerCustom);
+  return outerCustom
 }
-
-function time_taken(startTime){
-	var t =  Date.parse(new Date()) - Date.parse(startTime);
-	var seconds = Math.floor( (t/1000) % 60 );
-	var minutes = Math.floor( (t/1000/60) % 60 );
-	var hours = Math.floor( (t/(1000*60*60)) % 24 );
-	var days = Math.floor( t/(1000*60*60*24) );
-	return {'total':t, 'days':days, 'hours':hours, 'minutes':minutes, 'seconds':seconds};
-}
-  function gameEnd() {
-	if (tokenScore ==maxScore){
-		timer.innerHTML = "<h1>Level Complete</h1>"+"<h2>Time Taken</h2>"
-		+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds"+ '</div>';
-		console.log('hello')
-		console.log(timeTaken[0])
-	}
-	else{
-		timer.innerHTML = "<h1>Level failed</h1>"+"<h2>Time Taken</h2>"
-		+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds"+ '</div>';
-		console.log('hello')
-		console.log(timeTaken[0])
-
-	}
-	
-	
-}
-
 
 export default Game
