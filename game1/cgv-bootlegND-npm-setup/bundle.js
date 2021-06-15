@@ -9,8 +9,6 @@
 	 * SPDX-License-Identifier: MIT
 	 */
 	const REVISION = '129';
-	const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2 };
-	const TOUCH = { ROTATE: 0, PAN: 1, DOLLY_PAN: 2, DOLLY_ROTATE: 3 };
 	const CullFaceNone = 0;
 	const CullFaceBack = 1;
 	const CullFaceFront = 2;
@@ -27574,6 +27572,303 @@
 
 	DepthTexture.prototype.isDepthTexture = true;
 
+	class PolyhedronGeometry extends BufferGeometry {
+
+		constructor( vertices, indices, radius = 1, detail = 0 ) {
+
+			super();
+
+			this.type = 'PolyhedronGeometry';
+
+			this.parameters = {
+				vertices: vertices,
+				indices: indices,
+				radius: radius,
+				detail: detail
+			};
+
+			// default buffer data
+
+			const vertexBuffer = [];
+			const uvBuffer = [];
+
+			// the subdivision creates the vertex buffer data
+
+			subdivide( detail );
+
+			// all vertices should lie on a conceptual sphere with a given radius
+
+			applyRadius( radius );
+
+			// finally, create the uv data
+
+			generateUVs();
+
+			// build non-indexed geometry
+
+			this.setAttribute( 'position', new Float32BufferAttribute( vertexBuffer, 3 ) );
+			this.setAttribute( 'normal', new Float32BufferAttribute( vertexBuffer.slice(), 3 ) );
+			this.setAttribute( 'uv', new Float32BufferAttribute( uvBuffer, 2 ) );
+
+			if ( detail === 0 ) {
+
+				this.computeVertexNormals(); // flat normals
+
+			} else {
+
+				this.normalizeNormals(); // smooth normals
+
+			}
+
+			// helper functions
+
+			function subdivide( detail ) {
+
+				const a = new Vector3();
+				const b = new Vector3();
+				const c = new Vector3();
+
+				// iterate over all faces and apply a subdivison with the given detail value
+
+				for ( let i = 0; i < indices.length; i += 3 ) {
+
+					// get the vertices of the face
+
+					getVertexByIndex( indices[ i + 0 ], a );
+					getVertexByIndex( indices[ i + 1 ], b );
+					getVertexByIndex( indices[ i + 2 ], c );
+
+					// perform subdivision
+
+					subdivideFace( a, b, c, detail );
+
+				}
+
+			}
+
+			function subdivideFace( a, b, c, detail ) {
+
+				const cols = detail + 1;
+
+				// we use this multidimensional array as a data structure for creating the subdivision
+
+				const v = [];
+
+				// construct all of the vertices for this subdivision
+
+				for ( let i = 0; i <= cols; i ++ ) {
+
+					v[ i ] = [];
+
+					const aj = a.clone().lerp( c, i / cols );
+					const bj = b.clone().lerp( c, i / cols );
+
+					const rows = cols - i;
+
+					for ( let j = 0; j <= rows; j ++ ) {
+
+						if ( j === 0 && i === cols ) {
+
+							v[ i ][ j ] = aj;
+
+						} else {
+
+							v[ i ][ j ] = aj.clone().lerp( bj, j / rows );
+
+						}
+
+					}
+
+				}
+
+				// construct all of the faces
+
+				for ( let i = 0; i < cols; i ++ ) {
+
+					for ( let j = 0; j < 2 * ( cols - i ) - 1; j ++ ) {
+
+						const k = Math.floor( j / 2 );
+
+						if ( j % 2 === 0 ) {
+
+							pushVertex( v[ i ][ k + 1 ] );
+							pushVertex( v[ i + 1 ][ k ] );
+							pushVertex( v[ i ][ k ] );
+
+						} else {
+
+							pushVertex( v[ i ][ k + 1 ] );
+							pushVertex( v[ i + 1 ][ k + 1 ] );
+							pushVertex( v[ i + 1 ][ k ] );
+
+						}
+
+					}
+
+				}
+
+			}
+
+			function applyRadius( radius ) {
+
+				const vertex = new Vector3();
+
+				// iterate over the entire buffer and apply the radius to each vertex
+
+				for ( let i = 0; i < vertexBuffer.length; i += 3 ) {
+
+					vertex.x = vertexBuffer[ i + 0 ];
+					vertex.y = vertexBuffer[ i + 1 ];
+					vertex.z = vertexBuffer[ i + 2 ];
+
+					vertex.normalize().multiplyScalar( radius );
+
+					vertexBuffer[ i + 0 ] = vertex.x;
+					vertexBuffer[ i + 1 ] = vertex.y;
+					vertexBuffer[ i + 2 ] = vertex.z;
+
+				}
+
+			}
+
+			function generateUVs() {
+
+				const vertex = new Vector3();
+
+				for ( let i = 0; i < vertexBuffer.length; i += 3 ) {
+
+					vertex.x = vertexBuffer[ i + 0 ];
+					vertex.y = vertexBuffer[ i + 1 ];
+					vertex.z = vertexBuffer[ i + 2 ];
+
+					const u = azimuth( vertex ) / 2 / Math.PI + 0.5;
+					const v = inclination( vertex ) / Math.PI + 0.5;
+					uvBuffer.push( u, 1 - v );
+
+				}
+
+				correctUVs();
+
+				correctSeam();
+
+			}
+
+			function correctSeam() {
+
+				// handle case when face straddles the seam, see #3269
+
+				for ( let i = 0; i < uvBuffer.length; i += 6 ) {
+
+					// uv data of a single face
+
+					const x0 = uvBuffer[ i + 0 ];
+					const x1 = uvBuffer[ i + 2 ];
+					const x2 = uvBuffer[ i + 4 ];
+
+					const max = Math.max( x0, x1, x2 );
+					const min = Math.min( x0, x1, x2 );
+
+					// 0.9 is somewhat arbitrary
+
+					if ( max > 0.9 && min < 0.1 ) {
+
+						if ( x0 < 0.2 ) uvBuffer[ i + 0 ] += 1;
+						if ( x1 < 0.2 ) uvBuffer[ i + 2 ] += 1;
+						if ( x2 < 0.2 ) uvBuffer[ i + 4 ] += 1;
+
+					}
+
+				}
+
+			}
+
+			function pushVertex( vertex ) {
+
+				vertexBuffer.push( vertex.x, vertex.y, vertex.z );
+
+			}
+
+			function getVertexByIndex( index, vertex ) {
+
+				const stride = index * 3;
+
+				vertex.x = vertices[ stride + 0 ];
+				vertex.y = vertices[ stride + 1 ];
+				vertex.z = vertices[ stride + 2 ];
+
+			}
+
+			function correctUVs() {
+
+				const a = new Vector3();
+				const b = new Vector3();
+				const c = new Vector3();
+
+				const centroid = new Vector3();
+
+				const uvA = new Vector2();
+				const uvB = new Vector2();
+				const uvC = new Vector2();
+
+				for ( let i = 0, j = 0; i < vertexBuffer.length; i += 9, j += 6 ) {
+
+					a.set( vertexBuffer[ i + 0 ], vertexBuffer[ i + 1 ], vertexBuffer[ i + 2 ] );
+					b.set( vertexBuffer[ i + 3 ], vertexBuffer[ i + 4 ], vertexBuffer[ i + 5 ] );
+					c.set( vertexBuffer[ i + 6 ], vertexBuffer[ i + 7 ], vertexBuffer[ i + 8 ] );
+
+					uvA.set( uvBuffer[ j + 0 ], uvBuffer[ j + 1 ] );
+					uvB.set( uvBuffer[ j + 2 ], uvBuffer[ j + 3 ] );
+					uvC.set( uvBuffer[ j + 4 ], uvBuffer[ j + 5 ] );
+
+					centroid.copy( a ).add( b ).add( c ).divideScalar( 3 );
+
+					const azi = azimuth( centroid );
+
+					correctUV( uvA, j + 0, a, azi );
+					correctUV( uvB, j + 2, b, azi );
+					correctUV( uvC, j + 4, c, azi );
+
+				}
+
+			}
+
+			function correctUV( uv, stride, vector, azimuth ) {
+
+				if ( ( azimuth < 0 ) && ( uv.x === 1 ) ) {
+
+					uvBuffer[ stride ] = uv.x - 1;
+
+				}
+
+				if ( ( vector.x === 0 ) && ( vector.z === 0 ) ) {
+
+					uvBuffer[ stride ] = azimuth / 2 / Math.PI + 0.5;
+
+				}
+
+			}
+
+			// Angle around the Y axis, counter-clockwise when looking from above.
+
+			function azimuth( vector ) {
+
+				return Math.atan2( vector.z, - vector.x );
+
+			}
+
+
+			// Angle above the XZ plane.
+
+			function inclination( vector ) {
+
+				return Math.atan2( - vector.y, Math.sqrt( ( vector.x * vector.x ) + ( vector.z * vector.z ) ) );
+
+			}
+
+		}
+
+	}
+
 	new Vector3();
 	new Vector3();
 	new Vector3();
@@ -29235,6 +29530,34 @@
 
 	}
 
+	class OctahedronGeometry extends PolyhedronGeometry {
+
+		constructor( radius = 1, detail = 0 ) {
+
+			const vertices = [
+				1, 0, 0, 	- 1, 0, 0,	0, 1, 0,
+				0, - 1, 0, 	0, 0, 1,	0, 0, - 1
+			];
+
+			const indices = [
+				0, 2, 4,	0, 4, 3,	0, 3, 5,
+				0, 5, 2,	1, 2, 5,	1, 5, 3,
+				1, 3, 4,	1, 4, 2
+			];
+
+			super( vertices, indices, radius, detail );
+
+			this.type = 'OctahedronGeometry';
+
+			this.parameters = {
+				radius: radius,
+				detail: detail
+			};
+
+		}
+
+	}
+
 	class ShapeGeometry extends BufferGeometry {
 
 		constructor( shapes, curveSegments = 12 ) {
@@ -29393,121 +29716,6 @@
 		}
 
 		return data;
-
-	}
-
-	class SphereGeometry extends BufferGeometry {
-
-		constructor( radius = 1, widthSegments = 8, heightSegments = 6, phiStart = 0, phiLength = Math.PI * 2, thetaStart = 0, thetaLength = Math.PI ) {
-
-			super();
-			this.type = 'SphereGeometry';
-
-			this.parameters = {
-				radius: radius,
-				widthSegments: widthSegments,
-				heightSegments: heightSegments,
-				phiStart: phiStart,
-				phiLength: phiLength,
-				thetaStart: thetaStart,
-				thetaLength: thetaLength
-			};
-
-			widthSegments = Math.max( 3, Math.floor( widthSegments ) );
-			heightSegments = Math.max( 2, Math.floor( heightSegments ) );
-
-			const thetaEnd = Math.min( thetaStart + thetaLength, Math.PI );
-
-			let index = 0;
-			const grid = [];
-
-			const vertex = new Vector3();
-			const normal = new Vector3();
-
-			// buffers
-
-			const indices = [];
-			const vertices = [];
-			const normals = [];
-			const uvs = [];
-
-			// generate vertices, normals and uvs
-
-			for ( let iy = 0; iy <= heightSegments; iy ++ ) {
-
-				const verticesRow = [];
-
-				const v = iy / heightSegments;
-
-				// special case for the poles
-
-				let uOffset = 0;
-
-				if ( iy == 0 && thetaStart == 0 ) {
-
-					uOffset = 0.5 / widthSegments;
-
-				} else if ( iy == heightSegments && thetaEnd == Math.PI ) {
-
-					uOffset = - 0.5 / widthSegments;
-
-				}
-
-				for ( let ix = 0; ix <= widthSegments; ix ++ ) {
-
-					const u = ix / widthSegments;
-
-					// vertex
-
-					vertex.x = - radius * Math.cos( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );
-					vertex.y = radius * Math.cos( thetaStart + v * thetaLength );
-					vertex.z = radius * Math.sin( phiStart + u * phiLength ) * Math.sin( thetaStart + v * thetaLength );
-
-					vertices.push( vertex.x, vertex.y, vertex.z );
-
-					// normal
-
-					normal.copy( vertex ).normalize();
-					normals.push( normal.x, normal.y, normal.z );
-
-					// uv
-
-					uvs.push( u + uOffset, 1 - v );
-
-					verticesRow.push( index ++ );
-
-				}
-
-				grid.push( verticesRow );
-
-			}
-
-			// indices
-
-			for ( let iy = 0; iy < heightSegments; iy ++ ) {
-
-				for ( let ix = 0; ix < widthSegments; ix ++ ) {
-
-					const a = grid[ iy ][ ix + 1 ];
-					const b = grid[ iy ][ ix ];
-					const c = grid[ iy + 1 ][ ix ];
-					const d = grid[ iy + 1 ][ ix + 1 ];
-
-					if ( iy !== 0 || thetaStart > 0 ) indices.push( a, b, d );
-					if ( iy !== heightSegments - 1 || thetaEnd < Math.PI ) indices.push( b, c, d );
-
-				}
-
-			}
-
-			// build geometry
-
-			this.setIndex( indices );
-			this.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
-			this.setAttribute( 'normal', new Float32BufferAttribute( normals, 3 ) );
-			this.setAttribute( 'uv', new Float32BufferAttribute( uvs, 2 ) );
-
-		}
 
 	}
 
@@ -39336,89 +39544,6 @@
 
 	InstancedInterleavedBuffer.prototype.isInstancedInterleavedBuffer = true;
 
-	/**
-	 * Ref: https://en.wikipedia.org/wiki/Spherical_coordinate_system
-	 *
-	 * The polar angle (phi) is measured from the positive y-axis. The positive y-axis is up.
-	 * The azimuthal angle (theta) is measured from the positive z-axis.
-	 */
-
-	class Spherical {
-
-		constructor( radius = 1, phi = 0, theta = 0 ) {
-
-			this.radius = radius;
-			this.phi = phi; // polar angle
-			this.theta = theta; // azimuthal angle
-
-			return this;
-
-		}
-
-		set( radius, phi, theta ) {
-
-			this.radius = radius;
-			this.phi = phi;
-			this.theta = theta;
-
-			return this;
-
-		}
-
-		copy( other ) {
-
-			this.radius = other.radius;
-			this.phi = other.phi;
-			this.theta = other.theta;
-
-			return this;
-
-		}
-
-		// restrict phi to be betwee EPS and PI-EPS
-		makeSafe() {
-
-			const EPS = 0.000001;
-			this.phi = Math.max( EPS, Math.min( Math.PI - EPS, this.phi ) );
-
-			return this;
-
-		}
-
-		setFromVector3( v ) {
-
-			return this.setFromCartesianCoords( v.x, v.y, v.z );
-
-		}
-
-		setFromCartesianCoords( x, y, z ) {
-
-			this.radius = Math.sqrt( x * x + y * y + z * z );
-
-			if ( this.radius === 0 ) {
-
-				this.theta = 0;
-				this.phi = 0;
-
-			} else {
-
-				this.theta = Math.atan2( x, z );
-				this.phi = Math.acos( clamp( y / this.radius, - 1, 1 ) );
-
-			}
-
-			return this;
-
-		}
-
-		clone() {
-
-			return new this.constructor().copy( this );
-
-		}
-
-	}
-
 	const _startP = /*@__PURE__*/ new Vector3();
 	const _startEnd = /*@__PURE__*/ new Vector3();
 
@@ -41345,1183 +41470,6 @@
 		} else {
 
 			window.__THREE__ = REVISION;
-
-		}
-
-	}
-
-	// This set of controls performs orbiting, dollying (zooming), and panning.
-	// Unlike TrackballControls, it maintains the "up" direction object.up (+Y by default).
-	//
-	//    Orbit - left mouse / touch: one-finger move
-	//    Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
-	//    Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
-
-	const _changeEvent = { type: 'change' };
-	const _startEvent = { type: 'start' };
-	const _endEvent = { type: 'end' };
-
-	class OrbitControls extends EventDispatcher {
-
-		constructor( object, domElement ) {
-
-			super();
-
-			if ( domElement === undefined ) console.warn( 'THREE.OrbitControls: The second parameter "domElement" is now mandatory.' );
-			if ( domElement === document ) console.error( 'THREE.OrbitControls: "document" should not be used as the target "domElement". Please use "renderer.domElement" instead.' );
-
-			this.object = object;
-			this.domElement = domElement;
-
-			// Set to false to disable this control
-			this.enabled = true;
-
-			// "target" sets the location of focus, where the object orbits around
-			this.target = new Vector3();
-
-			// How far you can dolly in and out ( PerspectiveCamera only )
-			this.minDistance = 0;
-			this.maxDistance = Infinity;
-
-			// How far you can zoom in and out ( OrthographicCamera only )
-			this.minZoom = 0;
-			this.maxZoom = Infinity;
-
-			// How far you can orbit vertically, upper and lower limits.
-			// Range is 0 to Math.PI radians.
-			this.minPolarAngle = 0; // radians
-			this.maxPolarAngle = Math.PI; // radians
-
-			// How far you can orbit horizontally, upper and lower limits.
-			// If set, the interval [ min, max ] must be a sub-interval of [ - 2 PI, 2 PI ], with ( max - min < 2 PI )
-			this.minAzimuthAngle = - Infinity; // radians
-			this.maxAzimuthAngle = Infinity; // radians
-
-			// Set to true to enable damping (inertia)
-			// If damping is enabled, you must call controls.update() in your animation loop
-			this.enableDamping = false;
-			this.dampingFactor = 0.05;
-
-			// This option actually enables dollying in and out; left as "zoom" for backwards compatibility.
-			// Set to false to disable zooming
-			this.enableZoom = true;
-			this.zoomSpeed = 1.0;
-
-			// Set to false to disable rotating
-			this.enableRotate = true;
-			this.rotateSpeed = 1.0;
-
-			// Set to false to disable panning
-			this.enablePan = true;
-			this.panSpeed = 1.0;
-			this.screenSpacePanning = true; // if false, pan orthogonal to world-space direction camera.up
-			this.keyPanSpeed = 7.0;	// pixels moved per arrow key push
-
-			// Set to true to automatically rotate around the target
-			// If auto-rotate is enabled, you must call controls.update() in your animation loop
-			this.autoRotate = false;
-			this.autoRotateSpeed = 2.0; // 30 seconds per orbit when fps is 60
-
-			// The four arrow keys
-			this.keys = { LEFT: 'ArrowLeft', UP: 'ArrowUp', RIGHT: 'ArrowRight', BOTTOM: 'ArrowDown' };
-
-			// Mouse buttons
-			this.mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
-
-			// Touch fingers
-			this.touches = { ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN };
-
-			// for reset
-			this.target0 = this.target.clone();
-			this.position0 = this.object.position.clone();
-			this.zoom0 = this.object.zoom;
-
-			// the target DOM element for key events
-			this._domElementKeyEvents = null;
-
-			//
-			// public methods
-			//
-
-			this.getPolarAngle = function () {
-
-				return spherical.phi;
-
-			};
-
-			this.getAzimuthalAngle = function () {
-
-				return spherical.theta;
-
-			};
-
-			this.listenToKeyEvents = function ( domElement ) {
-
-				domElement.addEventListener( 'keydown', onKeyDown );
-				this._domElementKeyEvents = domElement;
-
-			};
-
-			this.saveState = function () {
-
-				scope.target0.copy( scope.target );
-				scope.position0.copy( scope.object.position );
-				scope.zoom0 = scope.object.zoom;
-
-			};
-
-			this.reset = function () {
-
-				scope.target.copy( scope.target0 );
-				scope.object.position.copy( scope.position0 );
-				scope.object.zoom = scope.zoom0;
-
-				scope.object.updateProjectionMatrix();
-				scope.dispatchEvent( _changeEvent );
-
-				scope.update();
-
-				state = STATE.NONE;
-
-			};
-
-			// this method is exposed, but perhaps it would be better if we can make it private...
-			this.update = function () {
-
-				const offset = new Vector3();
-
-				// so camera.up is the orbit axis
-				const quat = new Quaternion$1().setFromUnitVectors( object.up, new Vector3( 0, 1, 0 ) );
-				const quatInverse = quat.clone().invert();
-
-				const lastPosition = new Vector3();
-				const lastQuaternion = new Quaternion$1();
-
-				const twoPI = 2 * Math.PI;
-
-				return function update() {
-
-					const position = scope.object.position;
-
-					offset.copy( position ).sub( scope.target );
-
-					// rotate offset to "y-axis-is-up" space
-					offset.applyQuaternion( quat );
-
-					// angle from z-axis around y-axis
-					spherical.setFromVector3( offset );
-
-					if ( scope.autoRotate && state === STATE.NONE ) {
-
-						rotateLeft( getAutoRotationAngle() );
-
-					}
-
-					if ( scope.enableDamping ) {
-
-						spherical.theta += sphericalDelta.theta * scope.dampingFactor;
-						spherical.phi += sphericalDelta.phi * scope.dampingFactor;
-
-					} else {
-
-						spherical.theta += sphericalDelta.theta;
-						spherical.phi += sphericalDelta.phi;
-
-					}
-
-					// restrict theta to be between desired limits
-
-					let min = scope.minAzimuthAngle;
-					let max = scope.maxAzimuthAngle;
-
-					if ( isFinite( min ) && isFinite( max ) ) {
-
-						if ( min < - Math.PI ) min += twoPI; else if ( min > Math.PI ) min -= twoPI;
-
-						if ( max < - Math.PI ) max += twoPI; else if ( max > Math.PI ) max -= twoPI;
-
-						if ( min <= max ) {
-
-							spherical.theta = Math.max( min, Math.min( max, spherical.theta ) );
-
-						} else {
-
-							spherical.theta = ( spherical.theta > ( min + max ) / 2 ) ?
-								Math.max( min, spherical.theta ) :
-								Math.min( max, spherical.theta );
-
-						}
-
-					}
-
-					// restrict phi to be between desired limits
-					spherical.phi = Math.max( scope.minPolarAngle, Math.min( scope.maxPolarAngle, spherical.phi ) );
-
-					spherical.makeSafe();
-
-
-					spherical.radius *= scale;
-
-					// restrict radius to be between desired limits
-					spherical.radius = Math.max( scope.minDistance, Math.min( scope.maxDistance, spherical.radius ) );
-
-					// move target to panned location
-
-					if ( scope.enableDamping === true ) {
-
-						scope.target.addScaledVector( panOffset, scope.dampingFactor );
-
-					} else {
-
-						scope.target.add( panOffset );
-
-					}
-
-					offset.setFromSpherical( spherical );
-
-					// rotate offset back to "camera-up-vector-is-up" space
-					offset.applyQuaternion( quatInverse );
-
-					position.copy( scope.target ).add( offset );
-
-					scope.object.lookAt( scope.target );
-
-					if ( scope.enableDamping === true ) {
-
-						sphericalDelta.theta *= ( 1 - scope.dampingFactor );
-						sphericalDelta.phi *= ( 1 - scope.dampingFactor );
-
-						panOffset.multiplyScalar( 1 - scope.dampingFactor );
-
-					} else {
-
-						sphericalDelta.set( 0, 0, 0 );
-
-						panOffset.set( 0, 0, 0 );
-
-					}
-
-					scale = 1;
-
-					// update condition is:
-					// min(camera displacement, camera rotation in radians)^2 > EPS
-					// using small-angle approximation cos(x/2) = 1 - x^2 / 8
-
-					if ( zoomChanged ||
-						lastPosition.distanceToSquared( scope.object.position ) > EPS ||
-						8 * ( 1 - lastQuaternion.dot( scope.object.quaternion ) ) > EPS ) {
-
-						scope.dispatchEvent( _changeEvent );
-
-						lastPosition.copy( scope.object.position );
-						lastQuaternion.copy( scope.object.quaternion );
-						zoomChanged = false;
-
-						return true;
-
-					}
-
-					return false;
-
-				};
-
-			}();
-
-			this.dispose = function () {
-
-				scope.domElement.removeEventListener( 'contextmenu', onContextMenu );
-
-				scope.domElement.removeEventListener( 'pointerdown', onPointerDown );
-				scope.domElement.removeEventListener( 'wheel', onMouseWheel );
-
-				scope.domElement.removeEventListener( 'touchstart', onTouchStart );
-				scope.domElement.removeEventListener( 'touchend', onTouchEnd );
-				scope.domElement.removeEventListener( 'touchmove', onTouchMove );
-
-				scope.domElement.ownerDocument.removeEventListener( 'pointermove', onPointerMove );
-				scope.domElement.ownerDocument.removeEventListener( 'pointerup', onPointerUp );
-
-
-				if ( scope._domElementKeyEvents !== null ) {
-
-					scope._domElementKeyEvents.removeEventListener( 'keydown', onKeyDown );
-
-				}
-
-				//scope.dispatchEvent( { type: 'dispose' } ); // should this be added here?
-
-			};
-
-			//
-			// internals
-			//
-
-			const scope = this;
-
-			const STATE = {
-				NONE: - 1,
-				ROTATE: 0,
-				DOLLY: 1,
-				PAN: 2,
-				TOUCH_ROTATE: 3,
-				TOUCH_PAN: 4,
-				TOUCH_DOLLY_PAN: 5,
-				TOUCH_DOLLY_ROTATE: 6
-			};
-
-			let state = STATE.NONE;
-
-			const EPS = 0.000001;
-
-			// current position in spherical coordinates
-			const spherical = new Spherical();
-			const sphericalDelta = new Spherical();
-
-			let scale = 1;
-			const panOffset = new Vector3();
-			let zoomChanged = false;
-
-			const rotateStart = new Vector2();
-			const rotateEnd = new Vector2();
-			const rotateDelta = new Vector2();
-
-			const panStart = new Vector2();
-			const panEnd = new Vector2();
-			const panDelta = new Vector2();
-
-			const dollyStart = new Vector2();
-			const dollyEnd = new Vector2();
-			const dollyDelta = new Vector2();
-
-			function getAutoRotationAngle() {
-
-				return 2 * Math.PI / 60 / 60 * scope.autoRotateSpeed;
-
-			}
-
-			function getZoomScale() {
-
-				return Math.pow( 0.95, scope.zoomSpeed );
-
-			}
-
-			function rotateLeft( angle ) {
-
-				sphericalDelta.theta -= angle;
-
-			}
-
-			function rotateUp( angle ) {
-
-				sphericalDelta.phi -= angle;
-
-			}
-
-			const panLeft = function () {
-
-				const v = new Vector3();
-
-				return function panLeft( distance, objectMatrix ) {
-
-					v.setFromMatrixColumn( objectMatrix, 0 ); // get X column of objectMatrix
-					v.multiplyScalar( - distance );
-
-					panOffset.add( v );
-
-				};
-
-			}();
-
-			const panUp = function () {
-
-				const v = new Vector3();
-
-				return function panUp( distance, objectMatrix ) {
-
-					if ( scope.screenSpacePanning === true ) {
-
-						v.setFromMatrixColumn( objectMatrix, 1 );
-
-					} else {
-
-						v.setFromMatrixColumn( objectMatrix, 0 );
-						v.crossVectors( scope.object.up, v );
-
-					}
-
-					v.multiplyScalar( distance );
-
-					panOffset.add( v );
-
-				};
-
-			}();
-
-			// deltaX and deltaY are in pixels; right and down are positive
-			const pan = function () {
-
-				const offset = new Vector3();
-
-				return function pan( deltaX, deltaY ) {
-
-					const element = scope.domElement;
-
-					if ( scope.object.isPerspectiveCamera ) {
-
-						// perspective
-						const position = scope.object.position;
-						offset.copy( position ).sub( scope.target );
-						let targetDistance = offset.length();
-
-						// half of the fov is center to top of screen
-						targetDistance *= Math.tan( ( scope.object.fov / 2 ) * Math.PI / 180.0 );
-
-						// we use only clientHeight here so aspect ratio does not distort speed
-						panLeft( 2 * deltaX * targetDistance / element.clientHeight, scope.object.matrix );
-						panUp( 2 * deltaY * targetDistance / element.clientHeight, scope.object.matrix );
-
-					} else if ( scope.object.isOrthographicCamera ) {
-
-						// orthographic
-						panLeft( deltaX * ( scope.object.right - scope.object.left ) / scope.object.zoom / element.clientWidth, scope.object.matrix );
-						panUp( deltaY * ( scope.object.top - scope.object.bottom ) / scope.object.zoom / element.clientHeight, scope.object.matrix );
-
-					} else {
-
-						// camera neither orthographic nor perspective
-						console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - pan disabled.' );
-						scope.enablePan = false;
-
-					}
-
-				};
-
-			}();
-
-			function dollyOut( dollyScale ) {
-
-				if ( scope.object.isPerspectiveCamera ) {
-
-					scale /= dollyScale;
-
-				} else if ( scope.object.isOrthographicCamera ) {
-
-					scope.object.zoom = Math.max( scope.minZoom, Math.min( scope.maxZoom, scope.object.zoom * dollyScale ) );
-					scope.object.updateProjectionMatrix();
-					zoomChanged = true;
-
-				} else {
-
-					console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.' );
-					scope.enableZoom = false;
-
-				}
-
-			}
-
-			function dollyIn( dollyScale ) {
-
-				if ( scope.object.isPerspectiveCamera ) {
-
-					scale *= dollyScale;
-
-				} else if ( scope.object.isOrthographicCamera ) {
-
-					scope.object.zoom = Math.max( scope.minZoom, Math.min( scope.maxZoom, scope.object.zoom / dollyScale ) );
-					scope.object.updateProjectionMatrix();
-					zoomChanged = true;
-
-				} else {
-
-					console.warn( 'WARNING: OrbitControls.js encountered an unknown camera type - dolly/zoom disabled.' );
-					scope.enableZoom = false;
-
-				}
-
-			}
-
-			//
-			// event callbacks - update the object state
-			//
-
-			function handleMouseDownRotate( event ) {
-
-				rotateStart.set( event.clientX, event.clientY );
-
-			}
-
-			function handleMouseDownDolly( event ) {
-
-				dollyStart.set( event.clientX, event.clientY );
-
-			}
-
-			function handleMouseDownPan( event ) {
-
-				panStart.set( event.clientX, event.clientY );
-
-			}
-
-			function handleMouseMoveRotate( event ) {
-
-				rotateEnd.set( event.clientX, event.clientY );
-
-				rotateDelta.subVectors( rotateEnd, rotateStart ).multiplyScalar( scope.rotateSpeed );
-
-				const element = scope.domElement;
-
-				rotateLeft( 2 * Math.PI * rotateDelta.x / element.clientHeight ); // yes, height
-
-				rotateUp( 2 * Math.PI * rotateDelta.y / element.clientHeight );
-
-				rotateStart.copy( rotateEnd );
-
-				scope.update();
-
-			}
-
-			function handleMouseMoveDolly( event ) {
-
-				dollyEnd.set( event.clientX, event.clientY );
-
-				dollyDelta.subVectors( dollyEnd, dollyStart );
-
-				if ( dollyDelta.y > 0 ) {
-
-					dollyOut( getZoomScale() );
-
-				} else if ( dollyDelta.y < 0 ) {
-
-					dollyIn( getZoomScale() );
-
-				}
-
-				dollyStart.copy( dollyEnd );
-
-				scope.update();
-
-			}
-
-			function handleMouseMovePan( event ) {
-
-				panEnd.set( event.clientX, event.clientY );
-
-				panDelta.subVectors( panEnd, panStart ).multiplyScalar( scope.panSpeed );
-
-				pan( panDelta.x, panDelta.y );
-
-				panStart.copy( panEnd );
-
-				scope.update();
-
-			}
-
-			function handleMouseWheel( event ) {
-
-				if ( event.deltaY < 0 ) {
-
-					dollyIn( getZoomScale() );
-
-				} else if ( event.deltaY > 0 ) {
-
-					dollyOut( getZoomScale() );
-
-				}
-
-				scope.update();
-
-			}
-
-			function handleKeyDown( event ) {
-
-				let needsUpdate = false;
-
-				switch ( event.code ) {
-
-					case scope.keys.UP:
-						pan( 0, scope.keyPanSpeed );
-						needsUpdate = true;
-						break;
-
-					case scope.keys.BOTTOM:
-						pan( 0, - scope.keyPanSpeed );
-						needsUpdate = true;
-						break;
-
-					case scope.keys.LEFT:
-						pan( scope.keyPanSpeed, 0 );
-						needsUpdate = true;
-						break;
-
-					case scope.keys.RIGHT:
-						pan( - scope.keyPanSpeed, 0 );
-						needsUpdate = true;
-						break;
-
-				}
-
-				if ( needsUpdate ) {
-
-					// prevent the browser from scrolling on cursor keys
-					event.preventDefault();
-
-					scope.update();
-
-				}
-
-
-			}
-
-			function handleTouchStartRotate( event ) {
-
-				if ( event.touches.length == 1 ) {
-
-					rotateStart.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
-
-				} else {
-
-					const x = 0.5 * ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX );
-					const y = 0.5 * ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY );
-
-					rotateStart.set( x, y );
-
-				}
-
-			}
-
-			function handleTouchStartPan( event ) {
-
-				if ( event.touches.length == 1 ) {
-
-					panStart.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
-
-				} else {
-
-					const x = 0.5 * ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX );
-					const y = 0.5 * ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY );
-
-					panStart.set( x, y );
-
-				}
-
-			}
-
-			function handleTouchStartDolly( event ) {
-
-				const dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-				const dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-
-				const distance = Math.sqrt( dx * dx + dy * dy );
-
-				dollyStart.set( 0, distance );
-
-			}
-
-			function handleTouchStartDollyPan( event ) {
-
-				if ( scope.enableZoom ) handleTouchStartDolly( event );
-
-				if ( scope.enablePan ) handleTouchStartPan( event );
-
-			}
-
-			function handleTouchStartDollyRotate( event ) {
-
-				if ( scope.enableZoom ) handleTouchStartDolly( event );
-
-				if ( scope.enableRotate ) handleTouchStartRotate( event );
-
-			}
-
-			function handleTouchMoveRotate( event ) {
-
-				if ( event.touches.length == 1 ) {
-
-					rotateEnd.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
-
-				} else {
-
-					const x = 0.5 * ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX );
-					const y = 0.5 * ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY );
-
-					rotateEnd.set( x, y );
-
-				}
-
-				rotateDelta.subVectors( rotateEnd, rotateStart ).multiplyScalar( scope.rotateSpeed );
-
-				const element = scope.domElement;
-
-				rotateLeft( 2 * Math.PI * rotateDelta.x / element.clientHeight ); // yes, height
-
-				rotateUp( 2 * Math.PI * rotateDelta.y / element.clientHeight );
-
-				rotateStart.copy( rotateEnd );
-
-			}
-
-			function handleTouchMovePan( event ) {
-
-				if ( event.touches.length == 1 ) {
-
-					panEnd.set( event.touches[ 0 ].pageX, event.touches[ 0 ].pageY );
-
-				} else {
-
-					const x = 0.5 * ( event.touches[ 0 ].pageX + event.touches[ 1 ].pageX );
-					const y = 0.5 * ( event.touches[ 0 ].pageY + event.touches[ 1 ].pageY );
-
-					panEnd.set( x, y );
-
-				}
-
-				panDelta.subVectors( panEnd, panStart ).multiplyScalar( scope.panSpeed );
-
-				pan( panDelta.x, panDelta.y );
-
-				panStart.copy( panEnd );
-
-			}
-
-			function handleTouchMoveDolly( event ) {
-
-				const dx = event.touches[ 0 ].pageX - event.touches[ 1 ].pageX;
-				const dy = event.touches[ 0 ].pageY - event.touches[ 1 ].pageY;
-
-				const distance = Math.sqrt( dx * dx + dy * dy );
-
-				dollyEnd.set( 0, distance );
-
-				dollyDelta.set( 0, Math.pow( dollyEnd.y / dollyStart.y, scope.zoomSpeed ) );
-
-				dollyOut( dollyDelta.y );
-
-				dollyStart.copy( dollyEnd );
-
-			}
-
-			function handleTouchMoveDollyPan( event ) {
-
-				if ( scope.enableZoom ) handleTouchMoveDolly( event );
-
-				if ( scope.enablePan ) handleTouchMovePan( event );
-
-			}
-
-			function handleTouchMoveDollyRotate( event ) {
-
-				if ( scope.enableZoom ) handleTouchMoveDolly( event );
-
-				if ( scope.enableRotate ) handleTouchMoveRotate( event );
-
-			}
-
-			//
-			// event handlers - FSM: listen for events and reset state
-			//
-
-			function onPointerDown( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				switch ( event.pointerType ) {
-
-					case 'mouse':
-					case 'pen':
-						onMouseDown( event );
-						break;
-
-					// TODO touch
-
-				}
-
-			}
-
-			function onPointerMove( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				switch ( event.pointerType ) {
-
-					case 'mouse':
-					case 'pen':
-						onMouseMove( event );
-						break;
-
-					// TODO touch
-
-				}
-
-			}
-
-			function onPointerUp( event ) {
-
-				switch ( event.pointerType ) {
-
-					case 'mouse':
-					case 'pen':
-						onMouseUp();
-						break;
-
-					// TODO touch
-
-				}
-
-			}
-
-			function onMouseDown( event ) {
-
-				// Prevent the browser from scrolling.
-				event.preventDefault();
-
-				// Manually set the focus since calling preventDefault above
-				// prevents the browser from setting it automatically.
-
-				scope.domElement.focus ? scope.domElement.focus() : window.focus();
-
-				let mouseAction;
-
-				switch ( event.button ) {
-
-					case 0:
-
-						mouseAction = scope.mouseButtons.LEFT;
-						break;
-
-					case 1:
-
-						mouseAction = scope.mouseButtons.MIDDLE;
-						break;
-
-					case 2:
-
-						mouseAction = scope.mouseButtons.RIGHT;
-						break;
-
-					default:
-
-						mouseAction = - 1;
-
-				}
-
-				switch ( mouseAction ) {
-
-					case MOUSE.DOLLY:
-
-						if ( scope.enableZoom === false ) return;
-
-						handleMouseDownDolly( event );
-
-						state = STATE.DOLLY;
-
-						break;
-
-					case MOUSE.ROTATE:
-
-						if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
-
-							if ( scope.enablePan === false ) return;
-
-							handleMouseDownPan( event );
-
-							state = STATE.PAN;
-
-						} else {
-
-							if ( scope.enableRotate === false ) return;
-
-							handleMouseDownRotate( event );
-
-							state = STATE.ROTATE;
-
-						}
-
-						break;
-
-					case MOUSE.PAN:
-
-						if ( event.ctrlKey || event.metaKey || event.shiftKey ) {
-
-							if ( scope.enableRotate === false ) return;
-
-							handleMouseDownRotate( event );
-
-							state = STATE.ROTATE;
-
-						} else {
-
-							if ( scope.enablePan === false ) return;
-
-							handleMouseDownPan( event );
-
-							state = STATE.PAN;
-
-						}
-
-						break;
-
-					default:
-
-						state = STATE.NONE;
-
-				}
-
-				if ( state !== STATE.NONE ) {
-
-					scope.domElement.ownerDocument.addEventListener( 'pointermove', onPointerMove );
-					scope.domElement.ownerDocument.addEventListener( 'pointerup', onPointerUp );
-
-					scope.dispatchEvent( _startEvent );
-
-				}
-
-			}
-
-			function onMouseMove( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				event.preventDefault();
-
-				switch ( state ) {
-
-					case STATE.ROTATE:
-
-						if ( scope.enableRotate === false ) return;
-
-						handleMouseMoveRotate( event );
-
-						break;
-
-					case STATE.DOLLY:
-
-						if ( scope.enableZoom === false ) return;
-
-						handleMouseMoveDolly( event );
-
-						break;
-
-					case STATE.PAN:
-
-						if ( scope.enablePan === false ) return;
-
-						handleMouseMovePan( event );
-
-						break;
-
-				}
-
-			}
-
-			function onMouseUp( event ) {
-
-				scope.domElement.ownerDocument.removeEventListener( 'pointermove', onPointerMove );
-				scope.domElement.ownerDocument.removeEventListener( 'pointerup', onPointerUp );
-
-				if ( scope.enabled === false ) return;
-
-				scope.dispatchEvent( _endEvent );
-
-				state = STATE.NONE;
-
-			}
-
-			function onMouseWheel( event ) {
-
-				if ( scope.enabled === false || scope.enableZoom === false || ( state !== STATE.NONE && state !== STATE.ROTATE ) ) return;
-
-				event.preventDefault();
-
-				scope.dispatchEvent( _startEvent );
-
-				handleMouseWheel( event );
-
-				scope.dispatchEvent( _endEvent );
-
-			}
-
-			function onKeyDown( event ) {
-
-				if ( scope.enabled === false || scope.enablePan === false ) return;
-
-				handleKeyDown( event );
-
-			}
-
-			function onTouchStart( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				event.preventDefault(); // prevent scrolling
-
-				switch ( event.touches.length ) {
-
-					case 1:
-
-						switch ( scope.touches.ONE ) {
-
-							case TOUCH.ROTATE:
-
-								if ( scope.enableRotate === false ) return;
-
-								handleTouchStartRotate( event );
-
-								state = STATE.TOUCH_ROTATE;
-
-								break;
-
-							case TOUCH.PAN:
-
-								if ( scope.enablePan === false ) return;
-
-								handleTouchStartPan( event );
-
-								state = STATE.TOUCH_PAN;
-
-								break;
-
-							default:
-
-								state = STATE.NONE;
-
-						}
-
-						break;
-
-					case 2:
-
-						switch ( scope.touches.TWO ) {
-
-							case TOUCH.DOLLY_PAN:
-
-								if ( scope.enableZoom === false && scope.enablePan === false ) return;
-
-								handleTouchStartDollyPan( event );
-
-								state = STATE.TOUCH_DOLLY_PAN;
-
-								break;
-
-							case TOUCH.DOLLY_ROTATE:
-
-								if ( scope.enableZoom === false && scope.enableRotate === false ) return;
-
-								handleTouchStartDollyRotate( event );
-
-								state = STATE.TOUCH_DOLLY_ROTATE;
-
-								break;
-
-							default:
-
-								state = STATE.NONE;
-
-						}
-
-						break;
-
-					default:
-
-						state = STATE.NONE;
-
-				}
-
-				if ( state !== STATE.NONE ) {
-
-					scope.dispatchEvent( _startEvent );
-
-				}
-
-			}
-
-			function onTouchMove( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				event.preventDefault(); // prevent scrolling
-
-				switch ( state ) {
-
-					case STATE.TOUCH_ROTATE:
-
-						if ( scope.enableRotate === false ) return;
-
-						handleTouchMoveRotate( event );
-
-						scope.update();
-
-						break;
-
-					case STATE.TOUCH_PAN:
-
-						if ( scope.enablePan === false ) return;
-
-						handleTouchMovePan( event );
-
-						scope.update();
-
-						break;
-
-					case STATE.TOUCH_DOLLY_PAN:
-
-						if ( scope.enableZoom === false && scope.enablePan === false ) return;
-
-						handleTouchMoveDollyPan( event );
-
-						scope.update();
-
-						break;
-
-					case STATE.TOUCH_DOLLY_ROTATE:
-
-						if ( scope.enableZoom === false && scope.enableRotate === false ) return;
-
-						handleTouchMoveDollyRotate( event );
-
-						scope.update();
-
-						break;
-
-					default:
-
-						state = STATE.NONE;
-
-				}
-
-			}
-
-			function onTouchEnd( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				scope.dispatchEvent( _endEvent );
-
-				state = STATE.NONE;
-
-			}
-
-			function onContextMenu( event ) {
-
-				if ( scope.enabled === false ) return;
-
-				event.preventDefault();
-
-			}
-
-			//
-
-			scope.domElement.addEventListener( 'contextmenu', onContextMenu );
-
-			scope.domElement.addEventListener( 'pointerdown', onPointerDown );
-			scope.domElement.addEventListener( 'wheel', onMouseWheel, { passive: false } );
-
-			scope.domElement.addEventListener( 'touchstart', onTouchStart, { passive: false } );
-			scope.domElement.addEventListener( 'touchend', onTouchEnd );
-			scope.domElement.addEventListener( 'touchmove', onTouchMove, { passive: false } );
-
-			// force an update at start
-
-			this.update();
 
 		}
 
@@ -46481,85 +45429,6 @@
 		return newGeometry;
 
 	}
-
-	/*!
-	fflate - fast JavaScript compression/decompression
-	<https://101arrowz.github.io/fflate>
-	Licensed under MIT. https://github.com/101arrowz/fflate/blob/master/LICENSE
-	version 0.6.9
-	*/
-	var durl = function (c) { return URL.createObjectURL(new Blob([c], { type: 'text/javascript' })); };
-	try {
-	    URL.revokeObjectURL(durl(''));
-	}
-	catch (e) {
-	    // We're in Deno or a very old browser
-	    durl = function (c) { return 'data:application/javascript;charset=UTF-8,' + encodeURI(c); };
-	}
-
-	// aliases for shorter compressed code (most minifers don't do this)
-	var u8 = Uint8Array, u16 = Uint16Array, u32 = Uint32Array;
-	// fixed length extra bits
-	var fleb = new u8([0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, /* unused */ 0, 0, /* impossible */ 0]);
-	// fixed distance extra bits
-	// see fleb note
-	var fdeb = new u8([0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, /* unused */ 0, 0]);
-	// get base, reverse index map from extra bits
-	var freb = function (eb, start) {
-	    var b = new u16(31);
-	    for (var i = 0; i < 31; ++i) {
-	        b[i] = start += 1 << eb[i - 1];
-	    }
-	    // numbers here are at max 18 bits
-	    var r = new u32(b[30]);
-	    for (var i = 1; i < 30; ++i) {
-	        for (var j = b[i]; j < b[i + 1]; ++j) {
-	            r[j] = ((j - b[i]) << 5) | i;
-	        }
-	    }
-	    return [b, r];
-	};
-	var _a = freb(fleb, 2), fl = _a[0], revfl = _a[1];
-	// we can ignore the fact that the other numbers are wrong; they never happen anyway
-	fl[28] = 258, revfl[258] = 28;
-	freb(fdeb, 0);
-	// map of value to reverse (assuming 16 bits)
-	var rev = new u16(32768);
-	for (var i = 0; i < 32768; ++i) {
-	    // reverse table algorithm from SO
-	    var x$1 = ((i & 0xAAAA) >>> 1) | ((i & 0x5555) << 1);
-	    x$1 = ((x$1 & 0xCCCC) >>> 2) | ((x$1 & 0x3333) << 2);
-	    x$1 = ((x$1 & 0xF0F0) >>> 4) | ((x$1 & 0x0F0F) << 4);
-	    rev[i] = (((x$1 & 0xFF00) >>> 8) | ((x$1 & 0x00FF) << 8)) >>> 1;
-	}
-	// fixed length tree
-	var flt = new u8(288);
-	for (var i = 0; i < 144; ++i)
-	    flt[i] = 8;
-	for (var i = 144; i < 256; ++i)
-	    flt[i] = 9;
-	for (var i = 256; i < 280; ++i)
-	    flt[i] = 7;
-	for (var i = 280; i < 288; ++i)
-	    flt[i] = 8;
-	// fixed distance tree
-	var fdt = new u8(32);
-	for (var i = 0; i < 32; ++i)
-	    fdt[i] = 5;
-	// empty
-	var et = /*#__PURE__*/ new u8(0);
-	// text decoder
-	var td = typeof TextDecoder != 'undefined' && /*#__PURE__*/ new TextDecoder();
-	// text decoder stream
-	var tds = 0;
-	try {
-	    td.decode(et, { stream: true });
-	    tds = 1;
-	}
-	catch (e) { }
-
-	new Euler();
-	new Vector3();
 
 	class BufferGeometryUtils {
 
@@ -57279,74 +56148,125 @@
 	var x=function(){var t,e,n,i,r=new Vector3;function o(){this.tolerance=-1,this.faces=[],this.newFaces=[],this.assigned=new d,this.unassigned=new d,this.vertices=[];}function s(){this.normal=new Vector3,this.midpoint=new Vector3,this.area=0,this.constant=0,this.outside=null,this.mark=0,this.edge=null;}function p(t,e){this.vertex=t,this.prev=null,this.next=null,this.twin=null,this.face=e;}function f(t){this.point=t,this.prev=null,this.next=null,this.face=null;}function d(){this.head=null,this.tail=null;}return Object.assign(o.prototype,{setFromPoints:function(t){!0!==Array.isArray(t)&&console.error("THREE.ConvexHull: Points parameter is not an array."),t.length<4&&console.error("THREE.ConvexHull: The algorithm needs at least four points."),this.makeEmpty();for(var e=0,n=t.length;e<n;e++)this.vertices.push(new f(t[e]));return this.compute(),this},setFromObject:function(t){var e=[];return t.updateMatrixWorld(!0),t.traverse(function(t){var n,i,r,o=t.geometry;if(void 0!==o&&(o.isGeometry&&(o=o.toBufferGeometry?o.toBufferGeometry():(new BufferGeometry).fromGeometry(o)),o.isBufferGeometry)){var s=o.attributes.position;if(void 0!==s)for(n=0,i=s.count;n<i;n++)(r=new Vector3).fromBufferAttribute(s,n).applyMatrix4(t.matrixWorld),e.push(r);}}),this.setFromPoints(e)},containsPoint:function(t){for(var e=this.faces,n=0,i=e.length;n<i;n++)if(e[n].distanceToPoint(t)>this.tolerance)return !1;return !0},intersectRay:function(t,e){for(var n=this.faces,i=-Infinity,r=Infinity,o=0,s=n.length;o<s;o++){var a=n[o],u=a.distanceToPoint(t.origin),h=a.normal.dot(t.direction);if(u>0&&h>=0)return null;var c=0!==h?-u/h:0;if(!(c<=0)&&(h>0?r=Math.min(c,r):i=Math.max(c,i),i>r))return null}return t.at(-Infinity!==i?i:r,e),e},intersectsRay:function(t){return null!==this.intersectRay(t,r)},makeEmpty:function(){return this.faces=[],this.vertices=[],this},addVertexToFace:function(t,e){return t.face=e,null===e.outside?this.assigned.append(t):this.assigned.insertBefore(e.outside,t),e.outside=t,this},removeVertexFromFace:function(t,e){return t===e.outside&&(e.outside=null!==t.next&&t.next.face===e?t.next:null),this.assigned.remove(t),this},removeAllVerticesFromFace:function(t){if(null!==t.outside){for(var e=t.outside,n=t.outside;null!==n.next&&n.next.face===t;)n=n.next;return this.assigned.removeSubList(e,n),e.prev=n.next=null,t.outside=null,e}},deleteFaceVertices:function(t,e){var n=this.removeAllVerticesFromFace(t);if(void 0!==n)if(void 0===e)this.unassigned.appendChain(n);else {var i=n;do{var r=i.next;e.distanceToPoint(i.point)>this.tolerance?this.addVertexToFace(i,e):this.unassigned.append(i),i=r;}while(null!==i)}return this},resolveUnassignedPoints:function(t){if(!1===this.unassigned.isEmpty()){var e=this.unassigned.first();do{for(var n=e.next,i=this.tolerance,r=null,o=0;o<t.length;o++){var s=t[o];if(0===s.mark){var a=s.distanceToPoint(e.point);if(a>i&&(i=a,r=s),i>1e3*this.tolerance)break}}null!==r&&this.addVertexToFace(e,r),e=n;}while(null!==e)}return this},computeExtremes:function(){var t,e,n,i=new Vector3,r=new Vector3,o=[],s=[];for(t=0;t<3;t++)o[t]=s[t]=this.vertices[0];for(i.copy(this.vertices[0].point),r.copy(this.vertices[0].point),t=0,e=this.vertices.length;t<e;t++){var u=this.vertices[t],h=u.point;for(n=0;n<3;n++)h.getComponent(n)<i.getComponent(n)&&(i.setComponent(n,h.getComponent(n)),o[n]=u);for(n=0;n<3;n++)h.getComponent(n)>r.getComponent(n)&&(r.setComponent(n,h.getComponent(n)),s[n]=u);}return this.tolerance=3*Number.EPSILON*(Math.max(Math.abs(i.x),Math.abs(r.x))+Math.max(Math.abs(i.y),Math.abs(r.y))+Math.max(Math.abs(i.z),Math.abs(r.z))),{min:o,max:s}},computeInitialHull:function(){void 0===t&&(t=new Line3,e=new Plane$1,n=new Vector3);var i,r,o,u,l,p,f,d,m,g=this.vertices,x=this.computeExtremes(),v=x.min,w=x.max,y=0,b=0;for(p=0;p<3;p++)(m=w[p].point.getComponent(p)-v[p].point.getComponent(p))>y&&(y=m,b=p);for(y=0,t.set((r=v[b]).point,(o=w[b]).point),p=0,f=this.vertices.length;p<f;p++)(i=g[p])!==r&&i!==o&&(t.closestPointToPoint(i.point,!0,n),(m=n.distanceToSquared(i.point))>y&&(y=m,u=i));for(y=-1,e.setFromCoplanarPoints(r.point,o.point,u.point),p=0,f=this.vertices.length;p<f;p++)(i=g[p])!==r&&i!==o&&i!==u&&(m=Math.abs(e.distanceToPoint(i.point)))>y&&(y=m,l=i);var T=[];if(e.distanceToPoint(l.point)<0)for(T.push(s.create(r,o,u),s.create(l,o,r),s.create(l,u,o),s.create(l,r,u)),p=0;p<3;p++)d=(p+1)%3,T[p+1].getEdge(2).setTwin(T[0].getEdge(d)),T[p+1].getEdge(1).setTwin(T[d+1].getEdge(0));else for(T.push(s.create(r,u,o),s.create(l,r,o),s.create(l,o,u),s.create(l,u,r)),p=0;p<3;p++)d=(p+1)%3,T[p+1].getEdge(2).setTwin(T[0].getEdge((3-p)%3)),T[p+1].getEdge(0).setTwin(T[d+1].getEdge(1));for(p=0;p<4;p++)this.faces.push(T[p]);for(p=0,f=g.length;p<f;p++)if((i=g[p])!==r&&i!==o&&i!==u&&i!==l){y=this.tolerance;var F=null;for(d=0;d<4;d++)(m=this.faces[d].distanceToPoint(i.point))>y&&(y=m,F=this.faces[d]);null!==F&&this.addVertexToFace(i,F);}return this},reindexFaces:function(){for(var t=[],e=0;e<this.faces.length;e++){var n=this.faces[e];0===n.mark&&t.push(n);}return this.faces=t,this},nextVertexToAdd:function(){if(!1===this.assigned.isEmpty()){var t,e=0,n=this.assigned.first().face,i=n.outside;do{var r=n.distanceToPoint(i.point);r>e&&(e=r,t=i),i=i.next;}while(null!==i&&i.face===n);return t}},computeHorizon:function(t,e,n,i){var r;this.deleteFaceVertices(n),n.mark=1,r=null===e?e=n.getEdge(0):e.next;do{var o=r.twin,s=o.face;0===s.mark&&(s.distanceToPoint(t)>this.tolerance?this.computeHorizon(t,o,s,i):i.push(r)),r=r.next;}while(r!==e);return this},addAdjoiningFace:function(t,e){var n=s.create(t,e.tail(),e.head());return this.faces.push(n),n.getEdge(-1).setTwin(e.twin),n.getEdge(0)},addNewFaces:function(t,e){this.newFaces=[];for(var n=null,i=null,r=0;r<e.length;r++){var o=this.addAdjoiningFace(t,e[r]);null===n?n=o:o.next.setTwin(i),this.newFaces.push(o.face),i=o;}return n.next.setTwin(i),this},addVertexToHull:function(t){var e=[];return this.unassigned.clear(),this.removeVertexFromFace(t,t.face),this.computeHorizon(t.point,null,t.face,e),this.addNewFaces(t,e),this.resolveUnassignedPoints(this.newFaces),this},cleanup:function(){return this.assigned.clear(),this.unassigned.clear(),this.newFaces=[],this},compute:function(){var t;for(this.computeInitialHull();void 0!==(t=this.nextVertexToAdd());)this.addVertexToHull(t);return this.reindexFaces(),this.cleanup(),this}}),Object.assign(s,{create:function(t,e,n){var i=new s,r=new p(t,i),o=new p(e,i),a=new p(n,i);return r.next=a.prev=o,o.next=r.prev=a,a.next=o.prev=r,i.edge=r,i.compute()}}),Object.assign(s.prototype,{getEdge:function(t){for(var e=this.edge;t>0;)e=e.next,t--;for(;t<0;)e=e.prev,t++;return e},compute:function(){void 0===i&&(i=new Triangle);var t=this.edge.tail(),e=this.edge.head(),n=this.edge.next.head();return i.set(t.point,e.point,n.point),i.getNormal(this.normal),i.getMidpoint(this.midpoint),this.area=i.getArea(),this.constant=this.normal.dot(this.midpoint),this},distanceToPoint:function(t){return this.normal.dot(t)-this.constant}}),Object.assign(p.prototype,{head:function(){return this.vertex},tail:function(){return this.prev?this.prev.vertex:null},length:function(){var t=this.head(),e=this.tail();return null!==e?e.point.distanceTo(t.point):-1},lengthSquared:function(){var t=this.head(),e=this.tail();return null!==e?e.point.distanceToSquared(t.point):-1},setTwin:function(t){return this.twin=t,t.twin=this,this}}),Object.assign(d.prototype,{first:function(){return this.head},last:function(){return this.tail},clear:function(){return this.head=this.tail=null,this},insertBefore:function(t,e){return e.prev=t.prev,e.next=t,null===e.prev?this.head=e:e.prev.next=e,t.prev=e,this},insertAfter:function(t,e){return e.prev=t,e.next=t.next,null===e.next?this.tail=e:e.next.prev=e,t.next=e,this},append:function(t){return null===this.head?this.head=t:this.tail.next=t,t.prev=this.tail,t.next=null,this.tail=t,this},appendChain:function(t){for(null===this.head?this.head=t:this.tail.next=t,t.prev=this.tail;null!==t.next;)t=t.next;return this.tail=t,this},remove:function(t){return null===t.prev?this.head=t.next:t.prev.next=t.next,null===t.next?this.tail=t.prev:t.next.prev=t.prev,this},removeSubList:function(t,e){return null===t.prev?this.head=e.next:t.prev.next=e.next,null===e.next?this.tail=t.prev:e.next.prev=t.prev,this},isEmpty:function(){return null===this.head}}),o}();const v=new Vector3,w=new Vector3,y=new Quaternion$1;function b(t){const e=function(t){const e=[];return t.traverse(function(t){t.isMesh&&e.push(t);}),e}(t);if(0===e.length)return null;if(1===e.length)return T(e[0]);let n;const i=[];for(;n=e.pop();)i.push(B(T(n)));return function(t){let e=0;for(let n=0;n<t.length;n++){const i=t[n].attributes.position;i&&3===i.itemSize&&(e+=i.count);}const n=new Float32Array(3*e);let i=0;for(let e=0;e<t.length;e++){const r=t[e].attributes.position;if(r&&3===r.itemSize)for(let t=0;t<r.count;t++)n[i++]=r.getX(t),n[i++]=r.getY(t),n[i++]=r.getZ(t);}return (new BufferGeometry).setAttribute("position",new BufferAttribute(n,3))}(i)}function T(t){let e=t.geometry;return e=e.toBufferGeometry?e.toBufferGeometry():e.clone(),t.updateMatrixWorld(),t.matrixWorld.decompose(v,y,w),e.scale(w.x,w.y,w.z),e}function F(t){const e=t.attributes.position,n=new Float32Array(3*e.count);for(let t=0;t<e.count;t+=3)n[t]=e.getX(t),n[t+1]=e.getY(t),n[t+2]=e.getZ(t);return n}function E(t,e){switch(e){case"x":return t.x;case"y":return t.y;case"z":return t.z}throw new Error(`Unexpected component ${e}`)}function B(t,e=1e-4){e=Math.max(e,Number.EPSILON);const n={},i=t.getIndex(),r=t.getAttribute("position"),o=i?i.count:r.count;let s=0;const a=[],h=[],c=Math.log10(1/e),l=Math.pow(10,c);for(let t=0;t<o;t++){const e=i?i.getX(t):t;let o="";o+=~~(r.getX(e)*l)+",",o+=~~(r.getY(e)*l)+",",o+=~~(r.getZ(e)*l)+",",o in n?a.push(n[o]):(h.push(r.getX(e)),h.push(r.getY(e)),h.push(r.getZ(e)),n[o]=s,a.push(s),s++);}const p=new BufferAttribute(new Float32Array(h),r.itemSize,r.normalized),d=new BufferGeometry;return d.setAttribute("position",p),d.setIndex(a),d}const M=Math.PI/2;var P;!function(t){t.BOX="Box",t.CYLINDER="Cylinder",t.SPHERE="Sphere",t.HULL="ConvexPolyhedron",t.MESH="Trimesh";}(P||(P={}));const S=function(a,u={}){let h;if(u.type===P.BOX)return C(a);if(u.type===P.CYLINDER)return function(e,n){const i=["x","y","z"],o=n.cylinderAxis||"y",s=i.splice(i.indexOf(o),1)&&i,a=(new Box3).setFromObject(e);if(!isFinite(a.min.lengthSq()))return null;const u=a.max[o]-a.min[o],h=.5*Math.max(E(a.max,s[0])-E(a.min,s[0]),E(a.max,s[1])-E(a.min,s[1])),c=new Cylinder(h,h,u,12);c.radiusTop=h,c.radiusBottom=h,c.height=u,c.numSegments=12;const l="y"===o?M:0,p="z"===o?M:0;return {shape:c,orientation:(new Quaternion).setFromEuler(l,p,0,"XYZ").normalize()}}(a,u);if(u.type===P.SPHERE)return function(t,e){if(e.sphereRadius)return {shape:new Sphere(e.sphereRadius)};const n=b(t);return n?(n.computeBoundingSphere(),{shape:new Sphere(n.boundingSphere.radius)}):null}(a,u);if(u.type===P.HULL)return function(t){const e=b(t);if(!e)return null;const r=1e-4;for(let t=0;t<e.attributes.position.count;t++)e.attributes.position.setXYZ(t,e.attributes.position.getX(t)+(Math.random()-.5)*r,e.attributes.position.getY(t)+(Math.random()-.5)*r,e.attributes.position.getZ(t)+(Math.random()-.5)*r);const o=(new x).setFromObject(new Mesh(e)).faces,s=[],a=[];for(let t=0;t<o.length;t++){const e=o[t],i=[];a.push(i);let r=e.edge;do{const t=r.head().point;s.push(new Vec3(t.x,t.y,t.z)),i.push(s.length-1),r=r.next;}while(r!==e.edge)}return {shape:new ConvexPolyhedron({vertices:s,faces:a})}}(a);if(u.type===P.MESH)return h=b(a),h?function(t){const e=F(t);if(!e.length)return null;const n=Object.keys(e).map(Number);return {shape:new Trimesh(e,n)}}(h):null;if(u.type)throw new Error(`[CANNON.threeToCannon] Invalid type "${u.type}".`);if(h=b(a),!h)return null;switch(h.type){case"BoxGeometry":case"BoxBufferGeometry":return z(h);case"CylinderGeometry":case"CylinderBufferGeometry":return function(e){const n=e.parameters,i=new Cylinder(n.radiusTop,n.radiusBottom,n.height,n.radialSegments);return i.radiusTop=n.radiusTop,i.radiusBottom=n.radiusBottom,i.height=n.height,i.numSegments=n.radialSegments,{shape:i,orientation:(new Quaternion).setFromEuler(MathUtils.degToRad(-90),0,0,"XYZ").normalize()}}(h);case"PlaneGeometry":case"PlaneBufferGeometry":return function(t){t.computeBoundingBox();const i=t.boundingBox;return {shape:new Box(new Vec3((i.max.x-i.min.x)/2||.1,(i.max.y-i.min.y)/2||.1,(i.max.z-i.min.z)/2||.1))}}(h);case"SphereGeometry":case"SphereBufferGeometry":return function(t){return {shape:new Sphere(t.parameters.radius)}}(h);case"TubeGeometry":case"BufferGeometry":return C(a);default:return console.warn('Unrecognized geometry: "%s". Using bounding box as shape.',h.type),z(h)}};function z(t){if(!F(t).length)return null;t.computeBoundingBox();const i=t.boundingBox;return {shape:new Box(new Vec3((i.max.x-i.min.x)/2,(i.max.y-i.min.y)/2,(i.max.z-i.min.z)/2))}}function C(t){const i=t.clone();i.quaternion.set(0,0,0,1),i.updateMatrixWorld();const r=(new Box3).setFromObject(i);if(!isFinite(r.min.lengthSq()))return null;const o=new Box(new Vec3((r.max.x-r.min.x)/2,(r.max.y-r.min.y)/2,(r.max.z-r.min.z)/2)),s=r.translate(i.position.negate()).getCenter(new Vector3);return {shape:o,offset:s.lengthSq()?new Vec3(s.x,s.y,s.z):void 0}}
 
 	// three.js global vars
-	let camera, scene, stats, renderer, clock;
-	let sphereMesh, shipModel;
-	const shipPath = '/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf';
+	let scene, stats, renderer, clock;
+	let shipModel;
 
-	//three.js textures
-	let skyBoxtexture;
-	const blue = 'rgb(110,197,233)';
+	// global asset paths
+	const shipPath =
+	  "/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
+	const blue = "rgb(110,197,233)";
+	const vibrantYellow = new Color(0xf49f1c);
+	const darkBlue = new Color(0x003380);
 
-	// cannon-es global vars
+	// cannon-es global variables
 	let world;
-	let sphereBody, shipBody;
-	const timeStep = 1 / 60; 
+	let shipBody;
+	const timeStep = 1 / 60;
 	let lastCallTime;
+
+	// player control global variables
+	let keys;
+
+	// flight camera a& controls global variables
+	let flightCamera;
+	let acceleration = 0; 
+	let pitchSpeed = 0;
+	let rollSpeed = 0;
+	let yawSpeed = 0;
+	let accelerationImpulse;
+
+	//token global variables
+	var tokensArray = []; //Array containing tokens
+	var boxArray = []; // Array containing box for tokens'
+	var innerCustomArray = []; //Array conatining the inner meh of the tokens
+
+	//ship model bounding box global vairables
+	var playerGeometry;
+	var playerBox;
+	var playerMaterial;
+	var playerCustom;
+
+	//global variable to keep track of the number of frames that havebeen rendered
+	var renderFrames = 0;
+
+	//timer variables
+	var minutes, seconds, gameStart, gameLoad, endTime;
+	var levelDuration = 0.1;
+	var timeTaken = [0,0];
+	var inprogress = true;
+
+	//score variable
+	var totalTokens = 1;
+	var tokenScore = 0;
+	var maxScore = 1;
+
 
 
 	class Game {
-
 		async init() {
+			gameLoad = Date.parse(new Date());
+			gameStart = new Date();
+			endTime = new Date(gameLoad+ levelDuration*60*1000);
+	////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+			//get html elements
+			document.getElementById("timer");
 
 			// Scene
 			scene = new Scene();
 			//scene.background = new THREE.Color(0xa0a0a0)
 
-
 			//Skybox
 			const skyBoxLoader = new CubeTextureLoader();
-			skyBoxtexture = skyBoxLoader.load([
-			  'textures/skybox/indigo_ft.jpg',
-			  'textures/skybox/indigo_bk.jpg',
-			  'textures/skybox/indigo_up.jpg',
-			  'textures/skybox/indigo_dn.jpg',
-			  'textures/skybox/indigo_rt.jpg',
-			  'textures/skybox/indigo_lf.jpg',
+			const skyBoxtexture = skyBoxLoader.load([
+				"textures/skybox/indigo_ft.jpg",
+				"textures/skybox/indigo_bk.jpg",
+				"textures/skybox/indigo_up.jpg",
+				"textures/skybox/indigo_dn.jpg",
+				"textures/skybox/indigo_rt.jpg",
+				"textures/skybox/indigo_lf.jpg",
 			]);
 			// console.log(skyBoxtexture)
 			scene.background = skyBoxtexture;
 
-
 			// Physics world
 			world = new World({
-				gravity: new Vec3(0, -9.82, 0), // m/s²
+				// gravity: new CANNON.Vec3(0, -9.81, 0), // m/s²
 			});
+			//world.gravity.set(0, -20, 0)
+			world.gravity.set(0, 0, 0);
+			world.broadphase = new NaiveBroadphase(); // Detect coilliding objects
+			world.solver.iterations = 5; // collision detection sampling rate
 
 			stats = new Stats();
 			document.body.appendChild(stats.dom);
 
-			
-			// Camera
-			camera = new PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
-			camera.position.z = 400;
-		
-			// Initial camera position
-			camera.position.set(50,10,25);
+			// Normale camera
+			//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 )
 
+			// Normal camera initial position and orientation
+			//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
+			//camera.position.set(0,10,10)
+			
+
+			// Initialise flight camera
+			const fcFielOfView = 75;
+			const fcNear = 0.1;
+			const fcFar = 1000;
+			flightCamera = new PerspectiveCamera( fcFielOfView, window.innerWidth / window.innerHeight, fcNear, fcFar );
 
 			// Renderer
-			renderer = new WebGLRenderer( { antialias: true } );
+			renderer = new WebGLRenderer({ antialias: true });
 			renderer.setClearColor(blue);
-			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3);
-			window.addEventListener( 'resize', onWindowResize, false );
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			//renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3)
+			window.addEventListener("resize", onWindowResize, false);
 			document.body.appendChild(renderer.domElement);
 
+			// Orbit Controls for normal camera (currently does nothing)
+			//const controls = new OrbitControls(camera, renderer.domElement)
+			//controls.update()
 
-			// Orbit Controls
-			const controls = new OrbitControls(camera, renderer.domElement);
-			controls.update();
-			
 			// Axes Helper
 			const axes = new AxesHelper(100);
 			scene.add(axes);
@@ -57354,18 +56274,16 @@
 			// X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
 			const gridSize = 500;
 			const gridDivisions = 50;
-			const gridHelper = new GridHelper( gridSize, gridDivisions );
-			scene.add( gridHelper );
-
+			const gridHelper = new GridHelper(gridSize, gridDivisions);
+			scene.add(gridHelper);
 
 			// Size of one unit for world coordinates if Grid used as basis
-			const gridSquareSize =gridSize/gridDivisions;
-
+			const gridSquareSize = gridSize / gridDivisions;
 
 			// Lights
-			const ambientLight = new AmbientLight(0xffffff,0.6);
+			const ambientLight = new AmbientLight(0xffffff, 0.6);
 			scene.add(ambientLight);
-		
+
 			const dirLight = new DirectionalLight(0xffffff);
 			dirLight.position.set(0, 200, 100);
 			dirLight.castShadow = true;
@@ -57375,199 +56293,502 @@
 			dirLight.shadow.camera.right = 120;
 			scene.add(dirLight);
 
-			
+			// Materials
+			const groundMaterial = new Material("groundMaterial");
+
+			// Adjust constraint equation parameters for ground/ground contact
+			const ground_ground_cm = new ContactMaterial(
+				groundMaterial,
+				groundMaterial,
+				{
+				friction: 0.4,
+				restitution: 0.3,
+				contactEquationStiffness: 1e8,
+				contactEquationRelaxation: 3,
+				frictionEquationStiffness: 1e8,
+				frictionEquationRegularizationTime: 3,
+				}
+			);
+
+			// Add contact material to the world
+			world.addContactMaterial(ground_ground_cm);
+
+			// Create a slippery material (friction coefficient = 0.0)
+			const slipperyMaterial = new Material("slipperyMaterial");
+
+			// The ContactMaterial defines what happens when two materials meet.
+			// In this case we want friction coefficient = 0.0 when the slippery material touches ground.
+			const slippery_ground_cm = new ContactMaterial(
+				groundMaterial,
+				slipperyMaterial,
+				{
+				friction: 0.0,
+				restitution: 0.3,
+				contactEquationStiffness: 1e8,
+				contactEquationRelaxation: 3,
+				}
+			);
+
+			// We must add the contact materials to the world
+			world.addContactMaterial(slippery_ground_cm);
 
 			// Create a static ground plane for the ground
 			const groundBody = new Body({
-			type: Body.STATIC, // can also be achieved by setting the mass to 0
-			shape: new Plane(),
+				type: Body.STATIC, // can also be achieved by setting the mass to 0
+				shape: new Plane(),
+				material: groundMaterial,
 			});
 			groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
-			world.addBody(groundBody);
+			//world.addBody(groundBody)
 
-
-			// Add sphere model to three scene
-			const radius = 5; // m
-			const geometry = new SphereGeometry(radius,20,20);
-			const material = new MeshLambertMaterial({ color: blue });
-			sphereMesh = new Mesh(geometry, material);
-
-			scene.add(sphereMesh);
-
-			
-			// Create sphere body in physics world
-			
-			sphereBody = new Body({
-				mass: 50, // kg
-				//shape: new CANNON.Sphere(radius),
-				shape: S(sphereMesh, {type: P.SPHERE}).shape,
-			});
-			sphereBody.position.set(21, 50, 21); // m
-			world.addBody(sphereBody);
-
+			//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
 
 			// Function to create a platform of size legth by width in world units
 			// out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
 			// your machine would otherwise die if it tried to render this many grouped objects normally
-			const createPlatform =(length,width,tileColorMap)=>{
-				
+			const createPlatform = (length, width, height, tileColorMap) => {
 				const tiles = [];
 
-				const tileGeometry = new BoxGeometry(1,0.25, 1);
-				
+				const tileGeometry = new BoxGeometry(1, 1, 1);
+
 				//const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
 				const tileMaterial = new MeshPhongMaterial({ map: tileColorMap });
-				
-				const midpointOffset=0.5;
 
-				
-				for(let x=0;x<length;x++){
-					const xpos=x+midpointOffset;
-					for(let z=0;z<width;z++){
-						const zpos=z+midpointOffset;
-						// instead of creating a new geometry, we just clone the bufferGeometry instance
-						const newTile = tileGeometry.clone();
-						const y =  0; //getRandomInt(0,5)
-						newTile.applyMatrix4( new Matrix4().makeTranslation(xpos,y,zpos) );
-						// then, we push this bufferGeometry instance in our array
-						tiles.push(newTile);
+				const midpointOffset = 0.5;
+
+				for (let y = 0; y < height; y++) {
+					
+					const ypos = y + midpointOffset;
+					for (let x = 0; x < length; x++) {
+						
+						const xpos = x + midpointOffset;
+						for (let z = 0; z < width; z++) {
+							
+							const zpos = z + midpointOffset;
+							// instead of creating a new geometry, we just clone the bufferGeometry instance
+							const newTile = tileGeometry.clone();
+							//const y =  0 //getRandomInt(0,5)
+							newTile.applyMatrix4(
+								new Matrix4().makeTranslation(xpos, ypos, zpos)
+							);
+							// then, we push this bufferGeometry instance in our array
+							tiles.push(newTile);
+						}
 					}
-				
 				}
 
 				// merge into single super buffer geometry;
 				const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
 				// centre super geometry at local origin
-				geometriesTiles.applyMatrix4( new Matrix4().makeTranslation(-length/2,0,-width/2 ) );
-				geometriesTiles.applyMatrix4( new Matrix4().makeScale(gridSquareSize,gridSquareSize,gridSquareSize) );
+				//geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
+				geometriesTiles.applyMatrix4( new Matrix4().makeTranslation( -length / 2, -height / 2, -width / 2) );
+				geometriesTiles.applyMatrix4( new Matrix4().makeScale( gridSquareSize, gridSquareSize, gridSquareSize) );
 
-
-				// create one mega big platform mesh from super geometry 
+				// create one mega big platform mesh from super geometry
 				const platform = new Mesh(geometriesTiles, tileMaterial);
 
 				// place lower left corner of platform mesh  at X-Z (0,0)
-				platform.translateX(gridSquareSize*length/2);
-				platform.translateZ(gridSquareSize*width/2);
-			
-				return platform
+				platform.translateX((gridSquareSize * length) / 2);
+				platform.translateZ((gridSquareSize * width) / 2);
+				platform.translateY((gridSquareSize * height) / 2);
+				
+				return platform;
 			};
 
-
 			// Function to set platform postition in gameboard coordinates in world
-			const placePlatform=(platform,x,y,z)=>{
-				
+			const placePlatform = (platform, x, y, z) => {
 				// translate platform in world coordinates
-				x=x*gridSquareSize;
-				y=y*gridSquareSize*0.25;
-				z=z*gridSquareSize;
-				platform.applyMatrix4( new Matrix4().makeTranslation(x,y,z));
+				x = x * gridSquareSize;
+				y = y * gridSquareSize;
+				z = z * gridSquareSize;
+				platform.applyMatrix4(new Matrix4().makeTranslation(x, y, z));
 
-				
 				// create cannon body for platform
 				const platformBody = new Body({
 					type: Body.STATIC,
-					shape: S(platform, {type: P.BOX}).shape,
+					material: groundMaterial,
+					shape: S(platform, { type: P.BOX }).shape,
 				});
+				
 				const platformPos = new Vector3();
 				platform.getWorldPosition(platformPos);
 				platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
 
 				return {
 					threePlatform: platform,
-					cannonPlatform: platformBody
-				}
+					cannonPlatform: platformBody,
+				};
 			};
 
 			// Function to add multiple platforms into a gameboard
 			// allow different textures/colours for different sections
-			const createGameBoard=()=>{
-
+			const createGameBoard = () => {
+				
 				const board = new Group();
 				const platformGeometries = [];
 				const platformBodies = [];
 				let newPlatform;
 				let colorMap;
 
-				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,2,colorMap),0,5,0);
+				colorMap = new TextureLoader().load("./textures/lime_floor.png");
+				newPlatform = placePlatform(
+				createPlatform(10, 10, 1, colorMap), 20, 5, 0);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				
+				colorMap = new TextureLoader().load("./textures/lime_floor.png");
+				newPlatform = placePlatform(
+				createPlatform(20, 10, 1, colorMap), 0, 20, 0);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				
+				colorMap = new TextureLoader().load("./textures/pink_floor.png");
+				newPlatform = placePlatform(
+				createPlatform(10, 20, 1, colorMap), -10, 40, 0);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
-
-				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(5,5,colorMap),3,0,3);
+				//create a wall
+				colorMap = new TextureLoader().load("./textures/lime_floor.png");
+				newPlatform = placePlatform(createPlatform(5, 1, 5, colorMap), 10, 1, 10);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
+				colorMap = new TextureLoader().load("./textures/blue_floor.png");
+				newPlatform = placePlatform(
+				createPlatform(50, 50, 1, colorMap), -25, 0, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				
+				for (var i = 0; i < 30; i++) {
+					
+					var randX = getRandomInt(-25, 0);
+					var randY = getRandomInt(0, 50);
+					getRandomInt(-25, 0);
+					
+					colorMap = new TextureLoader().load("./textures/blue_floor.png");
+					newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
+					platformGeometries.push(newPlatform.threePlatform);
+					platformBodies.push(newPlatform.cannonPlatform);
+				}
 
-				for (let i=0;i<platformGeometries.length;i++){
+				//ceiling
+				colorMap = new TextureLoader().load("./textures/pink_floor.png");
+				newPlatform = placePlatform(
+				createPlatform(50, 50, 1, colorMap), -25, 50, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+				//world boundaries
+				colorMap = new TextureLoader().load("./textures/light_floor.png");
+				newPlatform = placePlatform(
+				createPlatform(51, 1, 51, colorMap), -26, 0, 25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+				colorMap = new TextureLoader().load("./textures/light_floor.png");
+				newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+				// //guide wall block
+				// colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
+				// newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2)
+				// platformGeometries.push(newPlatform.threePlatform)
+				// platformBodies.push(newPlatform.cannonPlatform)
+
+				for (let i = 0; i < platformGeometries.length; i++) {
 					board.add(platformGeometries[i]);
 					world.addBody(platformBodies[i]);
 				}
 
-				return board
-	    	};
+				return board;
+			};
 
 			// Add gameboard to world
+
 			const gameboard = createGameBoard();
 			scene.add(gameboard);
 
-			shipModel = new Object3D;
-			
-			shipModel = await loadModel(shipPath);
+			//////////////// ADD PLAYER SHIP //////////////////////////
 
+
+			shipModel = new Object3D;
+			shipModel = await loadModel(shipPath);
+			//console.log(shipModel)
+			
+			// Rotate children of ship model to correct their orientation
+			//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
+			//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
+			
 			shipModel.applyMatrix4( new Matrix4().makeScale(1.9,1.9,1.9) );
 			shipModel.applyMatrix4( new Matrix4().makeTranslation(-5,0,-5) );
-			shipModel.applyMatrix4( new Matrix4().makeRotationY(Math.PI) );
 
 			scene.add(shipModel);
-			//console.log(shipModel)
+			shipModel.add(flightCamera);
+			flightCamera.position.set(0,4,7.5);
 
 			// create cannon body for ship
 			shipBody = new Body({
-				mass: 10,
+				mass: 1,
+				material: slipperyMaterial,
+				//angularFactor: new CANNON.Vec3(0,1,0),
 				shape: S(shipModel).shape,
+				//linearDamping: 0.5,
+				//angularDamping: 0.9,
 			});
-			shipBody.position.set(25, 5, 25);
-			new Vec3(0,1,0);
+			shipBody.position.set(0, 10, 0);
 			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), Math.PI);
 			world.addBody(shipBody);
 			//console.log(shipBody)
 
+			// Initialize ship keyboard control
+			initShipControls();
 
-			document.body.addEventListener('keydown', keyPressed);
 
-			function keyPressed(e){
-				switch(e.key) {
-				case 'ArrowUp':
-					snakeobj.position.z+=1;
-					break;
-				case 'ArrowDown':
-					snakeobj.position.z+=-1;
-					break;
-				case 'ArrowLeft':
-					snakeobj.position.x+=1;
-					break;
-				case 'ArrowRight':
-					snakeobj.position.x+=-1;
-					break;
-				}
-				e.preventDefault();
 
+			//////////////// CREATE SHIP BOUNDING BOX //////////////////
+			playerGeometry = new BoxGeometry(2, 2, 2);
+			playerBox = new Box3(); //bounding box
+			playerMaterial = new MeshLambertMaterial({
+				color: 0xff0000,
+				transparent: true,
+				opacity: 0,
+			});
+			playerCustom = new Mesh(playerGeometry, playerMaterial);
+			playerCustom.position.set(
+				shipModel.position.x,
+				shipModel.position.y,
+				shipModel.position.z
+			);
+			//Compute initial bounding box
+			playerCustom.geometry.computeBoundingBox();
+			//playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
+
+			new Vector3(2, 5, 8);
+			playerBox.getCenter();
+			// console.log('playerCenter:');
+			// console.log(playerCenter);
+
+			scene.add(playerCustom);
+			playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
+
+			//////////////// ADD THE TOKENS //////////////////
+			//Create tokens
+			for (let i = 0; i < totalTokens; i++){
+				//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
+				// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
+				// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+				// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
+
+				//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
+				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				//console.log('Inner',innerTokenCustom);
+				//console.log('Outer',outerTokenCustom);
+
+				//Generate random positions for each of the tokens
+				var randomX = Math.floor(Math.random() * 250);
+				var randomZ = Math.floor(Math.random() * 250);
+				var randomY = Math.floor(Math.random() * 100) + 10;
+				tokenCustom.position.set(randomX, randomY, randomZ);
+				const tokenBox = new Box3(); //bounding box
+				// ensure the bounding box is computed for its geometry
+				// this should be done only once (assuming static geometries)
+				tokenCustom.geometry.computeBoundingBox();
+				// console.log(tokenCustom.geometry.boundingBox);
+				//tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
+
+				//Calculate center of token just for debugging
+				new Vector3();
+				tokenBox.getCenter();
+				// console.log(tokenCenter);
+
+				scene.add(tokenCustom);
+
+				//Since the bounding box for each token must be computed within the animation loop,
+				//we create the tokens and boxes as empty here and add them to their respective arrays,
+				//which can be looped through and each token and box can be accessed within the animation loop.
+				tokensArray.push(tokenCustom);
+				boxArray.push(tokenBox);
 			}
-			
-			clock = new Clock();
-			
-			//initCannon()
-			
-			animate();
 
+			clock = new Clock();
+
+			animate();
 		}
 	}
 
+	function fly(){
 
-	async function loadModel(path){
-		const loader = new GLTFLoader();	
+		if (keys.arrowup){acceleration = -1;}
+		if (keys.arrowdown){acceleration = 1;}
+		if (keys.arrowup||keys.arrowdown){
+			let accelerationImpulseDirection = new Vec3(0,0,acceleration);
+			accelerationImpulse = shipBody.quaternion.vmult( accelerationImpulseDirection );
+			shipBody.applyImpulse ( accelerationImpulse);
+		
+		}
+
+		if( keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright ){
+			if (keys.w) { pitchSpeed = -0.5; }	else if (keys.s) { pitchSpeed = 0.5; } else { pitchSpeed = 0; }
+			if (keys.a) { rollSpeed = 1; } else if (keys.d){ rollSpeed = -1; } else { rollSpeed = 0; }
+			if (keys.arrowleft) { yawSpeed = 1; } else if (keys.arrowright){ yawSpeed = -1; } else { yawSpeed = 0; }
+
+			// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
+			// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
+			// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
+
+			var directionVector = new Vec3(pitchSpeed, yawSpeed, rollSpeed);
+			var directionVector = shipBody.quaternion.vmult( directionVector );
+
+			shipBody.angularVelocity.set( directionVector.x, directionVector.y, directionVector.z);
+		}
+
+		shipBody.linearDamping = 0.5;
+		shipBody.angularDamping = 0.9;
+	}
+
+
+	function animate() {
+		
+		renderFrames += 1;
+		//request render scene at every frame
+		
+		if (inprogress==true) {
+			requestAnimationFrame(animate);
+		}
+		else {
+			gameEnd();
+		}
+
+	/*************************************************************************************************************/
+
+		//check for token intersection
+		if (renderFrames >= 10) {
+			//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
+			for (let k = 0; k < tokensArray.length; k++) {
+				boxArray[k]
+				.copy(tokensArray[k].geometry.boundingBox)
+				.applyMatrix4(tokensArray[k].matrixWorld);
+				//Determine if player touches token
+				new Color(0x0000ff);
+				if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
+					tokenScore += 1;
+
+					//Make outer shape of token transparent
+					tokensArray[k].material.transparent = true;
+					tokensArray[k].material.opacity = 0;
+					//Make inner shape of token transparent
+					innerCustomArray[k].material.transparent = true;
+					innerCustomArray[k].material.opacity = 0;
+
+					//tokensArray[k].material.color.lerp();
+
+					tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
+					console.log(tokenScore);
+				}
+			}
+		}
+
+		  //update timer
+		  var timeRemaining = time_remaining(endTime);
+		  minutes = timeRemaining["minutes"];
+		  seconds = timeRemaining["seconds"];
+		  if(minutes <=0 && seconds <=0){
+			  timeTaken = time_taken(gameStart);
+			  var minutes_taken = timeTaken["minutes"];
+			  var seconds_taken =timeTaken["seconds"];
+			  timeTaken[0] =minutes_taken;
+			  timeTaken[1] =seconds_taken;
+			  inprogress = false;
+			
+			  
+		
+		  }
+		  if (minutes>0 && seconds> 30){
+			timer.innerHTML = "<h1>Snake Invader</h1>"
+			+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '</div>' + '<div> Tokens Collected: ' +tokenScore+' Out of '+ totalTokens +'</div>'+'</div>';
+			console.log("test1");
+		}
+
+		if(minutes==0 && seconds<= 30 && seconds>0){
+			timer.innerHTML = "<h1>Snake Invader</h1>"
+			+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+'</div>'+ '<div> Tokens Collected: ' +tokenScore+ ' Out of '+ totalTokens +'</div>'+'</div>';
+			console.log("test2");
+		}
+		  
+
+	/************************************************************************************************************************** */
+
+		// take timestep in physics simulation
+		stepPhysicsWorld();
+
+		// // update three.js meshes according to cannon-es simulations
+		updatePhysicsBodies();
+
+		// update flight camera
+		fly();
+		// let fp= new CANNON.Vec3(0,0,-3);
+		// flightCamera.position.lerp(fp,0.01)
+		
+		// models animations
+		clock.getDelta();
+		// if (dancerMixer) dancerMixer.update(delta)
+		// if (snakeMixer) snakeMixer.update(delta)
+	  
+		stats.update();
+		//// render three.js
+		//renderer.clear()
+		//renderer.render(scene, camera)
+		//controls.update()
+		renderer.render(scene, flightCamera);
+	}
+
+	// Update projection when viewing window is resized
+	function onWindowResize() {
+		
+		flightCamera.aspect = window.innerWidth / window.innerHeight;
+		flightCamera.updateProjectionMatrix();
+
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		
+	}
+
+	// Make time step in physics simulation
+	function stepPhysicsWorld() {
+		
+		const time = performance.now() / 1000;
+		
+		if (!lastCallTime) {
+			world.step(timeStep);
+		}
+		else {
+			const dt = time - lastCallTime;
+			world.step(timeStep, dt);
+		}
+		lastCallTime = time;
+	}
+
+	// Update the positions and orientations of the dynamic three.js objects according to the current
+	// physics properties of their corresponding bodies in the physics sim
+	function updatePhysicsBodies() {
+	  
+		// update three.js model positions using cannon-es simulation
+
+		shipModel.position.copy(shipBody.position);
+		shipModel.quaternion.copy(shipBody.quaternion);
+
+		playerCustom.position.copy(shipBody.position);
+		playerCustom.quaternion.copy(shipBody.quaternion);
+
+		playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
+
+	}
+
+	// load up gltf model asynchronously
+	async function loadModel(path) {
+		
+		const loader = new GLTFLoader();
 
 		const model = await loader.loadAsync(path);
 
@@ -57575,50 +56796,119 @@
 	}
 
 
-	function animate() {
+	// Initialise and create listeners for the keyboard controls
+	function initShipControls() {
 		
-		// cannon-es world stepping
-		updatePhysics();
-		
+		keys = {
+	        a: false,
+	        w: false,
+	        s: false,
+	        d: false,
+			q: false,
+			e: false,
+			arrowup :false,
+			arrowdown:false,
+			arrowleft: false,
+			arrowright: false
+	    };
 
-		// three.js model positions updates using cannon-es simulation
-		sphereMesh.position.copy(sphereBody.position);
-		sphereMesh.quaternion.copy(sphereBody.quaternion);
+		document.body.addEventListener("keydown", function (e) {
+			
+			const key = e.code.replace("Key", "").toLowerCase();
+			if (keys[key] !== undefined) keys[key] = true;
 
-		shipModel.position.copy(shipBody.position);
-		shipModel.quaternion.copy(shipBody.quaternion);
-		
-		// models animations
-		clock.getDelta();
+		});
+
+		document.body.addEventListener("keyup", function (e) {
+	    	
+			const key = e.code.replace("Key", "").toLowerCase();
+	    	if (keys[key] !== undefined) keys[key] = false;
+
+	  	});
+	}
+
+	// Randomizers that can be used for building Bufffer geometries
+
+	// random integer within range
+	function getRandomInt(min, max) {
+		min = Math.ceil(min);
+		max = Math.floor(max);
+		return Math.floor(Math.random() * (max - min) + min) //The maximum is exclusive and the minimum is inclusive
+	}
+	function createToken(
+						innerRadius,
+						outerRadius,
+						innerDetail,
+						outerDetail,
+						innerColour,
+						outerColour,
+						innerOpacity,
+						outerOpacity
+						){
+
+		//createToken creates a token consisting of 2 objects, one within the other.
+		//Opacities may be set in order to alter the appearance as well as make the inner object visible
+		var innerGeometry = new OctahedronGeometry(innerRadius, innerDetail);
+
+	    var innerMaterial = new MeshLambertMaterial({
+	    	color: innerColour,
+	    	transparent: true,
+	    	opacity: innerOpacity,
+	  	});
+
+	    var innerCustom = new Mesh(innerGeometry, innerMaterial);
+
+	  	var outerGeometry = new OctahedronGeometry(
+	    	outerRadius,
+	    	outerDetail
+	  	);
+	  var outerMaterial = new MeshLambertMaterial({
+	    color: outerColour,
+	    transparent: true,
+	    opacity: outerOpacity,
+	  });
 	  
-		// render three.js
+	  var outerCustom = new Mesh(outerGeometry, outerMaterial);
 
-		renderer.clear();
-		requestAnimationFrame(animate); //request render scene at every frame
-		renderer.render(scene, camera);
-		stats.update();
+	  outerCustom.add(innerCustom);
+	  innerCustomArray.push(innerCustom); // use separate array for innerCustom which will be global so that we can access them
+	  // console.log(outerCustom);
+	  return outerCustom
 	}
 
-
-	function onWindowResize() {
-
-		camera.aspect = window.innerWidth / window.innerHeight;
-		camera.updateProjectionMatrix();
-		renderer.setSize( window.innerWidth, window.innerHeight );
-
+	function time_remaining(endtime){
+		var t = Date.parse(endtime) - Date.parse(new Date());
+		var seconds = Math.floor( (t/1000) % 60 );
+		var minutes = Math.floor( (t/1000/60) % 60 );
+		var hours = Math.floor( (t/(1000*60*60)) % 24 );
+		var days = Math.floor( t/(1000*60*60*24) );
+		return {'total':t, 'days':days, 'hours':hours, 'minutes':minutes, 'seconds':seconds};
 	}
 
-
-	function updatePhysics(){
-		
-		const time = performance.now() / 1000;
-		if (!lastCallTime) {
-			world.step(timeStep);
-		} else {
-			const dt = time - lastCallTime;
-			world.step(timeStep, dt);
+	function time_taken(startTime){
+		var t =  Date.parse(new Date()) - Date.parse(startTime);
+		var seconds = Math.floor( (t/1000) % 60 );
+		var minutes = Math.floor( (t/1000/60) % 60 );
+		var hours = Math.floor( (t/(1000*60*60)) % 24 );
+		var days = Math.floor( t/(1000*60*60*24) );
+		return {'total':t, 'days':days, 'hours':hours, 'minutes':minutes, 'seconds':seconds};
+	}
+	  function gameEnd() {
+		if (tokenScore ==maxScore){
+			timer.innerHTML = "<h1>Level Complete</h1>"+"<h2>Time Taken</h2>"
+			+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds"+ '</div>';
+			console.log('hello');
+			console.log(timeTaken[0]);
 		}
-		lastCallTime = time;	
+		else {
+			timer.innerHTML = "<h1>Level failed</h1>"+"<h2>Time Taken</h2>"
+			+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds"+ '</div>';
+			console.log('hello');
+			console.log(timeTaken[0]);
+
+		}
+		
+		
 	}
 
 	const game = new Game();

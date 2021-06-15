@@ -1,42 +1,52 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { BufferGeometryUtils } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import Stats from  "three/examples/jsm/libs/stats.module.js"
+import Stats from  'three/examples/jsm/libs/stats.module.js'
 import * as CANNON from 'cannon-es'
 
-import { threeToCannon, ShapeType } from 'three-to-cannon';
+import { threeToCannon, ShapeType } from 'three-to-cannon'
 
 // three.js global vars
-let camera, scene, stats, renderer, clock, snakeMixer, dancerMixer
-let sphereMesh, snakeModel, dancerModel, shipModel
+let camera, scene, stats, renderer, clock
+let sphereMesh, shipModel
+
+
+// global asset paths
 const shipPath = '/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf'
 
-//three.js textures
-let skyBoxtexture
-
-// global
+// global colour variables
 const black = 'rgb(0,0,0)'
 const white = 'rgb(255,255,255)'
 const red = 'rgb(255,0,0)'
 const green = 'rgb(10,200,10)'
 const blue = 'rgb(110,197,233)'
 
-// cannon-es global vars
+// cannon-es global variables
 let world
 let sphereBody, shipBody
 const timeStep = 1 / 60 
 let lastCallTime
 
 
-// gameplay vars
-const jumpheight=10
+// player control global variables
+let keys
+
+// followCam global variables
+let followCam, followCamRig, followCamTarget
+let lerpedShipPos = new THREE.Vector3
+let followingDistance = 15
+let rigToTargetDist = followingDistance
+let shipVelocity = 0.0
 
 
 class Game {
 
 	async init() {
+
+
+		////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+
 
 		// Scene
 		scene = new THREE.Scene()
@@ -45,7 +55,7 @@ class Game {
 
 		//Skybox
 		const skyBoxLoader = new THREE.CubeTextureLoader()
-		skyBoxtexture = skyBoxLoader.load([
+		const skyBoxtexture = skyBoxLoader.load([
 		  'textures/skybox/indigo_ft.jpg',
 		  'textures/skybox/indigo_bk.jpg',
 		  'textures/skybox/indigo_up.jpg',
@@ -66,24 +76,25 @@ class Game {
 		document.body.appendChild(stats.dom)
 
 		
-		// Camera
-		camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 )
-		camera.position.z = 400
-	
-		// Initial camera position
-		camera.position.set(50,10,25)
+		// Normal camera
+		camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 )
+
+		// Normal camera initial position and orientation
+		camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
+		camera.position.set(0,10,10)
 
 
 		// Renderer
 		renderer = new THREE.WebGLRenderer( { antialias: true } );
 		renderer.setClearColor(blue)
 		renderer.setPixelRatio( window.devicePixelRatio );
-		renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3)
+		renderer.setSize(window.innerWidth, window.innerHeight)
+		//renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3)
 		window.addEventListener( 'resize', onWindowResize, false );
 		document.body.appendChild(renderer.domElement)
 
 
-		// Orbit Controls
+		// Orbit Controls for normal camera (currently does nothing)
 		const controls = new OrbitControls(camera, renderer.domElement)
 		controls.update()
 		
@@ -97,10 +108,8 @@ class Game {
 		const gridHelper = new THREE.GridHelper( gridSize, gridDivisions )
 		scene.add( gridHelper )
 
-
 		// Size of one unit for world coordinates if Grid used as basis
 		const gridSquareSize =gridSize/gridDivisions
-
 
 		// Lights
 		const ambientLight = new THREE.AmbientLight(0xffffff,0.6)
@@ -115,7 +124,6 @@ class Game {
 		dirLight.shadow.camera.right = 120
 		scene.add(dirLight)
 
-		
 
 		// Create a static ground plane for the ground
 		const groundBody = new CANNON.Body({
@@ -131,20 +139,20 @@ class Game {
 		const geometry = new THREE.SphereGeometry(radius,20,20)
 		const material = new THREE.MeshLambertMaterial({ color: blue })
 		sphereMesh = new THREE.Mesh(geometry, material)
-
 		scene.add(sphereMesh)
 
 		
 		// Create sphere body in physics world
-		
 		sphereBody = new CANNON.Body({
 			mass: 50, // kg
 			//shape: new CANNON.Sphere(radius),
 			shape: threeToCannon(sphereMesh, {type: ShapeType.SPHERE}).shape,
 		})
-		sphereBody.position.set(21, 50, 21) // m
+		sphereBody.position.set(21, 50, 21)
 		world.addBody(sphereBody)
 
+
+		//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
 
 		// Function to create a platform of size legth by width in world units
 		// out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
@@ -251,17 +259,22 @@ class Game {
 		// Add gameboard to world
 		const gameboard = createGameBoard()
 		scene.add(gameboard)
+		
+
+		//////////////// ADD PLAYER SHIP //////////////////////////
+
 
 		shipModel = new THREE.Object3D
-		
 		shipModel = await loadModel(shipPath)
-
+		//console.log(shipModel)
+		
+		// Rotate children of ship model to correct their orientation
+		shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
+		shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
+		
 		shipModel.applyMatrix4( new THREE.Matrix4().makeScale(1.9,1.9,1.9) );
 		shipModel.applyMatrix4( new THREE.Matrix4().makeTranslation(-5,0,-5) );
-		shipModel.applyMatrix4( new THREE.Matrix4().makeRotationY(Math.PI) );
 
-		scene.add(shipModel)
-		//console.log(shipModel)
 
 		// create cannon body for ship
 		shipBody = new CANNON.Body({
@@ -269,90 +282,114 @@ class Game {
 			shape: threeToCannon(shipModel).shape,
 		})
 		shipBody.position.set(25, 5, 25)
-		var axis = new CANNON.Vec3(0,1,0);
-		var angle = Math.PI;
 		shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
 		world.addBody(shipBody)
 		//console.log(shipBody)
+		
+		// Initialze followCam (height of camera above the ship, following distance behind ship)
+		initFollowCam(10,15)
 
+		// Place the target of the followCam on the ship model & place the followCam itself in a rig above the ship
+		shipModel.add( followCamTarget )
+    	followCamRig.add( followCam )
+		scene.add(shipModel)
 
-		document.body.addEventListener('keydown', keyPressed);
-
-		function keyPressed(e){
-			switch(e.key) {
-			case 'ArrowUp':
-				snakeobj.position.z+=1;
-				break;
-			case 'ArrowDown':
-				snakeobj.position.z+=-1;
-				break;
-			case 'ArrowLeft':
-				snakeobj.position.x+=1;
-				break;
-			case 'ArrowRight':
-				snakeobj.position.x+=-1;
-				break;
-			}
-			e.preventDefault();
-
-		}
+		// Initialize ship keyboard control
+		initShipControls()
 		
 		clock = new THREE.Clock()
-		
-		//initCannon()
-		
+
 		animate()
 
 	}
 }
 
 
-async function loadModel(path){
-	const loader = new GLTFLoader()	
+function followShip(){
+    
+    let shipSpeed = 0.0;
+    let camRigPos = new THREE.Vector3;
+    let camWorldPos = new THREE.Vector3;
+    let shipToRigDir = new THREE.Vector3;
 
-	const model = await loader.loadAsync(path)
+    if ( keys.w )
+        shipSpeed = 0.25;
+    else if ( keys.s )
+        shipSpeed = -0.25;
 
-	return model.scene.children[0]
+    shipVelocity += ( shipSpeed - shipVelocity ) * .1;
+    shipModel.translateZ( shipVelocity );
+	//shipBody.position.x+=shipVelocity
+	//shipBody.applyImpulse(new CANNON.Vec3(0,0,shipVelocity))
+    if ( keys.a )
+        shipModel.rotateY(0.05);
+		//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), 0.05);
+    else if ( keys.d )
+        shipModel.rotateY(-0.05);
+		//shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), -0.05);
+
+	//shipModel.position.copy(shipBody.position)
+	//shipModel.quaternion.copy(shipBody.quaternion)
+	
+	lerpedShipPos.lerp(shipModel.position, 0.4);
+	//lerpedShipPos.lerp(shipBody.position, 0.4);
+    
+    camRigPos.copy(followCamRig.position);
+
+    camWorldPos.setFromMatrixPosition(followCam.matrixWorld);
+  
+    shipToRigDir.copy( lerpedShipPos ).sub( camRigPos ).normalize();
+  
+    rigToTargetDist += ( followingDistance - rigToTargetDist ) * 0.2;
+  
+    let camToRigDist = lerpedShipPos.distanceTo( camRigPos ) - rigToTargetDist
+  
+    followCamRig.position.addScaledVector( shipToRigDir, camToRigDist );
+    camWorldPos.setFromMatrixPosition(followCamTarget.matrixWorld);
+    followCamRig.position.lerp(camWorldPos, 0.02);
+
 }
 
 
 function animate() {
 	
-	// cannon-es world stepping
-	updatePhysics()
+	//request render scene at every frame
+	requestAnimationFrame(animate) 
 	
+	// update followCam
+	followShip()
 
-	// three.js model positions updates using cannon-es simulation
-	sphereMesh.position.copy(sphereBody.position)
-	sphereMesh.quaternion.copy(sphereBody.quaternion)
+	// take timestep in physics simulation
+	stepPhysicsWorld()
+	
+	// update three.js meshes according to cannon-es simulations
+	updatePhysicsBodies()
 
-	shipModel.position.copy(shipBody.position)
-	shipModel.quaternion.copy(shipBody.quaternion)
 	
 	// models animations
 	const delta = clock.getDelta()
-	if (dancerMixer) dancerMixer.update(delta)
-	if (snakeMixer) snakeMixer.update(delta)
+	// if (dancerMixer) dancerMixer.update(delta)
+	// if (snakeMixer) snakeMixer.update(delta)
   
-	// render three.js
-
-	renderer.clear()
-	requestAnimationFrame(animate) //request render scene at every frame
-	renderer.render(scene, camera)
+	//// render three.js
+	//renderer.clear()
+	//renderer.render(scene, camera)
+	followCam.lookAt( shipModel.position );
+	renderer.render(scene, followCam)
 	stats.update()
 }
 
-
+// Update projection when viewing window is resized
 function onWindowResize() {
 
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
+	followCam.aspect = window.innerWidth / window.innerHeight;
+	followCam.updateProjectionMatrix();
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
 }
 
-
-function updatePhysics(){
+// Make time step in physics simulation
+function stepPhysicsWorld(){
 	
 	const time = performance.now() / 1000
 	if (!lastCallTime) {
@@ -363,6 +400,68 @@ function updatePhysics(){
 	}
 	lastCallTime = time	
 }
+
+// Update the positions and orientations of the dynamic three.js objects according to the current
+// physics properties of their corresponding bodies in the physics sim
+function updatePhysicsBodies(){
+	// three.js model positions updates using cannon-es simulation
+	sphereMesh.position.copy(sphereBody.position)
+	sphereMesh.quaternion.copy(sphereBody.quaternion)
+
+	//shipModel.position.copy(shipBody.position)
+	//shipModel.quaternion.copy(shipBody.quaternion)
+}
+
+// load up gltf model asynchronously
+async function loadModel(path){
+	const loader = new GLTFLoader()	
+
+	const model = await loader.loadAsync(path)
+
+	return model.scene.children[0]
+}
+
+// Initialize the variables for the followCam
+function initFollowCam(camHeight, newFollowingDistance){
+    followingDistance = newFollowingDistance
+    
+    followCam = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+    followCam.position.set( 0, camHeight, 0 );
+    followCam.lookAt( scene.position );
+
+    followCamRig = new THREE.Object3D;
+    followCamTarget = new THREE.Object3D;
+    followCamTarget.position.z = -followingDistance;
+}
+
+// Initialise and create listeners for the keyboard controls
+function initShipControls(){
+    
+    keys = {
+        a: false,
+        s: false,
+        d: false,
+        w: false
+    };
+
+    document.body.addEventListener( 'keydown', function(e) {
+    
+        const key = e.code.replace('Key', '').toLowerCase();
+        if ( keys[ key ] !== undefined )
+            keys[ key ] = true;
+        
+    });
+
+    document.body.addEventListener( 'keyup', function(e) {
+        
+        const key = e.code.replace('Key', '').toLowerCase();
+        if ( keys[ key ] !== undefined )
+            keys[ key ] = false;
+        
+    });
+}
+
+
 
 
 // Randomizers that can be used for building Bufffer geometries

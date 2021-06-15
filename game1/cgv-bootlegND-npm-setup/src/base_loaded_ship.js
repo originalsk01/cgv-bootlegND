@@ -11,10 +11,6 @@ import { threeToCannon, ShapeType } from 'three-to-cannon';
 // three.js global vars
 let camera, scene, stats, renderer, clock, snakeMixer, dancerMixer
 let sphereMesh, snakeModel, dancerModel, shipModel
-const shipPath = '/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf'
-
-//three.js textures
-let skyBoxtexture
 
 // global
 const black = 'rgb(0,0,0)'
@@ -40,26 +36,11 @@ class Game {
 
 		// Scene
 		scene = new THREE.Scene()
-		//scene.background = new THREE.Color(0xa0a0a0)
-
-
-		//Skybox
-		const skyBoxLoader = new THREE.CubeTextureLoader()
-		skyBoxtexture = skyBoxLoader.load([
-		  'textures/skybox/indigo_ft.jpg',
-		  'textures/skybox/indigo_bk.jpg',
-		  'textures/skybox/indigo_up.jpg',
-		  'textures/skybox/indigo_dn.jpg',
-		  'textures/skybox/indigo_rt.jpg',
-		  'textures/skybox/indigo_lf.jpg',
-		])
-		// console.log(skyBoxtexture)
-		scene.background = skyBoxtexture
-
+		scene.background = new THREE.Color(0xa0a0a0)
 
 		// Physics world
 		world = new CANNON.World({
-			gravity: new CANNON.Vec3(0, -9.82, 0), // m/s²
+			gravity: new CANNON.Vec3(0, -20, 0), // m/s²
 		})
 
 		stats = new Stats()
@@ -252,7 +233,69 @@ class Game {
 		const gameboard = createGameBoard()
 		scene.add(gameboard)
 
+
+		// Add animated snake
+		// const snakeLoader = new GLTFLoader()
+		// snakeLoader.load('models/snake/snake/scene.gltf', function (gltf) {
+		// 	snakeModel = gltf.scene
+		// 	snakeMixer = new THREE.AnimationMixer(snakeModel.children[0]);
+		// 	//snakeobj.position.setY(5)
+		// 	gltf.animations.forEach((clip) => { snakeMixer.clipAction(clip).play(); });
+		// 	scene.add(snakeModel)
+		// })
+
+		// Add player ship to threejs scene
+		//shipModel = new THREE.Object3D
+		//let shipLoader = new GLTFLoader() 
+	
+		//shipModel = await shipLoader.loadAsync('/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf', function (gltfModel) {	
+			// gltfModel.scene.multiplyScalar(1.9)
+        	// gltfModel.scene.x = 5
+        	// gltfModel.scene.z = 5
+			// gltfModel.scene.rotateY(Math.PI)
+			// shipModel=gltfModel.scene.clone(true)
+			// gltfModel.scene.traverse(function (child) {
+    
+			// 	//console.log(child);
+			// 	if (child.name=="Smallfighter"){
+			// 		//shipModel.add(child)
+			// 		console.log("Smallfighter");
+			// 	}
+						
+			// });
+			//shipModel.add(gltfModel.scene.children)
+			// shipModel.add(gltfModel.scene.children[0].children[1])
+
+			//shipModel.add(gltfModel.scene)
+			//x=gltfModel.scene.clone(true)
+			//x = JSON.parse(JSON.stringify(gltfModel.scene))
+			//shipShape = threeToCannon(shipModel, {type: ShapeType.BOX}).shape
+			// shipBody = new CANNON.Body({ 
+			// 	mass:10,
+			// 	shape:threeToCannon(shipModel, {type: ShapeType.BOX}).shape
+			// })
+			// shipBody.position.set(0,0,0)
+			// world.addBody(shipBody)
+			//console.log(shipShape)
+			//console.log(x)
+		// })
+
+		// shipModel.set.scale(1.9,1.9,1.9)
+		// shipModel.translateX(5)
+		// shipModel.translateZ(5)
+		// shipModel.rotateY(Math.PI)
+
 		shipModel = new THREE.Object3D
+		
+		async function loadModel(path){
+			const loader = new GLTFLoader()	
+
+			const model = await loader.loadAsync(path)
+
+			return model.scene.children[0]
+		}
+		
+		const shipPath = '/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf'
 		
 		shipModel = await loadModel(shipPath)
 
@@ -261,20 +304,52 @@ class Game {
 		shipModel.applyMatrix4( new THREE.Matrix4().makeRotationY(Math.PI) );
 
 		scene.add(shipModel)
-		//console.log(shipModel)
+		console.log(shipModel)
 
 		// create cannon body for ship
 		shipBody = new CANNON.Body({
 			mass: 10,
+			//shape: threeToCannon(shipModel).shape,
 			shape: threeToCannon(shipModel).shape,
 		})
-		shipBody.position.set(25, 5, 25)
-		var axis = new CANNON.Vec3(0,1,0);
-		var angle = Math.PI;
-		shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI);
-		world.addBody(shipBody)
-		//console.log(shipBody)
+		console.log(shipBody)
 
+
+		//console.log(shipModel)
+		//console.log(shipShape)
+		//console.log(x)
+		//console.log(shipModel)
+		//console.log(shipBody)
+		//console.log(shipModel.length)
+		// console.log(shipModel.children)
+		// console.log(shipModel.children.length)
+		// console.log(shipModel.children.children)
+		//console.log(shipModel.children.length)
+		//const x = shipModel.children
+		
+
+		//shipBody = new CANNON.Sphere(radius);
+		//console.log(x)
+		//console.log(x.length)
+		//shipBody = threeToCannon(shipModel.children[0], {type: ShapeType.BOX}).shape
+		//shape: threeToCannon(platform, {type: ShapeType.BOX}).shape,
+        //sphereBody = new CANNON.Body({ mass: mass });
+
+		// create cannon body for ship
+		// shipBody = new CANNON.Body({
+		// 	mass: 10,
+		// 	//shape: threeToCannon(shipModel).shape,
+		// 	shape: threeToCannon(shipModel).shape,
+		// })
+		// console.log(shipBody)
+		// const shipPos = new THREE.Vector3()
+		// platform.getWorldPosition(shipPos)
+		// platformBody.position.set(shipPos.x, shipPos.y, shipPos.z)
+
+		//world.addBody(shipBody)
+
+		//let shipGeometry = shipModel.getObjectByName('SmallFighter').geometry;
+		//console.log(shipGeometry);
 
 		document.body.addEventListener('keydown', keyPressed);
 
@@ -303,17 +378,38 @@ class Game {
 		
 		animate()
 
+
 	}
+
+	
+
+	
+
 }
 
+// function initCannon(){
+// 	world = new CANNON.World({
+// 		gravity: new CANNON.Vec3(0, -9.82, 0), // m/s²
+// 	})
 
-async function loadModel(path){
-	const loader = new GLTFLoader()	
+// 	// Create a sphere body
+// 	const radius = 5 // m
+// 	sphereBody = new CANNON.Body({
+// 		mass: 20, // kg
+// 		shape: new CANNON.Sphere(radius),
+// 	})
+// 	sphereBody.position.set(0, 1000, 0) // m
+// 	world.addBody(sphereBody)
 
-	const model = await loader.loadAsync(path)
+// 	// Create a static plane for the ground
+// 	const groundBody = new CANNON.Body({
+// 	type: CANNON.Body.STATIC, // can also be achieved by setting the mass to 0
+// 	shape: new CANNON.Plane(),
+// 	})
+// 	groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0) // make it face up
+// 	world.addBody(groundBody)
+// }
 
-	return model.scene.children[0]
-}
 
 
 function animate() {
@@ -326,8 +422,8 @@ function animate() {
 	sphereMesh.position.copy(sphereBody.position)
 	sphereMesh.quaternion.copy(sphereBody.quaternion)
 
-	shipModel.position.copy(shipBody.position)
-	shipModel.quaternion.copy(shipBody.quaternion)
+	//plat0.position.copy(plat0Body.position)
+	//plat0.quaternion.copy(plat0Body.quaternion)
 	
 	// models animations
 	const delta = clock.getDelta()
