@@ -56193,9 +56193,9 @@
 	//timer variables
 
 	var minutes, seconds, gameStart, gameLoad, endTime;
-	var levelDuration = 3;
+	var levelDuration = 0.1;
 	var timeTaken = [0, 0];
-	var inprogress = true;
+	var inprogress$1 = true;
 
 	//score variable
 	var totalTokens = 1;
@@ -56717,7 +56717,7 @@
 	function animate() {
 		renderFrames += 1;
 
-		if (inprogress == true) {
+		if (inprogress$1 == true) {
 			//request render scene at every frame
 			requestAnimationFrame(animate);
 		}
@@ -56755,7 +56755,7 @@
 		}
 
 
-		//update timer
+		//update timertimer
 		var timeRemaining = time_remaining(endTime);
 		minutes = timeRemaining["minutes"];
 		seconds = timeRemaining["seconds"];
@@ -56765,24 +56765,24 @@
 			var seconds_taken = timeTaken["seconds"];
 			timeTaken[0] = minutes_taken;
 			timeTaken[1] = seconds_taken;
-			inprogress = false;
+			inprogress$1 = false;
 		}
-		if (minutes > 0 && seconds > 30 && inprogress) {
+		if (minutes > 0 && seconds > 30 && inprogress$1) {
 			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
 				+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 		}
 
-		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
+		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress$1) {
 			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
 				+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 		}
 		if (tokenScore == maxScore) { // checking if they have won the game
 			timeTaken = time_taken(gameStart);
 			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["seconds"];
+			var seconds_taken = timeTaken["sectimeronds"];
 			timeTaken[0] = minutes_taken;
 			timeTaken[1] = seconds_taken;
-			inprogress = false;
+			inprogress$1 = false;
 
 		}
 		if (health <= 0) {//if the player loses all thier health end the game
@@ -56791,7 +56791,7 @@
 			var seconds_taken = timeTaken["seconds"];
 			timeTaken[0] = minutes_taken;
 			timeTaken[1] = seconds_taken;
-			inprogress = false;
+			inprogress$1 = false;
 		}
 
 
@@ -56891,7 +56891,7 @@
 
 		if (level == 2) {
 			//increase level goal
-			inprogress = true;
+			inprogress$1 = true;
 			maxScore = 5;
 			totalTokens = 5;
 
@@ -56913,7 +56913,7 @@
 
 		}
 		if (level == 3) {
-			inprogress = true;
+			inprogress$1 = true;
 			maxScore = 10;
 			totalTokens = 10;
 
@@ -56936,7 +56936,7 @@
 		if (level == 4) { //end of the game
 			timer.innerHTML = "<h1>Game Complete</h1>" + "<h2>Time Taken</h2>"
 				+ '<div class ="timerSec" style="background: black">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
-			inprogress = false;
+			inprogress$1 = false;
 		}
 		return
 	}
@@ -57074,7 +57074,7 @@
 		instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
 	    "<h4> (Click anywhere to start)</h4>" +
 	    "<h2>Instructions</h2>"+ 
-	    "<p>You are a rookie pilot Rich Heard aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots have been knocked out from stress of studying for\
+	    "<p>You are a rookie pilot Ricch Heard with 10 PhDs in everyfield aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and PRAvenman VESHim'l have been knocked out from stress of studying for\
     their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper tokens so they can buy past papers to help them \
     study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Captain! Heres your manual</p>"+
 	    "<div id='leftHandControls'> <h3> Left Hand controls </h3> " +
@@ -57092,13 +57092,21 @@
 	    "</div>"+
 	    "<h4> (Click anywhere to start)</h4>"; 
 
-
+	var inprogress = false;
 	document.addEventListener("click",startGame);
-	function startGame(){
-	    instructions.innerHTML = '';
-	    const game = new Game();
-	    game.init();
 
+	function startGame(){
+
+	    if(!inprogress){
+	        inprogress = true;
+	        instructions.innerHTML = '';
+	        const game = new Game();
+	        game.init();
+	        console.log("onclick");
+	    
+	    }
+	    
+	 
 	}
 
 })));
