@@ -62,9 +62,9 @@ var renderFrames = 0;
 
 //timer variables
 
-var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime,endTime
-var levelDuration = 0.5
-var timeTaken = [0,0]
+var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime, endTime
+var levelDuration = 2
+var timeTaken = [0, 0]
 var inprogress = true
 
 //score variable
@@ -75,26 +75,23 @@ var maxScore = 1;
 //animation variables
 var requestAnimationFrameID
 
-
-
+var level = 1
+// var levelOneComplete = false
 
 class Game {
+
 	async init() {
-
-		
-
-////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+		////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
 
 		//get html elements
 		const timer = document.getElementById("timer");
 
 		// Scene
 		scene = new THREE.Scene();
-		//scene.background = new THREE.Color(0xa0a0a0)
 
 		//Skybox
 
-		const secondLevelLoader=new THREE.CubeTextureLoader();
+		const secondLevelLoader = new THREE.CubeTextureLoader();
 		const gloomyskyBoxtexture = secondLevelLoader.load([
 			"textures/penguins/arid_ft.jpg",
 			"textures/penguins/arid_bk.jpg",
@@ -103,6 +100,8 @@ class Game {
 			"textures/penguins/arid_rt.jpg",
 			"textures/penguins/arid_lf.jpg",
 		]);
+
+		scene.background = gloomyskyBoxtexture;
 
 		//Skybox
 		const skyBoxLoader = new THREE.CubeTextureLoader();
@@ -114,9 +113,8 @@ class Game {
 			"textures/skybox/indigo_rt.jpg",
 			"textures/skybox/indigo_lf.jpg",
 		]);
-		// console.log(skyBoxtexture)
+		scene.background = skyBoxtexture;
 
-		scene.background = gloomyskyBoxtexture;
 
 
 		// Physics world
@@ -343,71 +341,41 @@ class Game {
 			let colorMap;
 
 			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
-			newPlatform = placePlatform(
+			newPlatform = placePlatform(createPlatform(1, 50, 50, colorMap), -25, 0, -25);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
 
-				createPlatform(10, 10, 1, colorMap), 20, 5, 0);
+			//final wall
+			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+			newPlatform = placePlatform(createPlatform(1, 30, 30, colorMap), 25, 0, -25);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+			newPlatform = placePlatform(createPlatform(1, 20, 20, colorMap), 25, 40, -25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
 			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
-			newPlatform = placePlatform(
-				createPlatform(20, 10, 1, colorMap), 0, 20, 0);
+			newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 0, -25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
-
-			colorMap = new THREE.TextureLoader().load("./textures/pink_floor.png");
-			newPlatform = placePlatform(
-				createPlatform(10, 20, 1, colorMap), -10, 40, 0);
-
-			platformGeometries.push(newPlatform.threePlatform);
-			platformBodies.push(newPlatform.cannonPlatform);
-
-			//create a wall
-			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
-			newPlatform = placePlatform(createPlatform(5, 1, 5, colorMap), 10, 1, 10);
-			platformGeometries.push(newPlatform.threePlatform);
-			platformBodies.push(newPlatform.cannonPlatform);
-
-
-			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
-			newPlatform = placePlatform(
-				createPlatform(50, 50, 1, colorMap), -25, 0, -25);
-			platformGeometries.push(newPlatform.threePlatform);
-			platformBodies.push(newPlatform.cannonPlatform);
-
-			// for (var i = 0; i < 30; i++) {
-			// 	var randX = getRandomInt(-25, 0);
-			// 	var randY = getRandomInt(0, 50);
-			// 	var randZ = getRandomInt(-25, 0);
-			// 	colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
-			// 	newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
-			// 	platformGeometries.push(newPlatform.threePlatform);
-			// 	platformBodies.push(newPlatform.cannonPlatform);
-			// }
-
-
 			//ceiling
-			colorMap = new THREE.TextureLoader().load("./textures/pink_floor.png");
-			newPlatform = placePlatform(
-
-				createPlatform(50, 50, 1, colorMap), -25, 50, -25);
-
+			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+			newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 50, -25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
-
 			//world boundaries
 			colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
-			newPlatform = placePlatform(
-
-				createPlatform(51, 1, 51, colorMap), -26, 0, 25);
+			newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -26, 0, 25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
 			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-
 			newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
+
+
 
 			// //guide wall block
 			// colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
@@ -499,7 +467,7 @@ class Game {
 		//////////////// ADD THE TOKENS //////////////////
 		//Create tokens
 
-		for (let i = 0; i < totalTokens; i++){
+		for (let i = 0; i < totalTokens; i++) {
 
 			//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
 			// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
@@ -515,7 +483,7 @@ class Game {
 			var randomX = Math.floor(Math.random() * 250);
 			var randomZ = Math.floor(Math.random() * 250);
 			var randomY = Math.floor(Math.random() * 100) + 10;
-			tokenCustom.position.set(randomX, randomY, randomZ);
+			tokenCustom.position.set(0, 20, 20);
 			const tokenBox = new THREE.Box3(); //bounding box
 			// ensure the bounding box is computed for its geometry
 			// this should be done only once (assuming static geometries)
@@ -541,9 +509,10 @@ class Game {
 
 		gameLoad = Date.parse(new Date());
 		gameStart = new Date();
-		endTime = new Date(gameLoad+ levelDuration*60*1000);
+		endTime = new Date(gameLoad + levelDuration * 60 * 1000);
 		animate();
 	}
+
 }
 
 
@@ -558,11 +527,11 @@ function fly() {
 	}
 
 	if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
-		if (keys.w) { pitchSpeed = -1 }	else if (keys.s) { pitchSpeed = 1 } else { pitchSpeed = 0 }
-		if (keys.a) { rollSpeed = 0.75 } else if (keys.d){ rollSpeed = -0.75 } else { rollSpeed = 0 }
+		if (keys.w) { pitchSpeed = -1 } else if (keys.s) { pitchSpeed = 1 } else { pitchSpeed = 0 }
+		if (keys.a) { rollSpeed = 0.75 } else if (keys.d) { rollSpeed = -0.75 } else { rollSpeed = 0 }
 		// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
-		if (keys.arrowleft) { rollSpeed += 2 } else if (keys.arrowright){ rollSpeed += -2} else { rollSpeed += 0 }
-		
+		if (keys.arrowleft) { rollSpeed += 2 } else if (keys.arrowright) { rollSpeed += -2 } else { rollSpeed += 0 }
+
 		// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 		// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
 		// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
@@ -593,12 +562,12 @@ function switchView() {
 
 function animate() {
 	renderFrames += 1;
-	
-	if (inprogress==true) {
-    //request render scene at every frame
-		requestAnimationFrameID= requestAnimationFrame(animate);
+
+	if (inprogress == true) {
+		//request render scene at every frame
+		requestAnimationFrameID = requestAnimationFrame(animate);
 	}
-	else{
+	else {
 		gameEnd();
 	}
 
@@ -633,42 +602,39 @@ function animate() {
 	}
 
 
-	  //update timer
-	  var timeRemaining = time_remaining(endTime)
-	  minutes = timeRemaining["minutes"]
-	  seconds = timeRemaining["seconds"]
-	  if(minutes <=0 && seconds <=0){
-		  timeTaken = time_taken(gameStart);
-		  var minutes_taken = timeTaken["minutes"]
-		  var seconds_taken =timeTaken["seconds"]
-		  timeTaken[0] =minutes_taken
-		  timeTaken[1] =seconds_taken
-		  inprogress = false
-		
-		  
-	
-	  }
-	  if (minutes>0 && seconds> 30 && inprogress){
-		timer.innerHTML = "<h1>Snake Invader</h1>"
-		+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '</div>' + '<div> Tokens Collected: ' +tokenScore+' Out of '+ totalTokens +'</div>'+'</div>';
+	//update timer
+	var timeRemaining = time_remaining(endTime)
+	minutes = timeRemaining["minutes"]
+	seconds = timeRemaining["seconds"]
+	if (minutes <= 0 && seconds <= 0) {
+		timeTaken = time_taken(gameStart);
+		var minutes_taken = timeTaken["minutes"]
+		var seconds_taken = timeTaken["seconds"]
+		timeTaken[0] = minutes_taken
+		timeTaken[1] = seconds_taken
+		inprogress = false
+	}
+	if (minutes > 0 && seconds > 30 && inprogress) {
+		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+			+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 	}
 
-	if(minutes==0 && seconds<= 30 && seconds>0 && inprogress){
-		timer.innerHTML = "<h1>Snake Invader</h1>"
-		+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+'</div>'+ '<div> Tokens Collected: ' +tokenScore+ ' Out of '+ totalTokens +'</div>'+'</div>';
+	if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
+		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+			+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 	}
-	if(tokenScore==maxScore){ // checking if they have won the game
-			timeTaken = time_taken(gameStart);
-		  var minutes_taken = timeTaken["minutes"]
-		  var seconds_taken =timeTaken["seconds"]
-		  timeTaken[0] =minutes_taken
-		  timeTaken[1] =seconds_taken
-		  inprogress = false
-		
-	  }
-	  
+	if (tokenScore == maxScore) { // checking if they have won the game
+		timeTaken = time_taken(gameStart);
+		var minutes_taken = timeTaken["minutes"]
+		var seconds_taken = timeTaken["seconds"]
+		timeTaken[0] = minutes_taken
+		timeTaken[1] = seconds_taken
+		inprogress = false
 
-/************************************************************************************************************************** */
+	}
+
+
+	/************************************************************************************************************************** */
 
 
 	// take timestep in physics simulation
@@ -762,7 +728,64 @@ async function loadModel(path) {
 	return model.scene.children[0]
 }
 
+const timer = document.getElementById("timer");
+function nextLevel() {
+	timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+		+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 
+	if (level == 2) {
+		inprogress = true
+		maxScore = 5
+		totalTokens = 5
+
+		animate()
+		for (let i = 0; i < totalTokens; i++) {
+			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+			var randomX = Math.floor(Math.random() * 250);
+			var randomZ = Math.floor(Math.random() * 250);
+			var randomY = Math.floor(Math.random() * 100) + 10;
+			tokenCustom.position.set(5, 25, randomZ);
+			const tokenBox = new THREE.Box3(); //bounding box
+			tokenCustom.geometry.computeBoundingBox();
+
+			var tokenCenter = new THREE.Vector3();
+			tokenCenter = tokenBox.getCenter();
+
+			scene.add(tokenCustom);
+			tokensArray.push(tokenCustom);
+			boxArray.push(tokenBox);
+		}
+
+	} 
+	if (level == 3) {
+		inprogress = true
+		maxScore = 10
+		totalTokens = 10
+
+		animate()
+		for (let i = 0; i < totalTokens; i++) {
+			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+			var randomX = Math.floor(Math.random() * 250);
+			var randomZ = Math.floor(Math.random() * 250);
+			var randomY = Math.floor(Math.random() * 100) + 10;
+			tokenCustom.position.set(5, 25, randomZ);
+			const tokenBox = new THREE.Box3(); //bounding box
+			tokenCustom.geometry.computeBoundingBox();
+
+			var tokenCenter = new THREE.Vector3();
+			tokenCenter = tokenBox.getCenter();
+
+			scene.add(tokenCustom);
+			tokensArray.push(tokenCustom);
+			boxArray.push(tokenBox);
+		}
+	}
+	if(level==4){ //end of the game
+		timer.innerHTML = "<h1>Game Complete</h1>" + "<h2>Time Taken</h2>"
+			+ '<div class ="timerSec" style="background: black">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
+	}
+	return
+}
 // Initialise and create listeners for the keyboard controls
 function initShipControls() {
 	keys = {
@@ -778,7 +801,7 @@ function initShipControls() {
 		arrowleft: false,
 		arrowright: false
 	};
-	
+
 	document.body.addEventListener("keydown", function (e) {
 
 		const key = e.code.replace("Key", "").toLowerCase()
@@ -850,43 +873,44 @@ function createToken(
 }
 function AddMinutesToDate(date, minutes) {
 	return new Date(date.getTime() + minutes * 60000);
-  
-  
-  }
 
-function time_remaining(endtime){
+
+}
+
+function time_remaining(endtime) {
 	var t = Date.parse(endtime) - Date.parse(new Date());
-	var seconds = Math.floor( (t/1000) % 60 );
-	var minutes = Math.floor( (t/1000/60) % 60 );
-	var hours = Math.floor( (t/(1000*60*60)) % 24 );
-	var days = Math.floor( t/(1000*60*60*24) );
-	return {'total':t, 'days':days, 'hours':hours, 'minutes':minutes, 'seconds':seconds};
+	var seconds = Math.floor((t / 1000) % 60);
+	var minutes = Math.floor((t / 1000 / 60) % 60);
+	var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+	var days = Math.floor(t / (1000 * 60 * 60 * 24));
+	return { 'total': t, 'days': days, 'hours': hours, 'minutes': minutes, 'seconds': seconds };
 }
 
-function time_taken(startTime){
-	var t =  Date.parse(new Date()) - Date.parse(startTime);
-	var seconds = Math.floor( (t/1000) % 60 );
-	var minutes = Math.floor( (t/1000/60) % 60 );
-	var hours = Math.floor( (t/(1000*60*60)) % 24 );
-	var days = Math.floor( t/(1000*60*60*24) );
-	return {'total':t, 'days':days, 'hours':hours, 'minutes':minutes, 'seconds':seconds};
+function time_taken(startTime) {
+	var t = Date.parse(new Date()) - Date.parse(startTime);
+	var seconds = Math.floor((t / 1000) % 60);
+	var minutes = Math.floor((t / 1000 / 60) % 60);
+	var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+	var days = Math.floor(t / (1000 * 60 * 60 * 24));
+	return { 'total': t, 'days': days, 'hours': hours, 'minutes': minutes, 'seconds': seconds };
 }
-  function gameEnd() {
-	if (tokenScore ==maxScore){
-		timer.innerHTML = "<h1>Level Complete</h1>"+"<h2>Time Taken</h2>"
-		+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds"+ '</div>';
-		console.log('hello')
-		console.log(timeTaken[0])
+function gameEnd() {
+	if (tokenScore == maxScore) {
+		level += 1
+		timer.innerHTML = "<h1>Level Complete</h1>" + "<h2>Time Taken</h2>" + "<h2>Progress to level " + level + " </h2>" +
+			+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
+		nextLevel()
 	}
-	else{
-		timer.innerHTML = "<h1>Level failed</h1>"+"<h2>Time Taken</h2>"
-		+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds"+ '</div>';
+	else {
+		timer.innerHTML = "<h1>Level failed</h1>" + "<h2>Time Taken</h2>"
+			+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
 		console.log('hello')
 		console.log(timeTaken[0])
 
+
 	}
-	
-	
+
+
 }
 
 
