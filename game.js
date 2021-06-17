@@ -558,11 +558,11 @@ function fly() {
 	}
 
 	if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
-		if (keys.w) { pitchSpeed = -0.5 } else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
-		if (keys.a) { rollSpeed = 1 } else if (keys.d) { rollSpeed = -1 } else { rollSpeed = 0 }
-		if (keys.arrowleft) { yawSpeed = 1 } else if (keys.arrowright) { yawSpeed = -1 } else { yawSpeed = 0 }
-
-
+		if (keys.w) { pitchSpeed = -1 }	else if (keys.s) { pitchSpeed = 1 } else { pitchSpeed = 0 }
+		if (keys.a) { rollSpeed = 0.75 } else if (keys.d){ rollSpeed = -0.75 } else { rollSpeed = 0 }
+		// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
+		if (keys.arrowleft) { rollSpeed += 2 } else if (keys.arrowright){ rollSpeed += -2} else { rollSpeed += 0 }
+		
 		// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 		// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
 		// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
