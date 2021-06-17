@@ -20,13 +20,62 @@
             color: black;
             position: absolute; 
         }
+		.health{
+			position:absolute;
+  			top: 90%;
+			left:80%;
+		}
+		.health-bar {
+		-webkit-box-sizing: border-box;
+		-moz-box-sizing: border-box;
+		box-sizing: border-box;
+		width: 200px;
+		height: 20px;
+		padding: 5px;
+		background: #ddd;
+		-webkit-border-radius: 5px;
+		-moz-border-radius: 5px;
+		border-radius: 5px;
+		}
+		.bar {
+		background: #c54;
+		width: 100%;
+		height: 10px;
+		position: relative;
+		
+		transition: width .5s linear;
+		}
+
+		.hit {
+		background: rgba(255,255,255,0.6);
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 0px;
+		
+		transition: width .5s linear;
+		}
 		</style>
 		<script type="module" src="./bundle.js" defer></script>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 		
 	</head>
 <body>
 	      <div id="timer"></div>
 		<div id="instructions"></div>
+<<<<<<< HEAD
 		
+=======
+
+ <h2 class="health"> Health </h2>
+<div class="health health-bar" data-total="1000" data-value="1000">
+  <div class="bar">
+  	  <div class="hit"></div>
+  </div>
+ 
+</div>
+
+>>>>>>> aa9a8dbe6ff616d55749b9e841f46aafb2d16c27
 </body>
 </html>
