@@ -56193,7 +56193,7 @@
 	//timer variables
 
 	var minutes, seconds, gameStart, gameLoad, endTime;
-	var levelDuration = 0.5;
+	var levelDuration = 3;
 	var timeTaken = [0,0];
 	var inprogress = true;
 
@@ -56202,6 +56202,13 @@
 	var tokenScore = 0;
 	var maxScore = 1;
 
+	//health bar
+	var health = 100;
+	var hBar = $('.health-bar'),
+	bar = hBar.find('.bar');
+	var totalHealth = 100;
+	var healthBarWidth = (health / totalHealth) * 100;
+	bar.css('width', healthBarWidth+ '%');
 
 
 
@@ -56495,12 +56502,13 @@
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
-
+				//floor 
 				colorMap = new TextureLoader().load("./textures/lime_floor.png");
 				newPlatform = placePlatform(
 					createPlatform(50, 50, 1, colorMap), -25, 0, -25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
+				newPlatform.cannonPlatform.id;
 
 				// for (var i = 0; i < 30; i++) {
 				// 	var randX = getRandomInt(-25, 0);
@@ -56589,6 +56597,23 @@
 
 			shipBody.quaternion.setFromAxisAngle(new Vec3(0, 1, 0), Math.PI);
 			world.addBody(shipBody);
+			var lastCollisionTime = new Date().getTime();
+			shipBody.addEventListener("collide",function(e){
+				timeTaken = time_taken(gameStart);
+				timeTaken["minutes"];
+				timeTaken["seconds"];
+				if(lastCollisionTime + 2000 < new Date().getTime()){
+					var damage = 5;
+					updateHealth(damage);
+					lastCollisionTime = new Date().getTime();
+				}
+				
+					
+
+
+			});
+			
+
 			//console.log(shipBody)
 
 			// Initialize ship keyboard control
@@ -56658,7 +56683,7 @@
 				scene.add(tokenCustom);
 
 				//Since the bounding box for each token must be computed within the animation loop,
-				//we create the tokens and boxes as empty here and add them to their respective arrays,
+				//we create the tokens and boxes as empty here and add them floorto their respective arrays,
 				//which can be looped through and each token and box can be accessed within the animation loop.
 				tokensArray.push(tokenCustom);
 				boxArray.push(tokenBox);
@@ -56793,6 +56818,14 @@
 			  inprogress = false;
 			
 		  }
+		if(health <=0){//if the player loses all thier health end the game
+			timeTaken = time_taken(gameStart);
+			var minutes_taken = timeTaken["minutes"];
+			var seconds_taken =timeTaken["seconds"];
+			timeTaken[0] =minutes_taken;
+			timeTaken[1] =seconds_taken;
+			inprogress = false;
+		}
 		  
 
 	/************************************************************************************************************************** */
@@ -56993,8 +57026,13 @@
 			console.log(timeTaken[0]);
 
 		}
+
 		
-		
+	}
+	function updateHealth(damage) {
+		health = health -damage;
+		var healthBarWidth = (health / totalHealth) * 100;
+		bar.css('width', healthBarWidth+ '%');
 	}
 
 	document.getElementById("instance");
