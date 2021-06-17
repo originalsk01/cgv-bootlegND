@@ -62,9 +62,9 @@ var renderFrames = 0;
 
 //timer variables
 
-var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime,endTime
+var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime, endTime
 var levelDuration = 3
-var timeTaken = [0,0]
+var timeTaken = [0, 0]
 var inprogress = true
 
 //score variable
@@ -80,10 +80,10 @@ var level = 1
 //health bar
 var health = 100
 var hBar = $('.health-bar'),
-bar = hBar.find('.bar');
+	bar = hBar.find('.bar');
 var totalHealth = 100
 var healthBarWidth = (health / totalHealth) * 100;
-bar.css('width', healthBarWidth+ '%');
+bar.css('width', healthBarWidth + '%');
 var floor_id
 
 
@@ -372,15 +372,17 @@ class Game {
 			platformBodies.push(newPlatform.cannonPlatform);
 			floor_id = newPlatform.cannonPlatform.id
 
-			// for (var i = 0; i < 30; i++) {
-			// 	var randX = getRandomInt(-25, 0);
-			// 	var randY = getRandomInt(0, 50);
-			// 	var randZ = getRandomInt(-25, 0);
-			// 	colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
-			// 	newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
-			// 	platformGeometries.push(newPlatform.threePlatform);
-			// 	platformBodies.push(newPlatform.cannonPlatform);
-			// }
+			for (var i = 0; i < 30; i++) {
+				var randX = getRandomInt(-25, 0);
+				var randY = getRandomInt(0, 50);
+				var randZ = getRandomInt(-25, 0);
+				colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
+				newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+			}
+
+
 
 
 			//ceiling
@@ -425,8 +427,6 @@ class Game {
 
 		shipModel = new THREE.Object3D
 		shipModel = await loadModel(shipPath)
-		//console.log(shipModel)
-
 
 		// Rotate children of ship model to correct their orientation
 		//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
@@ -455,23 +455,21 @@ class Game {
 		shipBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI);
 		world.addBody(shipBody)
 		var lastCollisionTime = new Date().getTime();
-		shipBody.addEventListener("collide",function(e){
+		shipBody.addEventListener("collide", function (e) {
 			timeTaken = time_taken(gameStart);
 			var minutes_taken = timeTaken["minutes"]
-			var seconds_taken =timeTaken["seconds"]
-			if(lastCollisionTime + 2000 < new Date().getTime()){
+			var seconds_taken = timeTaken["seconds"]
+			if (lastCollisionTime + 2000 < new Date().getTime()) {
 				var damage = 5
 				updateHealth(damage);
 				lastCollisionTime = new Date().getTime();
 			}
-			
-				
+
+
 
 
 		});
-		
 
-		//console.log(shipBody)
 
 		// Initialize ship keyboard control
 
@@ -499,8 +497,6 @@ class Game {
 
 		var playerCenter = new THREE.Vector3(2, 5, 8);
 		playerCenter = playerBox.getCenter();
-		// console.log('playerCenter:');
-		// console.log(playerCenter);
 
 		scene.add(playerCustom);
 		playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
@@ -517,9 +513,6 @@ class Game {
 
 			//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
 			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-			//console.log('Inner',innerTokenCustom);
-			//console.log('Outer',outerTokenCustom);
-
 			//Generate random positions for each of the tokens
 			var randomX = Math.floor(Math.random() * 250);
 			var randomZ = Math.floor(Math.random() * 250);
@@ -529,13 +522,11 @@ class Game {
 			// ensure the bounding box is computed for its geometry
 			// this should be done only once (assuming static geometries)
 			tokenCustom.geometry.computeBoundingBox();
-			// console.log(tokenCustom.geometry.boundingBox);
 			//tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
 
 			//Calculate center of token just for debugging
 			var tokenCenter = new THREE.Vector3();
 			tokenCenter = tokenBox.getCenter();
-			// console.log(tokenCenter);
 
 			scene.add(tokenCustom);
 
@@ -637,7 +628,6 @@ function animate() {
 				//tokensArray[k].material.color.lerp();
 
 				tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
-				console.log(tokenScore);
 			}
 		}
 	}
@@ -673,15 +663,15 @@ function animate() {
 		inprogress = false
 
 	}
-	if(health <=0){//if the player loses all thier health end the game
+	if (health <= 0) {//if the player loses all thier health end the game
 		timeTaken = time_taken(gameStart);
 		var minutes_taken = timeTaken["minutes"]
-		var seconds_taken =timeTaken["seconds"]
-		timeTaken[0] =minutes_taken
-		timeTaken[1] =seconds_taken
+		var seconds_taken = timeTaken["seconds"]
+		timeTaken[0] = minutes_taken
+		timeTaken[1] = seconds_taken
 		inprogress = false
 	}
-	  
+
 
 
 	/************************************************************************************************************************** */
@@ -695,14 +685,8 @@ function animate() {
 
 	// update flight camera
 	fly()
-
-	// switchView()
-
-
 	// models animations
 	const delta = clock.getDelta()
-	// if (dancerMixer) dancerMixer.update(delta)
-	// if (snakeMixer) snakeMixer.update(delta)
 
 	stats.update()
 	//// render three.js
@@ -784,6 +768,7 @@ function nextLevel() {
 		+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 
 	if (level == 2) {
+		//increase level goal
 		inprogress = true
 		maxScore = 5
 		totalTokens = 5
@@ -794,7 +779,7 @@ function nextLevel() {
 			var randomX = Math.floor(Math.random() * 250);
 			var randomZ = Math.floor(Math.random() * 250);
 			var randomY = Math.floor(Math.random() * 100) + 10;
-			tokenCustom.position.set(5, 25, randomZ);
+			tokenCustom.position.set(5, 25, randomZ); //sets location of thetoken to be in a random line location
 			const tokenBox = new THREE.Box3(); //bounding box
 			tokenCustom.geometry.computeBoundingBox();
 
@@ -806,7 +791,7 @@ function nextLevel() {
 			boxArray.push(tokenBox);
 		}
 
-	} 
+	}
 	if (level == 3) {
 		inprogress = true
 		maxScore = 10
@@ -830,9 +815,10 @@ function nextLevel() {
 			boxArray.push(tokenBox);
 		}
 	}
-	if(level==4){ //end of the game
+	if (level == 4) { //end of the game
 		timer.innerHTML = "<h1>Game Complete</h1>" + "<h2>Time Taken</h2>"
 			+ '<div class ="timerSec" style="background: black">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
+		inprogress = false
 	}
 	return
 }
@@ -877,9 +863,9 @@ function getRandomInt(min, max) {
 }
 
 // random float within range
-function getRandomArbitrary(min, max) {
-	return Math.random() * (max - min) + min
-}
+// function getRandomArbitrary(min, max) {
+// 	return Math.random() * (max - min) + min
+// }
 function createToken(
 
 	innerRadius,
@@ -918,14 +904,13 @@ function createToken(
 
 	outerCustom.add(innerCustom)
 	innerCustomArray.push(innerCustom) // use separate array for innerCustom which will be global so that we can access them
-	// console.log(outerCustom);
 	return outerCustom
 }
-function AddMinutesToDate(date, minutes) {
-	return new Date(date.getTime() + minutes * 60000);
+// function AddMinutesToDate(date, minutes) {
+// 	return new Date(date.getTime() + minutes * 60000);
 
 
-}
+// }
 
 function time_remaining(endtime) {
 	var t = Date.parse(endtime) - Date.parse(new Date());
@@ -954,19 +939,17 @@ function gameEnd() {
 	else {
 		timer.innerHTML = "<h1>Level failed</h1>" + "<h2>Time Taken</h2>"
 			+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
-		console.log('hello')
-		console.log(timeTaken[0])
 
 
 	}
 
 
-	
+
 }
 function updateHealth(damage) {
-	health = health -damage
+	health = health - damage
 	var healthBarWidth = (health / totalHealth) * 100;
-	bar.css('width', healthBarWidth+ '%');
+	bar.css('width', healthBarWidth + '%');
 }
 
 
