@@ -39,14 +39,6 @@ let rollSpeed = 0
 let yawSpeed = 0
 let accelerationImpulse
 
-<<<<<<< HEAD
-
-class Game {
-
-	async init() {
-
-
-=======
 //token global variables
 var tokensArray = []; //Array containing tokens
 var boxArray = []; // Array containing box for tokens'
@@ -92,16 +84,10 @@ var floor_id
 class Game {
 
 	async init() {
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 		////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
 
 
 		// Scene
-<<<<<<< HEAD
-		scene = new THREE.Scene()
-		//scene.background = new THREE.Color(0xa0a0a0)
-
-=======
 		scene = new THREE.Scene();
 
 		//Skybox
@@ -115,24 +101,12 @@ class Game {
 			"textures/penguins/arid_rt.jpg",
 			"textures/penguins/arid_lf.jpg",
 		]);
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 		scene.background = gloomyskyBoxtexture;
 
 		//Skybox
 		const skyBoxLoader = new THREE.CubeTextureLoader()
 		const skyBoxtexture = skyBoxLoader.load([
-<<<<<<< HEAD
-		  'textures/skybox/indigo_ft.jpg',
-		  'textures/skybox/indigo_bk.jpg',
-		  'textures/skybox/indigo_up.jpg',
-		  'textures/skybox/indigo_dn.jpg',
-		  'textures/skybox/indigo_rt.jpg',
-		  'textures/skybox/indigo_lf.jpg',
-		])
-		// console.log(skyBoxtexture)
-		scene.background = skyBoxtexture
-=======
 			"textures/skybox/indigo_ft.jpg",
 			"textures/skybox/indigo_bk.jpg",
 			"textures/skybox/indigo_up.jpg",
@@ -142,7 +116,6 @@ class Game {
 		]);
 		scene.background = skyBoxtexture;
 
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 
 		// Physics world
@@ -347,36 +320,6 @@ class Game {
 
 		// Function to add multiple platforms into a gameboard
 		// allow different textures/colours for different sections
-<<<<<<< HEAD
-		const createGameBoard=()=>{
-
-			const board = new THREE.Group()
-			const platformGeometries = []
-			const platformBodies = []
-			let newPlatform
-			let colorMap
-
-			colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
-			newPlatform = placePlatform(createPlatform(2,2,1,colorMap),-5,5,0)
-			platformGeometries.push(newPlatform.threePlatform)
-			platformBodies.push(newPlatform.cannonPlatform)
-
-
-			colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
-			newPlatform = placePlatform(createPlatform(2,5,1,colorMap),-15,2,-15)
-			platformGeometries.push(newPlatform.threePlatform)
-			platformBodies.push(newPlatform.cannonPlatform)
-
-			colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
-			newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,2,2)
-			platformGeometries.push(newPlatform.threePlatform)
-			platformBodies.push(newPlatform.cannonPlatform)
-
-
-			for (let i=0;i<platformGeometries.length;i++){
-				board.add(platformGeometries[i])
-				world.addBody(platformBodies[i])
-=======
 		const createGameBoard = () => {
 
 			const board = new THREE.Group();
@@ -447,7 +390,6 @@ class Game {
 			for (let i = 0; i < platformGeometries.length; i++) {
 				board.add(platformGeometries[i]);
 				world.addBody(platformBodies[i]);
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 			}
 
 			return board
@@ -464,12 +406,6 @@ class Game {
 
 		shipModel = new THREE.Object3D
 		shipModel = await loadModel(shipPath)
-<<<<<<< HEAD
-		//console.log(shipModel)
-		
-=======
-
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 		// Rotate children of ship model to correct their orientation
 		//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
 		//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
@@ -517,8 +453,6 @@ class Game {
 
 		animate()
 
-<<<<<<< HEAD
-=======
 
 		//////////////// CREATE SHIP BOUNDING BOX //////////////////
 		playerGeometry = new THREE.BoxGeometry(2, 2, 2);
@@ -586,7 +520,6 @@ class Game {
 		gameStart = new Date();
 		endTime = new Date(gameLoad + levelDuration * 60 * 1000);
 		animate();
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 	}
 
 }
@@ -594,27 +527,11 @@ class Game {
 
 function fly(){
 
-<<<<<<< HEAD
-	if (keys.arrowup){acceleration = -1}
-	if (keys.arrowdown){acceleration = 1}
-	if (keys.arrowup||keys.arrowdown){
-		let accelerationImpulseDirection = new CANNON.Vec3(0,0,acceleration)
-		accelerationImpulse = shipBody.quaternion.vmult( accelerationImpulseDirection )
-		shipBody.applyImpulse ( accelerationImpulse)	
-	
-	}
-
-	if( keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright ){
-		if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
-		if (keys.a) { rollSpeed = 1 } else if (keys.d){ rollSpeed = -1 } else { rollSpeed = 0 }
-		if (keys.arrowleft) { yawSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1 } else { yawSpeed = 0 }
-=======
 	if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
 		if (keys.w) { pitchSpeed = -1 } else if (keys.s) { pitchSpeed = 1 } else { pitchSpeed = 0 }
 		if (keys.a) { rollSpeed = 0.75 } else if (keys.d) { rollSpeed = -0.75 } else { rollSpeed = 0 }
 		// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
 		if (keys.arrowleft) { rollSpeed += 2 } else if (keys.arrowright) { rollSpeed += -2 } else { rollSpeed += 0 }
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 		// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 		// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
@@ -635,12 +552,6 @@ function fly(){
 }
 
 
-<<<<<<< HEAD
- function animate() {
-	
-	//request render scene at every frame
-	requestAnimationFrame(animate) 
-=======
 function switchView() {
 	let thirdPersonCam = new THREE.Vector3(0, 4, 7.5);
 	let fp = new CANNON.Vec3(0, 0, -3);
@@ -736,7 +647,6 @@ function animate() {
 
 	/************************************************************************************************************************** */
 
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 	// take timestep in physics simulation
 	stepPhysicsWorld()
@@ -746,20 +656,9 @@ function animate() {
 
 	// update flight camera
 	fly()
-<<<<<<< HEAD
-	// let fp= new CANNON.Vec3(0,0,-3);
-	// flightCamera.position.lerp(fp,0.01)
-	
-	// models animations
-	const delta = clock.getDelta()
-	// if (dancerMixer) dancerMixer.update(delta)
-	// if (snakeMixer) snakeMixer.update(delta)
-  
-=======
 	// models animations
 	const delta = clock.getDelta()
 
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 	stats.update()
 	//// render three.js
 	//renderer.clear()
@@ -884,17 +783,14 @@ function initShipControls(){
 		arrowdown:false,
 		arrowleft: false,
 		arrowright: false
-<<<<<<< HEAD
-    };
-=======
 	};
 
 	document.body.addEventListener("keydown", function (e) {
 
 		const key = e.code.replace("Key", "").toLowerCase()
 		if (keys[key] !== undefined) keys[key] = true
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
+	})
 
     document.body.addEventListener( 'keydown', function(e) {
     
@@ -924,10 +820,6 @@ function getRandomInt(min, max){
 }
 
 // random float within range
-<<<<<<< HEAD
-function getRandomArbitrary(min, max){
-    return Math.random() * (max - min) + min
-=======
 // function getRandomArbitrary(min, max) {
 // 	return Math.random() * (max - min) + min
 // }
@@ -1010,7 +902,6 @@ function gameEnd() {
 
 
 
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 }
 function updateHealth(damage) {
 	health = health - damage

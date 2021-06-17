@@ -27572,6 +27572,303 @@
 
 	DepthTexture.prototype.isDepthTexture = true;
 
+	class PolyhedronGeometry extends BufferGeometry {
+
+		constructor( vertices, indices, radius = 1, detail = 0 ) {
+
+			super();
+
+			this.type = 'PolyhedronGeometry';
+
+			this.parameters = {
+				vertices: vertices,
+				indices: indices,
+				radius: radius,
+				detail: detail
+			};
+
+			// default buffer data
+
+			const vertexBuffer = [];
+			const uvBuffer = [];
+
+			// the subdivision creates the vertex buffer data
+
+			subdivide( detail );
+
+			// all vertices should lie on a conceptual sphere with a given radius
+
+			applyRadius( radius );
+
+			// finally, create the uv data
+
+			generateUVs();
+
+			// build non-indexed geometry
+
+			this.setAttribute( 'position', new Float32BufferAttribute( vertexBuffer, 3 ) );
+			this.setAttribute( 'normal', new Float32BufferAttribute( vertexBuffer.slice(), 3 ) );
+			this.setAttribute( 'uv', new Float32BufferAttribute( uvBuffer, 2 ) );
+
+			if ( detail === 0 ) {
+
+				this.computeVertexNormals(); // flat normals
+
+			} else {
+
+				this.normalizeNormals(); // smooth normals
+
+			}
+
+			// helper functions
+
+			function subdivide( detail ) {
+
+				const a = new Vector3();
+				const b = new Vector3();
+				const c = new Vector3();
+
+				// iterate over all faces and apply a subdivison with the given detail value
+
+				for ( let i = 0; i < indices.length; i += 3 ) {
+
+					// get the vertices of the face
+
+					getVertexByIndex( indices[ i + 0 ], a );
+					getVertexByIndex( indices[ i + 1 ], b );
+					getVertexByIndex( indices[ i + 2 ], c );
+
+					// perform subdivision
+
+					subdivideFace( a, b, c, detail );
+
+				}
+
+			}
+
+			function subdivideFace( a, b, c, detail ) {
+
+				const cols = detail + 1;
+
+				// we use this multidimensional array as a data structure for creating the subdivision
+
+				const v = [];
+
+				// construct all of the vertices for this subdivision
+
+				for ( let i = 0; i <= cols; i ++ ) {
+
+					v[ i ] = [];
+
+					const aj = a.clone().lerp( c, i / cols );
+					const bj = b.clone().lerp( c, i / cols );
+
+					const rows = cols - i;
+
+					for ( let j = 0; j <= rows; j ++ ) {
+
+						if ( j === 0 && i === cols ) {
+
+							v[ i ][ j ] = aj;
+
+						} else {
+
+							v[ i ][ j ] = aj.clone().lerp( bj, j / rows );
+
+						}
+
+					}
+
+				}
+
+				// construct all of the faces
+
+				for ( let i = 0; i < cols; i ++ ) {
+
+					for ( let j = 0; j < 2 * ( cols - i ) - 1; j ++ ) {
+
+						const k = Math.floor( j / 2 );
+
+						if ( j % 2 === 0 ) {
+
+							pushVertex( v[ i ][ k + 1 ] );
+							pushVertex( v[ i + 1 ][ k ] );
+							pushVertex( v[ i ][ k ] );
+
+						} else {
+
+							pushVertex( v[ i ][ k + 1 ] );
+							pushVertex( v[ i + 1 ][ k + 1 ] );
+							pushVertex( v[ i + 1 ][ k ] );
+
+						}
+
+					}
+
+				}
+
+			}
+
+			function applyRadius( radius ) {
+
+				const vertex = new Vector3();
+
+				// iterate over the entire buffer and apply the radius to each vertex
+
+				for ( let i = 0; i < vertexBuffer.length; i += 3 ) {
+
+					vertex.x = vertexBuffer[ i + 0 ];
+					vertex.y = vertexBuffer[ i + 1 ];
+					vertex.z = vertexBuffer[ i + 2 ];
+
+					vertex.normalize().multiplyScalar( radius );
+
+					vertexBuffer[ i + 0 ] = vertex.x;
+					vertexBuffer[ i + 1 ] = vertex.y;
+					vertexBuffer[ i + 2 ] = vertex.z;
+
+				}
+
+			}
+
+			function generateUVs() {
+
+				const vertex = new Vector3();
+
+				for ( let i = 0; i < vertexBuffer.length; i += 3 ) {
+
+					vertex.x = vertexBuffer[ i + 0 ];
+					vertex.y = vertexBuffer[ i + 1 ];
+					vertex.z = vertexBuffer[ i + 2 ];
+
+					const u = azimuth( vertex ) / 2 / Math.PI + 0.5;
+					const v = inclination( vertex ) / Math.PI + 0.5;
+					uvBuffer.push( u, 1 - v );
+
+				}
+
+				correctUVs();
+
+				correctSeam();
+
+			}
+
+			function correctSeam() {
+
+				// handle case when face straddles the seam, see #3269
+
+				for ( let i = 0; i < uvBuffer.length; i += 6 ) {
+
+					// uv data of a single face
+
+					const x0 = uvBuffer[ i + 0 ];
+					const x1 = uvBuffer[ i + 2 ];
+					const x2 = uvBuffer[ i + 4 ];
+
+					const max = Math.max( x0, x1, x2 );
+					const min = Math.min( x0, x1, x2 );
+
+					// 0.9 is somewhat arbitrary
+
+					if ( max > 0.9 && min < 0.1 ) {
+
+						if ( x0 < 0.2 ) uvBuffer[ i + 0 ] += 1;
+						if ( x1 < 0.2 ) uvBuffer[ i + 2 ] += 1;
+						if ( x2 < 0.2 ) uvBuffer[ i + 4 ] += 1;
+
+					}
+
+				}
+
+			}
+
+			function pushVertex( vertex ) {
+
+				vertexBuffer.push( vertex.x, vertex.y, vertex.z );
+
+			}
+
+			function getVertexByIndex( index, vertex ) {
+
+				const stride = index * 3;
+
+				vertex.x = vertices[ stride + 0 ];
+				vertex.y = vertices[ stride + 1 ];
+				vertex.z = vertices[ stride + 2 ];
+
+			}
+
+			function correctUVs() {
+
+				const a = new Vector3();
+				const b = new Vector3();
+				const c = new Vector3();
+
+				const centroid = new Vector3();
+
+				const uvA = new Vector2();
+				const uvB = new Vector2();
+				const uvC = new Vector2();
+
+				for ( let i = 0, j = 0; i < vertexBuffer.length; i += 9, j += 6 ) {
+
+					a.set( vertexBuffer[ i + 0 ], vertexBuffer[ i + 1 ], vertexBuffer[ i + 2 ] );
+					b.set( vertexBuffer[ i + 3 ], vertexBuffer[ i + 4 ], vertexBuffer[ i + 5 ] );
+					c.set( vertexBuffer[ i + 6 ], vertexBuffer[ i + 7 ], vertexBuffer[ i + 8 ] );
+
+					uvA.set( uvBuffer[ j + 0 ], uvBuffer[ j + 1 ] );
+					uvB.set( uvBuffer[ j + 2 ], uvBuffer[ j + 3 ] );
+					uvC.set( uvBuffer[ j + 4 ], uvBuffer[ j + 5 ] );
+
+					centroid.copy( a ).add( b ).add( c ).divideScalar( 3 );
+
+					const azi = azimuth( centroid );
+
+					correctUV( uvA, j + 0, a, azi );
+					correctUV( uvB, j + 2, b, azi );
+					correctUV( uvC, j + 4, c, azi );
+
+				}
+
+			}
+
+			function correctUV( uv, stride, vector, azimuth ) {
+
+				if ( ( azimuth < 0 ) && ( uv.x === 1 ) ) {
+
+					uvBuffer[ stride ] = uv.x - 1;
+
+				}
+
+				if ( ( vector.x === 0 ) && ( vector.z === 0 ) ) {
+
+					uvBuffer[ stride ] = azimuth / 2 / Math.PI + 0.5;
+
+				}
+
+			}
+
+			// Angle around the Y axis, counter-clockwise when looking from above.
+
+			function azimuth( vector ) {
+
+				return Math.atan2( vector.z, - vector.x );
+
+			}
+
+
+			// Angle above the XZ plane.
+
+			function inclination( vector ) {
+
+				return Math.atan2( - vector.y, Math.sqrt( ( vector.x * vector.x ) + ( vector.z * vector.z ) ) );
+
+			}
+
+		}
+
+	}
+
 	new Vector3();
 	new Vector3();
 	new Vector3();
@@ -29230,6 +29527,34 @@
 		if ( options.extrudePath !== undefined ) data.options.extrudePath = options.extrudePath.toJSON();
 
 		return data;
+
+	}
+
+	class OctahedronGeometry extends PolyhedronGeometry {
+
+		constructor( radius = 1, detail = 0 ) {
+
+			const vertices = [
+				1, 0, 0, 	- 1, 0, 0,	0, 1, 0,
+				0, - 1, 0, 	0, 0, 1,	0, 0, - 1
+			];
+
+			const indices = [
+				0, 2, 4,	0, 4, 3,	0, 3, 5,
+				0, 5, 2,	1, 2, 5,	1, 5, 3,
+				1, 3, 4,	1, 4, 2
+			];
+
+			super( vertices, indices, radius, detail );
+
+			this.type = 'OctahedronGeometry';
+
+			this.parameters = {
+				radius: radius,
+				detail: detail
+			};
+
+		}
 
 	}
 
@@ -55842,20 +56167,10 @@
 
 	// flight camera a& controls global variables
 	let flightCamera;
-	let acceleration = 0; 
 	let pitchSpeed = 0;
 	let rollSpeed = 0;
 	let yawSpeed = 0;
-	let accelerationImpulse;
 
-<<<<<<< HEAD
-
-	class Game {
-
-		async init() {
-
-
-=======
 	//token global variables
 	var tokensArray = []; //Array containing tokens
 	var boxArray = []; // Array containing box for tokens'
@@ -55897,15 +56212,12 @@
 	class Game {
 
 		async init() {
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 			////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
 
 
 			// Scene
 			scene = new Scene();
 
-<<<<<<< HEAD
-=======
 			//Skybox
 
 			const secondLevelLoader = new CubeTextureLoader();
@@ -55917,24 +56229,12 @@
 				"textures/penguins/arid_rt.jpg",
 				"textures/penguins/arid_lf.jpg",
 			]);
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 			scene.background = gloomyskyBoxtexture;
 
 			//Skybox
 			const skyBoxLoader = new CubeTextureLoader();
 			const skyBoxtexture = skyBoxLoader.load([
-<<<<<<< HEAD
-			  'textures/skybox/indigo_ft.jpg',
-			  'textures/skybox/indigo_bk.jpg',
-			  'textures/skybox/indigo_up.jpg',
-			  'textures/skybox/indigo_dn.jpg',
-			  'textures/skybox/indigo_rt.jpg',
-			  'textures/skybox/indigo_lf.jpg',
-			]);
-			// console.log(skyBoxtexture)
-			scene.background = skyBoxtexture;
-=======
 				"textures/skybox/indigo_ft.jpg",
 				"textures/skybox/indigo_bk.jpg",
 				"textures/skybox/indigo_up.jpg",
@@ -55944,7 +56244,6 @@
 			]);
 			scene.background = skyBoxtexture;
 
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 
 			// Physics world
@@ -56149,7 +56448,7 @@
 
 			// Function to add multiple platforms into a gameboard
 			// allow different textures/colours for different sections
-			const createGameBoard=()=>{
+			const createGameBoard = () => {
 
 				const board = new Group();
 				const platformGeometries = [];
@@ -56157,24 +56456,6 @@
 				let newPlatform;
 				let colorMap;
 
-<<<<<<< HEAD
-				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,2,1,colorMap),-5,5,0);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-
-
-				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,5,1,colorMap),-15,2,-15);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-
-				colorMap = new TextureLoader().load('./textures/blue_floor.png');
-				newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,2,2);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-
-=======
 				colorMap = new TextureLoader().load("./textures/lime_floor.png");
 				newPlatform = placePlatform(createPlatform(1, 50, 50, colorMap), -25, 0, -25);
 				platformGeometries.push(newPlatform.threePlatform);
@@ -56233,9 +56514,8 @@
 				// newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2)
 				// platformGeometries.push(newPlatform.threePlatform)
 				// platformBodies.push(newPlatform.cannonPlatform)
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
-				for (let i=0;i<platformGeometries.length;i++){
+				for (let i = 0; i < platformGeometries.length; i++) {
 					board.add(platformGeometries[i]);
 					world.addBody(platformBodies[i]);
 				}
@@ -56254,12 +56534,6 @@
 
 			shipModel = new Object3D;
 			shipModel = await loadModel(shipPath);
-<<<<<<< HEAD
-			//console.log(shipModel)
-			
-=======
-
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 			// Rotate children of ship model to correct their orientation
 			//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
 			//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
@@ -56302,12 +56576,10 @@
 
 			// Initialize ship keyboard control
 			initShipControls();
-<<<<<<< HEAD
 			
 			clock = new Clock();
 
-=======
-
+			animate();
 
 
 			//////////////// CREATE SHIP BOUNDING BOX //////////////////
@@ -56371,9 +56643,7 @@
 			gameLoad = Date.parse(new Date());
 			gameStart = new Date();
 			endTime = new Date(gameLoad + levelDuration * 60 * 1000);
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 			animate();
-
 		}
 
 	}
@@ -56381,27 +56651,11 @@
 
 	function fly(){
 
-<<<<<<< HEAD
-		if (keys.arrowup){acceleration = -1;}
-		if (keys.arrowdown){acceleration = 1;}
-		if (keys.arrowup||keys.arrowdown){
-			let accelerationImpulseDirection = new Vec3(0,0,acceleration);
-			accelerationImpulse = shipBody.quaternion.vmult( accelerationImpulseDirection );
-			shipBody.applyImpulse ( accelerationImpulse);	
-		
-		}
-
-		if( keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright ){
-			if (keys.w) { pitchSpeed = -0.5; }	else if (keys.s) { pitchSpeed = 0.5; } else { pitchSpeed = 0; }
-			if (keys.a) { rollSpeed = 1; } else if (keys.d){ rollSpeed = -1; } else { rollSpeed = 0; }
-			if (keys.arrowleft) { yawSpeed = 1; } else if (keys.arrowright){ yawSpeed = -1; } else { yawSpeed = 0; }
-=======
 		if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
 			if (keys.w) { pitchSpeed = -1; } else if (keys.s) { pitchSpeed = 1; } else { pitchSpeed = 0; }
 			if (keys.a) { rollSpeed = 0.75; } else if (keys.d) { rollSpeed = -0.75; } else { rollSpeed = 0; }
 			// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
 			if (keys.arrowleft) { rollSpeed += 2; } else if (keys.arrowright) { rollSpeed += -2; } else { rollSpeed += 0; }
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 			// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 			// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
@@ -56419,24 +56673,6 @@
 
 		shipBody.linearDamping = 0.5;
 		shipBody.angularDamping = 0.9;
-	}
-
-
-<<<<<<< HEAD
-	 function animate() {
-		
-		//request render scene at every frame
-		requestAnimationFrame(animate); 
-=======
-	function switchView() {
-		let thirdPersonCam = new Vector3(0, 4, 7.5);
-		let fp = new Vec3(0, 0, -3);
-		if (flightCamera.position.x == fp.x && flightCamera.position.y == fp.y && flightCamera.position.z == fp.z) {
-			flightCamera.position.lerp(thirdPersonCam, 1);
-		}
-		else if (flightCamera.position.x == thirdPersonCam.x && flightCamera.position.y == thirdPersonCam.y && flightCamera.position.z == thirdPersonCam.z) {
-			flightCamera.position.lerp(fp, 1);
-		}
 	}
 
 	function animate() {
@@ -56523,7 +56759,6 @@
 
 		/************************************************************************************************************************** */
 
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 		// take timestep in physics simulation
 		stepPhysicsWorld();
@@ -56533,20 +56768,9 @@
 
 		// update flight camera
 		fly();
-<<<<<<< HEAD
-		// let fp= new CANNON.Vec3(0,0,-3);
-		// flightCamera.position.lerp(fp,0.01)
-		
-		// models animations
-		clock.getDelta();
-		// if (dancerMixer) dancerMixer.update(delta)
-		// if (snakeMixer) snakeMixer.update(delta)
-	  
-=======
 		// models animations
 		clock.getDelta();
 
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 		stats.update();
 		//// render three.js
 		//renderer.clear()
@@ -56667,9 +56891,6 @@
 			arrowdown:false,
 			arrowleft: false,
 			arrowright: false
-<<<<<<< HEAD
-	    };
-=======
 		};
 
 		document.body.addEventListener("keydown", function (e) {
@@ -56679,21 +56900,31 @@
 
 		});
 
-		document.body.addEventListener("keyup", function (e) {
+	    document.body.addEventListener( 'keydown', function(e) {
+	    
+	        const key = e.code.replace('Key', '').toLowerCase();
+	        if ( keys[ key ] !== undefined )
+	            keys[ key ] = true;
+	        
+	    });
 
-			const key = e.code.replace("Key", "").toLowerCase();
-			if (keys[key] !== undefined) keys[key] = false;
+	    document.body.addEventListener( 'keyup', function(e) {
+	        
+	        const key = e.code.replace('Key', '').toLowerCase();
+	        if ( keys[ key ] !== undefined )
+	            keys[ key ] = false;
+	        
+	    });
 
-		});
 	}
 
 	// Randomizers that can be used for building Bufffer geometries
 
 	// random integer within range
-	function getRandomInt(min, max) {
-		min = Math.ceil(min);
-		max = Math.floor(max);
-		return Math.floor(Math.random() * (max - min) + min) //The maximum is exclusive and the minimum is inclusive
+	function getRandomInt(min, max){
+	    min = Math.ceil(min);
+	    max = Math.floor(max);
+	    return Math.floor(Math.random() * (max - min) + min) //The maximum is exclusive and the minimum is inclusive
 	}
 
 	// random float within range
@@ -56715,27 +56946,15 @@
 		//createToken creates a token consisting of 2 objects, one within the other.
 		//Opacities may be set in order to alter the appearance as well as make the inner object visible
 		var innerGeometry = new OctahedronGeometry(innerRadius, innerDetail);
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
+		var innerMaterial = new MeshLambertMaterial({
+			color: innerColour,
+			transparent: true,
+			opacity: innerOpacity,
+		});
 
-	    document.body.addEventListener( 'keydown', function(e) {
-	    
-	        const key = e.code.replace('Key', '').toLowerCase();
-	        if ( keys[ key ] !== undefined )
-	            keys[ key ] = true;
-	        
-	    });
+		var innerCustom = new Mesh(innerGeometry, innerMaterial);
 
-<<<<<<< HEAD
-	    document.body.addEventListener( 'keyup', function(e) {
-	        
-	        const key = e.code.replace('Key', '').toLowerCase();
-	        if ( keys[ key ] !== undefined )
-	            keys[ key ] = false;
-	        
-	    });
-
-=======
 		var outerGeometry = new OctahedronGeometry(
 			outerRadius,
 			outerDetail
@@ -56796,14 +57015,13 @@
 		health = health - damage;
 		var healthBarWidth = (health / totalHealth) * 100;
 		bar.css('width', healthBarWidth + '%');
->>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 	}
 
 	document.getElementById("instance");
 		instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
 	    "<h4> (Click anywhere to start)</h4>" +
 	    "<h2>Instructions</h2>"+ 
-	    "<p>You are a rookie pilot Rich Heard aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots have been knocked out from stress of studying for\
+	    "<p>You are a rookie pilot Ricch Heard with 10 PhDs in everyfield aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and PRAvenman VESHim'l have been knocked out from stress of studying for\
     their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper tokens so they can buy past papers to help them \
     study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Captain! Heres your manual</p>"+
 	    "<div id='leftHandControls'> <h3> Left Hand controls </h3> " +
