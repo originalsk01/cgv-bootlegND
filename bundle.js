@@ -55848,23 +55848,83 @@
 	let yawSpeed = 0;
 	let accelerationImpulse;
 
+<<<<<<< HEAD
 
 	class Game {
 
 		async init() {
 
 
+=======
+	//token global variables
+	var tokensArray = []; //Array containing tokens
+	var boxArray = []; // Array containing box for tokens'
+	var innerCustomArray = []; //Array conatining the inner meh of the tokens
+
+	//ship model bounding box global vairables
+	var playerGeometry;
+	var playerBox;
+	var playerMaterial;
+	var playerCustom;
+
+	//global variable to keep track of the number of frames that havebeen rendered
+	var renderFrames = 0;
+
+	//timer variables
+
+	var minutes, seconds, gameStart, gameLoad, endTime;
+	var levelDuration = 3;
+	var timeTaken = [0, 0];
+	var inprogress = true;
+
+	//score variable
+	var totalTokens = 1;
+	var tokenScore = 0;
+	var maxScore = 1;
+
+	var level = 1;
+	// var levelOneComplete = false
+	//health bar
+	var health = 100;
+	var hBar = $('.health-bar'),
+		bar = hBar.find('.bar');
+	var totalHealth = 100;
+	var healthBarWidth = (health / totalHealth) * 100;
+	bar.css('width', healthBarWidth + '%');
+
+
+
+	class Game {
+
+		async init() {
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 			////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
 
 
 			// Scene
 			scene = new Scene();
-			//scene.background = new THREE.Color(0xa0a0a0)
 
+<<<<<<< HEAD
+=======
+			//Skybox
+
+			const secondLevelLoader = new CubeTextureLoader();
+			const gloomyskyBoxtexture = secondLevelLoader.load([
+				"textures/penguins/arid_ft.jpg",
+				"textures/penguins/arid_bk.jpg",
+				"textures/penguins/arid_up.jpg",
+				"textures/penguins/arid_dn.jpg",
+				"textures/penguins/arid_rt.jpg",
+				"textures/penguins/arid_lf.jpg",
+			]);
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
+
+			scene.background = gloomyskyBoxtexture;
 
 			//Skybox
 			const skyBoxLoader = new CubeTextureLoader();
 			const skyBoxtexture = skyBoxLoader.load([
+<<<<<<< HEAD
 			  'textures/skybox/indigo_ft.jpg',
 			  'textures/skybox/indigo_bk.jpg',
 			  'textures/skybox/indigo_up.jpg',
@@ -55874,6 +55934,17 @@
 			]);
 			// console.log(skyBoxtexture)
 			scene.background = skyBoxtexture;
+=======
+				"textures/skybox/indigo_ft.jpg",
+				"textures/skybox/indigo_bk.jpg",
+				"textures/skybox/indigo_up.jpg",
+				"textures/skybox/indigo_dn.jpg",
+				"textures/skybox/indigo_rt.jpg",
+				"textures/skybox/indigo_lf.jpg",
+			]);
+			scene.background = skyBoxtexture;
+
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 
 			// Physics world
@@ -56086,6 +56157,7 @@
 				let newPlatform;
 				let colorMap;
 
+<<<<<<< HEAD
 				colorMap = new TextureLoader().load('./textures/blue_floor.png');
 				newPlatform = placePlatform(createPlatform(2,2,1,colorMap),-5,5,0);
 				platformGeometries.push(newPlatform.threePlatform);
@@ -56102,6 +56174,66 @@
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
+=======
+				colorMap = new TextureLoader().load("./textures/lime_floor.png");
+				newPlatform = placePlatform(createPlatform(1, 50, 50, colorMap), -25, 0, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+				//final wall
+				colorMap = new TextureLoader().load("./textures/dark_floor.png");
+				newPlatform = placePlatform(createPlatform(1, 30, 30, colorMap), 25, 0, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				colorMap = new TextureLoader().load("./textures/dark_floor.png");
+				newPlatform = placePlatform(createPlatform(1, 20, 20, colorMap), 25, 40, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+				//floor 
+				colorMap = new TextureLoader().load("./textures/lime_floor.png");
+				newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 0, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				newPlatform.cannonPlatform.id;
+
+				for (var i = 0; i < 30; i++) {
+					var randX = getRandomInt(-25, 0);
+					var randY = getRandomInt(0, 50);
+					getRandomInt(-25, 0);
+					colorMap = new TextureLoader().load("./textures/blue_floor.png");
+					newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
+					platformGeometries.push(newPlatform.threePlatform);
+					platformBodies.push(newPlatform.cannonPlatform);
+				}
+
+
+
+
+				//ceiling
+				colorMap = new TextureLoader().load("./textures/dark_floor.png");
+				newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 50, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				//world boundaries
+				colorMap = new TextureLoader().load("./textures/light_floor.png");
+				newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -26, 0, 25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+				colorMap = new TextureLoader().load("./textures/dark_floor.png");
+				newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+
+
+
+				// //guide wall block
+				// colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
+				// newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2)
+				// platformGeometries.push(newPlatform.threePlatform)
+				// platformBodies.push(newPlatform.cannonPlatform)
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 				for (let i=0;i<platformGeometries.length;i++){
 					board.add(platformGeometries[i]);
@@ -56122,8 +56254,12 @@
 
 			shipModel = new Object3D;
 			shipModel = await loadModel(shipPath);
+<<<<<<< HEAD
 			//console.log(shipModel)
 			
+=======
+
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 			// Rotate children of ship model to correct their orientation
 			//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
 			//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
@@ -56147,21 +56283,105 @@
 			shipBody.position.set(0, 3, 0);
 			shipBody.quaternion.setFromAxisAngle(new Vec3(0,1,0), Math.PI);
 			world.addBody(shipBody);
-			//console.log(shipBody)
+			var lastCollisionTime = new Date().getTime();
+			shipBody.addEventListener("collide", function (e) {
+				timeTaken = time_taken(gameStart);
+				timeTaken["minutes"];
+				timeTaken["seconds"];
+				if (lastCollisionTime + 2000 < new Date().getTime()) {
+					var damage = 5;
+					updateHealth(damage);
+					lastCollisionTime = new Date().getTime();
+				}
+
+
+
+
+			});
+
 
 			// Initialize ship keyboard control
 			initShipControls();
+<<<<<<< HEAD
 			
 			clock = new Clock();
 
+=======
+
+
+
+			//////////////// CREATE SHIP BOUNDING BOX //////////////////
+			playerGeometry = new BoxGeometry(2, 2, 2);
+			playerBox = new Box3(); //bounding box
+			playerMaterial = new MeshLambertMaterial({
+				color: 0xff0000,
+				transparent: true,
+				opacity: 0,
+			});
+			playerCustom = new Mesh(playerGeometry, playerMaterial);
+			playerCustom.position.set(
+				shipModel.position.x,
+				shipModel.position.y,
+				shipModel.position.z
+			);
+			//Compute initial bounding box
+			playerCustom.geometry.computeBoundingBox();
+			//playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
+
+			new Vector3(2, 5, 8);
+			playerBox.getCenter();
+
+			scene.add(playerCustom);
+			playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
+
+			//////////////// ADD THE TOKENS //////////////////
+			//Create tokens
+
+			for (let i = 0; i < totalTokens; i++) {
+
+				//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
+				// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
+				// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+				// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
+
+				//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
+				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				tokenCustom.position.set(0, 20, 20);
+				const tokenBox = new Box3(); //bounding box
+				// ensure the bounding box is computed for its geometry
+				// this should be done only once (assuming static geometries)
+				tokenCustom.geometry.computeBoundingBox();
+				//tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
+
+				//Calculate center of token just for debugging
+				new Vector3();
+				tokenBox.getCenter();
+
+				scene.add(tokenCustom);
+
+				//Since the bounding box for each token must be computed within the animation loop,
+				//we create the tokens and boxes as empty here and add them floorto their respective arrays,
+				//which can be looped through and each token and box can be accessed within the animation loop.
+				tokensArray.push(tokenCustom);
+				boxArray.push(tokenBox);
+			}
+
+			clock = new Clock();
+
+			gameLoad = Date.parse(new Date());
+			gameStart = new Date();
+			endTime = new Date(gameLoad + levelDuration * 60 * 1000);
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 			animate();
 
 		}
+
 	}
 
 
 	function fly(){
 
+<<<<<<< HEAD
 		if (keys.arrowup){acceleration = -1;}
 		if (keys.arrowdown){acceleration = 1;}
 		if (keys.arrowup||keys.arrowdown){
@@ -56175,6 +56395,13 @@
 			if (keys.w) { pitchSpeed = -0.5; }	else if (keys.s) { pitchSpeed = 0.5; } else { pitchSpeed = 0; }
 			if (keys.a) { rollSpeed = 1; } else if (keys.d){ rollSpeed = -1; } else { rollSpeed = 0; }
 			if (keys.arrowleft) { yawSpeed = 1; } else if (keys.arrowright){ yawSpeed = -1; } else { yawSpeed = 0; }
+=======
+		if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
+			if (keys.w) { pitchSpeed = -1; } else if (keys.s) { pitchSpeed = 1; } else { pitchSpeed = 0; }
+			if (keys.a) { rollSpeed = 0.75; } else if (keys.d) { rollSpeed = -0.75; } else { rollSpeed = 0; }
+			// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
+			if (keys.arrowleft) { rollSpeed += 2; } else if (keys.arrowright) { rollSpeed += -2; } else { rollSpeed += 0; }
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 			// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 			// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
@@ -56195,10 +56422,108 @@
 	}
 
 
+<<<<<<< HEAD
 	 function animate() {
 		
 		//request render scene at every frame
 		requestAnimationFrame(animate); 
+=======
+	function switchView() {
+		let thirdPersonCam = new Vector3(0, 4, 7.5);
+		let fp = new Vec3(0, 0, -3);
+		if (flightCamera.position.x == fp.x && flightCamera.position.y == fp.y && flightCamera.position.z == fp.z) {
+			flightCamera.position.lerp(thirdPersonCam, 1);
+		}
+		else if (flightCamera.position.x == thirdPersonCam.x && flightCamera.position.y == thirdPersonCam.y && flightCamera.position.z == thirdPersonCam.z) {
+			flightCamera.position.lerp(fp, 1);
+		}
+	}
+
+	function animate() {
+		renderFrames += 1;
+
+		if (inprogress == true) {
+			//request render scene at every frame
+			requestAnimationFrame(animate);
+		}
+		else {
+			gameEnd();
+		}
+
+		/*************************************************************************************************************/
+
+
+		//check for token intersection
+		if (renderFrames >= 10) {
+			//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
+			for (let k = 0; k < tokensArray.length; k++) {
+				boxArray[k]
+					.copy(tokensArray[k].geometry.boundingBox)
+					.applyMatrix4(tokensArray[k].matrixWorld);
+				//Determine if player touches token
+				new Color(0x0000ff);
+				if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
+					tokenScore += 1;
+
+					//Make outer shape of token transparent
+					tokensArray[k].material.transparent = true;
+					tokensArray[k].material.opacity = 0;
+					//Make inner shape of token transparent
+					innerCustomArray[k].material.transparent = true;
+					innerCustomArray[k].material.opacity = 0;
+
+					//tokensArray[k].material.color.lerp();
+
+					tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
+				}
+			}
+		}
+
+
+		//update timer
+		var timeRemaining = time_remaining(endTime);
+		minutes = timeRemaining["minutes"];
+		seconds = timeRemaining["seconds"];
+		if (minutes <= 0 && seconds <= 0) {
+			timeTaken = time_taken(gameStart);
+			var minutes_taken = timeTaken["minutes"];
+			var seconds_taken = timeTaken["seconds"];
+			timeTaken[0] = minutes_taken;
+			timeTaken[1] = seconds_taken;
+			inprogress = false;
+		}
+		if (minutes > 0 && seconds > 30 && inprogress) {
+			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+				+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+		}
+
+		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
+			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+				+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+		}
+		if (tokenScore == maxScore) { // checking if they have won the game
+			timeTaken = time_taken(gameStart);
+			var minutes_taken = timeTaken["minutes"];
+			var seconds_taken = timeTaken["seconds"];
+			timeTaken[0] = minutes_taken;
+			timeTaken[1] = seconds_taken;
+			inprogress = false;
+
+		}
+		if (health <= 0) {//if the player loses all thier health end the game
+			timeTaken = time_taken(gameStart);
+			var minutes_taken = timeTaken["minutes"];
+			var seconds_taken = timeTaken["seconds"];
+			timeTaken[0] = minutes_taken;
+			timeTaken[1] = seconds_taken;
+			inprogress = false;
+		}
+
+
+
+		/************************************************************************************************************************** */
+
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 		// take timestep in physics simulation
 		stepPhysicsWorld();
@@ -56208,6 +56533,7 @@
 
 		// update flight camera
 		fly();
+<<<<<<< HEAD
 		// let fp= new CANNON.Vec3(0,0,-3);
 		// flightCamera.position.lerp(fp,0.01)
 		
@@ -56216,6 +56542,11 @@
 		// if (dancerMixer) dancerMixer.update(delta)
 		// if (snakeMixer) snakeMixer.update(delta)
 	  
+=======
+		// models animations
+		clock.getDelta();
+
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 		stats.update();
 		//// render three.js
 		//renderer.clear()
@@ -56266,7 +56597,62 @@
 		return model.scene.children[0]
 	}
 
+	const timer = document.getElementById("timer");
+	function nextLevel() {
+		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+			+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 
+		if (level == 2) {
+			//increase level goal
+			inprogress = true;
+			maxScore = 5;
+			totalTokens = 5;
+
+			animate();
+			for (let i = 0; i < totalTokens; i++) {
+				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				var randomZ = Math.floor(Math.random() * 250);
+				tokenCustom.position.set(5, 25, randomZ); //sets location of thetoken to be in a random line location
+				const tokenBox = new Box3(); //bounding box
+				tokenCustom.geometry.computeBoundingBox();
+
+				new Vector3();
+				tokenBox.getCenter();
+
+				scene.add(tokenCustom);
+				tokensArray.push(tokenCustom);
+				boxArray.push(tokenBox);
+			}
+
+		}
+		if (level == 3) {
+			inprogress = true;
+			maxScore = 10;
+			totalTokens = 10;
+
+			animate();
+			for (let i = 0; i < totalTokens; i++) {
+				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				var randomZ = Math.floor(Math.random() * 250);
+				tokenCustom.position.set(5, 25, randomZ);
+				const tokenBox = new Box3(); //bounding box
+				tokenCustom.geometry.computeBoundingBox();
+
+				new Vector3();
+				tokenBox.getCenter();
+
+				scene.add(tokenCustom);
+				tokensArray.push(tokenCustom);
+				boxArray.push(tokenBox);
+			}
+		}
+		if (level == 4) { //end of the game
+			timer.innerHTML = "<h1>Game Complete</h1>" + "<h2>Time Taken</h2>"
+				+ '<div class ="timerSec" style="background: black">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
+			inprogress = false;
+		}
+		return
+	}
 	// Initialise and create listeners for the keyboard controls
 	function initShipControls(){
 	    
@@ -56281,7 +56667,55 @@
 			arrowdown:false,
 			arrowleft: false,
 			arrowright: false
+<<<<<<< HEAD
 	    };
+=======
+		};
+
+		document.body.addEventListener("keydown", function (e) {
+
+			const key = e.code.replace("Key", "").toLowerCase();
+			if (keys[key] !== undefined) keys[key] = true;
+
+		});
+
+		document.body.addEventListener("keyup", function (e) {
+
+			const key = e.code.replace("Key", "").toLowerCase();
+			if (keys[key] !== undefined) keys[key] = false;
+
+		});
+	}
+
+	// Randomizers that can be used for building Bufffer geometries
+
+	// random integer within range
+	function getRandomInt(min, max) {
+		min = Math.ceil(min);
+		max = Math.floor(max);
+		return Math.floor(Math.random() * (max - min) + min) //The maximum is exclusive and the minimum is inclusive
+	}
+
+	// random float within range
+	// function getRandomArbitrary(min, max) {
+	// 	return Math.random() * (max - min) + min
+	// }
+	function createToken(
+
+		innerRadius,
+		outerRadius,
+		innerDetail,
+		outerDetail,
+		innerColour,
+		outerColour,
+		innerOpacity,
+		outerOpacity
+	) {
+
+		//createToken creates a token consisting of 2 objects, one within the other.
+		//Opacities may be set in order to alter the appearance as well as make the inner object visible
+		var innerGeometry = new OctahedronGeometry(innerRadius, innerDetail);
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 
 
 	    document.body.addEventListener( 'keydown', function(e) {
@@ -56292,6 +56726,7 @@
 	        
 	    });
 
+<<<<<<< HEAD
 	    document.body.addEventListener( 'keyup', function(e) {
 	        
 	        const key = e.code.replace('Key', '').toLowerCase();
@@ -56300,17 +56735,83 @@
 	        
 	    });
 
+=======
+		var outerGeometry = new OctahedronGeometry(
+			outerRadius,
+			outerDetail
+		);
+		var outerMaterial = new MeshLambertMaterial({
+			color: outerColour,
+			transparent: true,
+			opacity: outerOpacity,
+		});
+
+		var outerCustom = new Mesh(outerGeometry, outerMaterial);
+
+		outerCustom.add(innerCustom);
+		innerCustomArray.push(innerCustom); // use separate array for innerCustom which will be global so that we can access them
+		return outerCustom
+	}
+	// function AddMinutesToDate(date, minutes) {
+	// 	return new Date(date.getTime() + minutes * 60000);
+
+
+	// }
+
+	function time_remaining(endtime) {
+		var t = Date.parse(endtime) - Date.parse(new Date());
+		var seconds = Math.floor((t / 1000) % 60);
+		var minutes = Math.floor((t / 1000 / 60) % 60);
+		var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+		var days = Math.floor(t / (1000 * 60 * 60 * 24));
+		return { 'total': t, 'days': days, 'hours': hours, 'minutes': minutes, 'seconds': seconds };
+	}
+
+	function time_taken(startTime) {
+		var t = Date.parse(new Date()) - Date.parse(startTime);
+		var seconds = Math.floor((t / 1000) % 60);
+		var minutes = Math.floor((t / 1000 / 60) % 60);
+		var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
+		var days = Math.floor(t / (1000 * 60 * 60 * 24));
+		return { 'total': t, 'days': days, 'hours': hours, 'minutes': minutes, 'seconds': seconds };
+	}
+	function gameEnd() {
+		if (tokenScore == maxScore) {
+			level += 1;
+			timer.innerHTML = "<h1>Level Complete</h1>" + "<h2>Time Taken</h2>" + "<h2>Progress to level " + level + " </h2>" +
+				+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
+			nextLevel();
+		}
+		else {
+			timer.innerHTML = "<h1>Level failed</h1>" + "<h2>Time Taken</h2>"
+				+ '<div class ="timerSec">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
+
+
+		}
+
+
+
+	}
+	function updateHealth(damage) {
+		health = health - damage;
+		var healthBarWidth = (health / totalHealth) * 100;
+		bar.css('width', healthBarWidth + '%');
+>>>>>>> 50cbd3927c82c407b14eb8ae0a0f747c1bd27ac3
 	}
 
 	document.getElementById("instance");
 		instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
 	    "<h4> (Click anywhere to start)</h4>" +
 	    "<h2>Instructions</h2>"+ 
-	    "<div id='leftHandControls'> <h3> Left Hand controls </h3>" +
+	    "<p>You are a rookie pilot Rich Heard aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots have been knocked out from stress of studying for\
+    their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper tokens so they can buy past papers to help them \
+    study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Captain! Heres your manual</p>"+
+	    "<div id='leftHandControls'> <h3> Left Hand controls </h3> " +
 	        "<div>Tilt Left: A</div>" +
 	        "<div>Tilt Right:D</div>"+
 	        "<div>Tilt Up:W</div>"+
 	        "<div>Tilt Down:S</div>"+
+	        "<div>Switch Perspective:H</div>"+
 	    "</div>"+
 	    "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
 	    "<div>Turn Left: &#8592</div>" +
