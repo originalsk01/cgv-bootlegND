@@ -62,9 +62,9 @@ var renderFrames = 0;
 
 //timer variables
 
-var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime,endTime
-var levelDuration = 0.5
-var timeTaken = [0,0]
+var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime, endTime
+var levelDuration = 0.1
+var timeTaken = [0, 0]
 var inprogress = true
 
 //score variable
@@ -633,25 +633,34 @@ function animate() {
 	}
 
 
-	  //update timer
-	  var timeRemaining = time_remaining(endTime)
-	  minutes = timeRemaining["minutes"]
-	  seconds = timeRemaining["seconds"]
-	  if(minutes <=0 && seconds <=0){
-		  timeTaken = time_taken(gameStart);
-		  var minutes_taken = timeTaken["minutes"]
-		  var seconds_taken =timeTaken["seconds"]
-		  timeTaken[0] =minutes_taken
-		  timeTaken[1] =seconds_taken
-		  inprogress = false
-		
-		  
-	
-	  }
-	  if (minutes>0 && seconds> 30 && inprogress){
-		timer.innerHTML = "<h1>Snake Invader</h1>"
-		+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds"+ '</div>' + '<div> Tokens Collected: ' +tokenScore+' Out of '+ totalTokens +'</div>'+'</div>';
+	//update timertimer
+	var timeRemaining = time_remaining(endTime)
+	minutes = timeRemaining["minutes"]
+	seconds = timeRemaining["seconds"]
+	if (minutes <= 0 && seconds <= 0) {
+		timeTaken = time_taken(gameStart);
+		var minutes_taken = timeTaken["minutes"]
+		var seconds_taken = timeTaken["seconds"]
+		timeTaken[0] = minutes_taken
+		timeTaken[1] = seconds_taken
+		inprogress = false
 	}
+	if (minutes > 0 && seconds > 30 && inprogress) {
+		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+			+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+	}
+
+	if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
+		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+			+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+	}
+	if (tokenScore == maxScore) { // checking if they have won the game
+		timeTaken = time_taken(gameStart);
+		var minutes_taken = timeTaken["minutes"]
+		var seconds_taken = timeTaken["sectimeronds"]
+		timeTaken[0] = minutes_taken
+		timeTaken[1] = seconds_taken
+		inprogress = false
 
 	if(minutes==0 && seconds<= 30 && seconds>0 && inprogress){
 		timer.innerHTML = "<h1>Snake Invader</h1>"
@@ -888,6 +897,6 @@ function time_taken(startTime){
 	
 	
 }
-
+}
 
 export default Game
