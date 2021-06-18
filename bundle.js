@@ -56234,6 +56234,8 @@
 	// player control global variables
 	let keys;
 
+	let pause = false;
+
 	// flight camera a& controls global variables
 	let flightCamera, minimapCamera, mapWidth = 240, mapHeight = 160;
 	let acceleration = 0;
@@ -56633,7 +56635,8 @@
 			gameEnd();
 		}
 
-		tokenCollisions();
+		if(!pause){
+			tokenCollisions();
 
 		updateTimer();
 
@@ -56664,6 +56667,9 @@
 		renderer.render(scene, minimapCamera);
 		// minimap (overhead orthogonal camera)
 		//  lower_left_x, lower_left_y, viewport_width, viewport_height
+		}
+
+		
 	}
 
 	// Update projection when viewing window is resized
@@ -56747,6 +56753,14 @@
 		}
 		return
 	}
+
+	document.addEventListener('keydown', function(event) {
+		if (event.code == 'KeyP') {
+		  pause=!pause;
+		}
+	});
+
+
 	// Initialise and create listeners for the keyboard controls
 	function initShipControls() {
 		keys = {
