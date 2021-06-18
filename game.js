@@ -12,6 +12,15 @@ import { DstColorFactor } from "three";
 let camera, scene, stats, renderer, clock, controls;
 let shipModel;
 
+
+// var ctx = new AudioContext();
+//   var audio = document.getElementById('myAudio');
+//   var audioSrc = ctx.createMediaElementSource(audio);
+//   var analyser = ctx.createAnalyser();
+
+
+
+
 // global asset paths
 const shipPath =
 	"/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
@@ -77,6 +86,8 @@ var maxScore = 1;
 //animation variables
 var requestAnimationFrameID
 
+
+
 var level = 1
 // var levelOneComplete = false
 //health bar
@@ -88,7 +99,7 @@ var healthBarWidth = (health / totalHealth) * 100;
 bar.css('width', healthBarWidth + '%');
 var floor_id
 
-
+var playonce = true
 
 class Game {
 
@@ -177,10 +188,26 @@ class Game {
 		window.addEventListener("resize", onWindowResize, false);
 		document.body.appendChild(renderer.domElement);
 
-		// Orbit Controls for normal camera (currently does nothing)
-		//const controls = new OrbitControls(camera, renderer.domElement)
-		//controls.update()
+		//add some background music
+		if (playonce) {
+			const listener = new THREE.AudioListener();
+			flightCamera.add(listener);
 
+			// create a global audio source
+			const sound = new THREE.Audio(listener);
+
+			// load a sound and set it as the Audio object's buffer
+			const audioLoader = new THREE.AudioLoader();
+			audioLoader.load('DOMN.mp3', function (buffer) {
+				sound.setBuffer(buffer);
+				sound.setLoop(true);
+				sound.setVolume(0.5);
+				if (!sound.isPlaying) {
+					sound.play();
+				}
+			});
+			playonce = false
+		}
 		// Axes Helper
 		const axes = new THREE.AxesHelper(100);
 		scene.add(axes);
@@ -374,15 +401,15 @@ class Game {
 			platformBodies.push(newPlatform.cannonPlatform);
 			floor_id = newPlatform.cannonPlatform.id
 
-			for (var i = 0; i < 30; i++) {
-				var randX = getRandomInt(-25, 0);
-				var randY = getRandomInt(0, 50);
-				var randZ = getRandomInt(-25, 0);
-				colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
-				newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-			}
+			// for (var i = 0; i < 35; i++) {
+			// 	var randX = Math.floor(Math.random() * 250);
+			// 	var randY = Math.floor(Math.random() * 250);
+			// 	var randZ = Math.floor(Math.random() * 100) + 10;
+			// 	colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
+			// 	newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, 30, randY);
+			// 	platformGeometries.push(newPlatform.threePlatform);
+			// 	platformBodies.push(newPlatform.cannonPlatform);
+			// }
 
 
 
@@ -441,7 +468,20 @@ class Game {
 		shipModel.add(flightCamera)
 
 		flightCamera.position.set(0, 4, 7.5)
+		const hurtListener = new THREE.AudioListener();
+		flightCamera.add(hurtListener);
 
+		// create a global audio source
+		const hurtSound = new THREE.Audio(hurtListener);
+
+		// load a sound and set it as the Audio object's buffer
+		const hurtLoader = new THREE.AudioLoader();
+		hurtLoader.load('classic_hurt.mp3', function (buffer) {
+			hurtSound.setBuffer(buffer);
+			hurtSound.setLoop(false);
+			hurtSound.setVolume(0.6);
+			hurtSound.play()
+		});
 
 		// create cannon body for ship
 		shipBody = new CANNON.Body({
@@ -461,6 +501,7 @@ class Game {
 			timeTaken = time_taken(gameStart);
 			var minutes_taken = timeTaken["minutes"]
 			var seconds_taken = timeTaken["seconds"]
+			hurtSound.play();
 			if (lastCollisionTime + 2000 < new Date().getTime()) {
 				var damage = 5
 				updateHealth(damage);

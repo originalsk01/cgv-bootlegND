@@ -36644,6 +36644,136 @@
 
 	}
 
+	const _position$1 = /*@__PURE__*/ new Vector3();
+	const _quaternion$1 = /*@__PURE__*/ new Quaternion$1();
+	const _scale$1 = /*@__PURE__*/ new Vector3();
+	const _orientation$1 = /*@__PURE__*/ new Vector3();
+
+	class AudioListener extends Object3D {
+
+		constructor() {
+
+			super();
+
+			this.type = 'AudioListener';
+
+			this.context = AudioContext.getContext();
+
+			this.gain = this.context.createGain();
+			this.gain.connect( this.context.destination );
+
+			this.filter = null;
+
+			this.timeDelta = 0;
+
+			// private
+
+			this._clock = new Clock();
+
+		}
+
+		getInput() {
+
+			return this.gain;
+
+		}
+
+		removeFilter() {
+
+			if ( this.filter !== null ) {
+
+				this.gain.disconnect( this.filter );
+				this.filter.disconnect( this.context.destination );
+				this.gain.connect( this.context.destination );
+				this.filter = null;
+
+			}
+
+			return this;
+
+		}
+
+		getFilter() {
+
+			return this.filter;
+
+		}
+
+		setFilter( value ) {
+
+			if ( this.filter !== null ) {
+
+				this.gain.disconnect( this.filter );
+				this.filter.disconnect( this.context.destination );
+
+			} else {
+
+				this.gain.disconnect( this.context.destination );
+
+			}
+
+			this.filter = value;
+			this.gain.connect( this.filter );
+			this.filter.connect( this.context.destination );
+
+			return this;
+
+		}
+
+		getMasterVolume() {
+
+			return this.gain.gain.value;
+
+		}
+
+		setMasterVolume( value ) {
+
+			this.gain.gain.setTargetAtTime( value, this.context.currentTime, 0.01 );
+
+			return this;
+
+		}
+
+		updateMatrixWorld( force ) {
+
+			super.updateMatrixWorld( force );
+
+			const listener = this.context.listener;
+			const up = this.up;
+
+			this.timeDelta = this._clock.getDelta();
+
+			this.matrixWorld.decompose( _position$1, _quaternion$1, _scale$1 );
+
+			_orientation$1.set( 0, 0, - 1 ).applyQuaternion( _quaternion$1 );
+
+			if ( listener.positionX ) {
+
+				// code path for Chrome (see #14393)
+
+				const endTime = this.context.currentTime + this.timeDelta;
+
+				listener.positionX.linearRampToValueAtTime( _position$1.x, endTime );
+				listener.positionY.linearRampToValueAtTime( _position$1.y, endTime );
+				listener.positionZ.linearRampToValueAtTime( _position$1.z, endTime );
+				listener.forwardX.linearRampToValueAtTime( _orientation$1.x, endTime );
+				listener.forwardY.linearRampToValueAtTime( _orientation$1.y, endTime );
+				listener.forwardZ.linearRampToValueAtTime( _orientation$1.z, endTime );
+				listener.upX.linearRampToValueAtTime( up.x, endTime );
+				listener.upY.linearRampToValueAtTime( up.y, endTime );
+				listener.upZ.linearRampToValueAtTime( up.z, endTime );
+
+			} else {
+
+				listener.setPosition( _position$1.x, _position$1.y, _position$1.z );
+				listener.setOrientation( _orientation$1.x, _orientation$1.y, _orientation$1.z, up.x, up.y, up.z );
+
+			}
+
+		}
+
+	}
+
 	class Audio extends Object3D {
 
 		constructor( listener ) {
@@ -56151,6 +56281,15 @@
 	let scene, stats, renderer, clock;
 	let shipModel;
 
+
+	// var ctx = new AudioContext();
+	//   var audio = document.getElementById('myAudio');
+	//   var audioSrc = ctx.createMediaElementSource(audio);
+	//   var analyser = ctx.createAnalyser();
+
+
+
+
 	// global asset paths
 	const shipPath =
 		"/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
@@ -56204,6 +56343,8 @@
 	var tokenScore = 0;
 	var maxScore = 1;
 
+
+
 	var level = 1;
 	// var levelOneComplete = false
 	//health bar
@@ -56214,7 +56355,7 @@
 	var healthBarWidth = (health / totalHealth) * 100;
 	bar.css('width', healthBarWidth + '%');
 
-
+	var playonce = true;
 
 	class Game {
 
@@ -56303,10 +56444,26 @@
 			window.addEventListener("resize", onWindowResize, false);
 			document.body.appendChild(renderer.domElement);
 
-			// Orbit Controls for normal camera (currently does nothing)
-			//const controls = new OrbitControls(camera, renderer.domElement)
-			//controls.update()
+			//add some background music
+			if (playonce) {
+				const listener = new AudioListener();
+				flightCamera.add(listener);
 
+				// create a global audio source
+				const sound = new Audio(listener);
+
+				// load a sound and set it as the Audio object's buffer
+				const audioLoader = new AudioLoader();
+				audioLoader.load('DOMN.mp3', function (buffer) {
+					sound.setBuffer(buffer);
+					sound.setLoop(true);
+					sound.setVolume(0.5);
+					if (!sound.isPlaying) {
+						sound.play();
+					}
+				});
+				playonce = false;
+			}
 			// Axes Helper
 			const axes = new AxesHelper(100);
 			scene.add(axes);
@@ -56500,15 +56657,15 @@
 				platformBodies.push(newPlatform.cannonPlatform);
 				newPlatform.cannonPlatform.id;
 
-				for (var i = 0; i < 30; i++) {
-					var randX = getRandomInt(-25, 0);
-					var randY = getRandomInt(0, 50);
-					getRandomInt(-25, 0);
-					colorMap = new TextureLoader().load("./textures/blue_floor.png");
-					newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
-					platformGeometries.push(newPlatform.threePlatform);
-					platformBodies.push(newPlatform.cannonPlatform);
-				}
+				// for (var i = 0; i < 35; i++) {
+				// 	var randX = Math.floor(Math.random() * 250);
+				// 	var randY = Math.floor(Math.random() * 250);
+				// 	var randZ = Math.floor(Math.random() * 100) + 10;
+				// 	colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
+				// 	newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, 30, randY);
+				// 	platformGeometries.push(newPlatform.threePlatform);
+				// 	platformBodies.push(newPlatform.cannonPlatform);
+				// }
 
 
 
@@ -56567,7 +56724,20 @@
 			shipModel.add(flightCamera);
 
 			flightCamera.position.set(0, 4, 7.5);
+			const hurtListener = new AudioListener();
+			flightCamera.add(hurtListener);
 
+			// create a global audio source
+			const hurtSound = new Audio(hurtListener);
+
+			// load a sound and set it as the Audio object's buffer
+			const hurtLoader = new AudioLoader();
+			hurtLoader.load('classic_hurt.mp3', function (buffer) {
+				hurtSound.setBuffer(buffer);
+				hurtSound.setLoop(false);
+				hurtSound.setVolume(0.6);
+				hurtSound.play();
+			});
 
 			// create cannon body for ship
 			shipBody = new Body({
@@ -56587,6 +56757,7 @@
 				timeTaken = time_taken(gameStart);
 				timeTaken["minutes"];
 				timeTaken["seconds"];
+				hurtSound.play();
 				if (lastCollisionTime + 2000 < new Date().getTime()) {
 					var damage = 5;
 					updateHealth(damage);
@@ -56999,15 +57170,6 @@
 
 	}
 
-	// Randomizers that can be used for building Bufffer geometries
-
-	// random integer within range
-	function getRandomInt(min, max) {
-		min = Math.ceil(min);
-		max = Math.floor(max);
-		return Math.floor(Math.random() * (max - min) + min) //The maximum is exclusive and the minimum is inclusive
-	}
-
 	// random float within range
 	// function getRandomArbitrary(min, max) {
 	// 	return Math.random() * (max - min) + min
@@ -57099,24 +57261,26 @@
 	}
 
 	document.getElementById("instance");
-		instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
-	    "<h4> (Click anywhere to start)</h4>" +
+	// instructions.body.style.lineHeight="1.0rem"
+		instructions.innerHTML = "<h1>Welcome to: Space Invaders except its a project made by coms students tryna survive the Rona</h1>" +
+	    "<h4> And also its not really space invaders</h4>" +
+	    "<h6> Part II(The Snyder cut)</h6>" +
 	    "<h2>Instructions</h2>"+ 
 	    "<p>You are a rookie pilot Ricch Heard with 10 PhDs in everyfield aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and PRAvenman VESHim'l have been knocked out from stress of studying for\
     their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper tokens so they can buy past papers to help them \
     study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Captain! Heres your manual</p>"+
 	    "<div id='leftHandControls'> <h3> Left Hand controls </h3> " +
-	        "<div>Tilt Left: A</div>" +
-	        "<div>Tilt Right:D</div>"+
-	        "<div>Tilt Up:W</div>"+
-	        "<div>Tilt Down:S</div>"+
-	        "<div>Switch Perspective:H</div>"+
+	        "<div>Tilt Left : A</div>" +
+	        "<div>Tilt Right : D</div>"+
+	        "<div>Tilt Up : W</div>"+
+	        "<div>Tilt Down : S</div>"+
+	        "<div>Switch Perspective : H</div>"+
 	    "</div>"+
 	    "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
 	    "<div>Turn Left: &#8592</div>" +
-	    "<div>Turn Right:&#8594</div>"+
-	    "<div>Move Forward:&#8593</div>"+
-	    "<div>Move Back:&#8595</div>"+
+	    "<div>Turn Right: &#8594</div>"+
+	    "<div>Move Forward: &#8593</div>"+
+	    "<div>Move Back: &#8595</div>"+
 	    "</div>"+
 	    "<h4> (Click anywhere to start)</h4>"; 
 
