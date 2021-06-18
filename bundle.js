@@ -56315,6 +56315,8 @@
 	let yawSpeed = 0;
 	let accelerationImpulse;
 
+	let mouse;
+
 	//token global variables
 	var tokensArray = []; //Array containing tokens
 	var boxArray = []; // Array containing box for tokens'
@@ -56332,7 +56334,7 @@
 	//timer variables
 
 	var minutes, seconds, gameStart, gameLoad, endTime;
-	var levelDuration = 2;
+	var levelDuration = 3;
 	var timeTaken = [0, 0];
 	var inprogress = true;
 
@@ -56851,11 +56853,14 @@
 			shipBody.applyImpulse(accelerationImpulse);
 		}
 
+
 		if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
 			if (keys.w) { pitchSpeed = -1; } else if (keys.s) { pitchSpeed = 1; } else { pitchSpeed = 0; }
 			if (keys.a) { rollSpeed = 0.75; } else if (keys.d) { rollSpeed = -0.75; } else { rollSpeed = 0; }
 			// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
 			if (keys.arrowleft) { rollSpeed += 2; } else if (keys.arrowright) { rollSpeed += -2; } else { rollSpeed += 0; }
+
+			// if (mouseY<0) { pitchSpeed = -1 } else if (mouseY>0) { pitchSpeed = 1 } else { pitchSpeed = 0 }
 
 			// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 			// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
@@ -57140,6 +57145,30 @@
 			if (keys[key] !== undefined) keys[key] = false;
 
 		});
+		
+
+		document.addEventListener('mousemove', onDocumentMouseMove, false);
+
+	}
+
+	function onDocumentMouseMove(event) {
+	    event.preventDefault();
+		mouse = new Vec3();
+	    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+	    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+		pitchSpeed = mouse.y*1.1;
+		rollSpeed = -mouse.x*1.1;
+
+		var directionVector = new Vec3(pitchSpeed, 0, rollSpeed);
+
+		var directionVector = shipBody.quaternion.vmult(directionVector);
+
+		shipBody.angularVelocity.set(directionVector.x, directionVector.y, directionVector.z);
+
+		shipBody.linearDamping = 0.5;
+		shipBody.angularDamping = 0.9;
+
 	}
 
 	// random float within range
