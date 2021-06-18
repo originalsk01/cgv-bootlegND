@@ -56332,7 +56332,7 @@
 	//timer variables
 
 	var minutes, seconds, gameStart, gameLoad, endTime;
-	var levelDuration = 0.1;
+	var levelDuration = 2;
 	var timeTaken = [0, 0];
 	var inprogress$1 = true;
 
@@ -56455,7 +56455,7 @@
 				audioLoader.load('DOMN.mp3', function (buffer) {
 					sound.setBuffer(buffer);
 					sound.setLoop(true);
-					sound.setVolume(0.5);
+					sound.setVolume(0.2);
 					if (!sound.isPlaying) {
 						sound.play();
 					}
@@ -56722,20 +56722,7 @@
 			shipModel.add(flightCamera);
 
 			flightCamera.position.set(0, 4, 7.5);
-			const hurtListener = new AudioListener();
-			flightCamera.add(hurtListener);
-
-			// create a global audio source
-			const hurtSound = new Audio(hurtListener);
-
-			// load a sound and set it as the Audio object's buffer
-			const hurtLoader = new AudioLoader();
-			hurtLoader.load('classic_hurt.mp3', function (buffer) {
-				hurtSound.setBuffer(buffer);
-				hurtSound.setLoop(false);
-				hurtSound.setVolume(0.6);
-				hurtSound.play();
-			});
+			
 
 			// create cannon body for ship
 			shipBody = new Body({
@@ -56755,7 +56742,20 @@
 				timeTaken = time_taken(gameStart);
 				timeTaken["minutes"];
 				timeTaken["seconds"];
+				const hurtListener = new AudioListener();
+			flightCamera.add(hurtListener);
+
+			// create a global audio source
+			const hurtSound = new Audio(hurtListener);
+
+			// load a sound and set it as the Audio object's buffer
+			const hurtLoader = new AudioLoader();
+			hurtLoader.load('classic_hurt.mp3', function (buffer) {
+				hurtSound.setBuffer(buffer);
+				hurtSound.setLoop(false);
+				hurtSound.setVolume(0.2);
 				hurtSound.play();
+			});
 				if (lastCollisionTime + 2000 < new Date().getTime()) {
 					var damage = 5;
 					updateHealth(damage);
