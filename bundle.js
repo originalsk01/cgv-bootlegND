@@ -56627,7 +56627,7 @@
 
 			// Function to add multiple platforms into a gameboard
 			// allow different textures/colours for different sections
-			const createGameBoard = () => {
+			const createGameBoard = ( x, y , z, scaleLength, scaleWidth, scaleHeight,) => {
 
 				const board = new Group();
 				const platformGeometries = [];
@@ -56636,53 +56636,54 @@
 				let colorMap;
 
 				colorMap = new TextureLoader().load("./textures/lime_floor.png");
-				newPlatform = placePlatform(createPlatform(1, 50, 50, colorMap), -25, 0, -25);
+				newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*50, scaleHeight*50, colorMap), x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 				//final wall
 				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(1, 30, 30, colorMap), 25, 0, -25);
+				newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*50, scaleHeight*40, colorMap),x+ scaleLength*25,y+ scaleLength*0,z+ scaleHeight*-25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
+
 				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(1, 20, 20, colorMap), 25, 40, -25);
+				newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*45, scaleHeight*20, colorMap),x+ scaleLength*25,y+ scaleLength*40,z+ scaleHeight*-35);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 				//floor 
 				colorMap = new TextureLoader().load("./textures/lime_floor.png");
-				newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 0, -25);
+				newPlatform = placePlatform(createPlatform(scaleLength*50, scaleWidth*50, scaleHeight*1, colorMap),x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 				newPlatform.cannonPlatform.id;
 
-				// for (var i = 0; i < 35; i++) {
-				// 	var randX = Math.floor(Math.random() * 250);
-				// 	var randY = Math.floor(Math.random() * 250);
-				// 	var randZ = Math.floor(Math.random() * 100) + 10;
-				// 	colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
-				// 	newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, 30, randY);
-				// 	platformGeometries.push(newPlatform.threePlatform);
-				// 	platformBodies.push(newPlatform.cannonPlatform);
-				// }
+				for (var i = 0; i < 30; i++) {
+					var randX = getRandomInt(-25, 0);
+					var randY = getRandomInt(0, 50);
+					getRandomInt(-25, 0);
+					colorMap = new TextureLoader().load("./textures/blue_floor.png");
+					newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
+					platformGeometries.push(newPlatform.threePlatform);
+					platformBodies.push(newPlatform.cannonPlatform);
+				}
 
 
 
 
 				//ceiling
 				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 50, -25);
+				newPlatform = placePlatform(createPlatform(scaleLength*50, scaleWidth*50, scaleHeight*1, colorMap),x+ scaleLength*-25,y+ scaleLength*50,z+ scaleHeight*-25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 				//world boundaries
 				colorMap = new TextureLoader().load("./textures/light_floor.png");
-				newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -26, 0, 25);
+				newPlatform = placePlatform(createPlatform(scaleLength*51, scaleWidth*1, scaleHeight*51, colorMap),x+ scaleLength*-26,y+ scaleLength*0,z+ scaleHeight*25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
 				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
+				newPlatform = placePlatform(createPlatform(scaleLength*51, scaleWidth*1, scaleHeight*51, colorMap),x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 
@@ -56702,13 +56703,74 @@
 				return board;
 			};
 
+			const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight) =>{
+				const board = new Group();
+				const platformGeometries = [];
+				const platformBodies = [];
+				let newPlatform;
+				let colorMap;
+				
+				//ceiling
+				colorMap = new TextureLoader().load("./textures/dark_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y+5*scaleWidth, z-1*scaleHeight);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				//world boundaries
+				colorMap = new TextureLoader().load("./textures/light_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*6, colorMap), x-1*scaleLength, y, z+4*scaleHeight);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
 			
+				colorMap = new TextureLoader().load("./textures/dark_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*5, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+			
+				//floor 
+				colorMap = new TextureLoader().load("./textures/lime_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				newPlatform.cannonPlatform.id;
+			
+				// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
+				// token.position.set(20*x,20*y,20*z)
+				// scene.add(token)
+			
+				for (let i = 0; i < platformGeometries.length; i++) {
+					board.add(platformGeometries[i]);
+					world.addBody(platformBodies[i]);
+				}
+			
+				return board;
+			};
 
-
-			// Add gameboard to world
-
-			const gameboard = createGameBoard();
+			// Starting room
+			const gameboard = createGameBoard(0,0,0, 1,1,1);
 			scene.add(gameboard);
+
+
+			
+			// Ring obstacles to  drop tunnel
+			const ringOne = createSquareRing(50, 60, 18 , 1,1,1);
+			scene.add(ringOne);
+
+			const ringTwo = createSquareRing(70, 40, 21 , 1, 0.8, 0.8);
+			scene.add(ringTwo);
+
+			const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
+			scene.add(ringThree);
+
+			//Drop Tunnel
+			const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
+			scene.add(dropTunnel);
+
+			// Room two
+			// const gameboardTwo = createGameBoard(150,160,118, 1,1,1);
+			// scene.add(gameboardTwo);
+
+
+
 
 			//////////////// ADD PLAYER SHIP //////////////////////////
 
@@ -56767,7 +56829,7 @@
 					lastCollisionTime = new Date().getTime();
 				}
 
-
+				
 
 
 			});
@@ -56894,6 +56956,7 @@
 	}
 
 	function animate() {
+
 		renderFrames += 1;
 
 		if (inprogress == true) {
@@ -57174,6 +57237,15 @@
 
 	}
 
+	// Randomizers that can be used for building Bufffer geometries
+
+	// random integer within range
+	function getRandomInt(min, max) {
+		min = Math.ceil(min);
+		max = Math.floor(max);
+		return Math.floor(Math.random() * (max - min) + min) //The maximum is exclusive and the minimum is inclusive
+	}
+
 	// random float within range
 	// function getRandomArbitrary(min, max) {
 	// 	return Math.random() * (max - min) + min
@@ -57218,6 +57290,8 @@
 		innerCustomArray.push(innerCustom); // use separate array for innerCustom which will be global so that we can access them
 		return outerCustom
 	}
+
+
 	// function AddMinutesToDate(date, minutes) {
 	// 	return new Date(date.getTime() + minutes * 60000);
 
