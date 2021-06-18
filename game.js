@@ -897,6 +897,7 @@ function initShipControls() {
 		if (keys[key] !== undefined) keys[key] = false
 
 	})
+	
 
 	document.addEventListener('mousemove', onDocumentMouseMove, false);
 
