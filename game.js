@@ -368,8 +368,9 @@ class Game {
 function fly() {
 	if (keys.h) { switchView() }
 	if (keys.arrowup) { acceleration = -1 }
+	if (keys.space) { acceleration -= 0.25 }
 	if (keys.arrowdown) { acceleration = 1 }
-	if (keys.arrowup || keys.arrowdown) {
+	if (keys.arrowup || keys.arrowdown || keys.space) {
 		let accelerationImpulseDirection = new CANNON.Vec3(0, 0, acceleration)
 		accelerationImpulse = shipBody.quaternion.vmult(accelerationImpulseDirection)
 		shipBody.applyImpulse(accelerationImpulse)
@@ -589,7 +590,8 @@ function initShipControls() {
 		arrowup: false,
 		arrowdown: false,
 		arrowleft: false,
-		arrowright: false
+		arrowright: false,
+		space: false,
 	};
 
 	document.body.addEventListener("keydown", function (e) {
