@@ -56669,9 +56669,6 @@
 					platformBodies.push(newPlatform.cannonPlatform);
 				}
 
-
-				
-			
 				// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
 				// token.position.set(20*x,20*y,20*z)
 				// scene.add(token)
@@ -56683,6 +56680,32 @@
 			
 				return board;
 			};
+
+			const createFloor = (x,y,z, scaleLength, scaleWidth, scaleHeight) => {
+				const board = new Group();
+				const platformGeometries = [];
+				const platformBodies = [];
+				let newPlatform;
+				let colorMap;
+				//floor 
+				colorMap = new TextureLoader().load("./textures/lime_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
+				
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				newPlatform.cannonPlatform.id;
+
+				for (let i = 0; i < platformGeometries.length; i++) {
+					board.add(platformGeometries[i]);
+					world.addBody(platformBodies[i]);
+				}
+			
+				return board;
+			};
+
+			// Starting Platform
+			const floorPlatform = createFloor(-10,0,0, 10,10,1);
+			scene.add(floorPlatform);
 
 			// Starting room
 			// const gameboard = createGameBoard(0,0,0, 0.5,0.5,0.5);
@@ -56884,7 +56907,7 @@
 				// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
 
 				//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
-				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				var tokenCustom = createToken(6, 8, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 				//Generate random positions for each of the tokens
 				tokenCustom.position.set(12, 30, 200);
 				const tokenBox = new Box3(); //bounding box
@@ -57151,8 +57174,7 @@
 				var zCoordinates = [500, 800, 1125];
 				animate();
 				for (let i = 0; i < totalTokens; i++) {
-					var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-					var randomZ = Math.floor(Math.random() * 250);
+					var tokenCustom = createToken(6,8, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 					tokenCustom.position.set(xCoordinates[i], yCoordinates[i], zCoordinates[i]); //sets location of thetoken to be in a random line location
 					const tokenBox = new Box3(); //bounding box
 					tokenCustom.geometry.computeBoundingBox();
@@ -57166,27 +57188,28 @@
 				}
 		
 			}
-		if (level == 3) {
-			inprogress = true;
-			maxScore = 10;
-			totalTokens = 10;
-
-			animate();
-			for (let i = 0; i < totalTokens; i++) {
-				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-				var randomZ = Math.floor(Math.random() * 250);
-				tokenCustom.position.set(5, 25, randomZ);
-				const tokenBox = new Box3(); //bounding box
-				tokenCustom.geometry.computeBoundingBox();
-
-				new Vector3();
-				tokenBox.getCenter();
-
-				scene.add(tokenCustom);
-				tokensArray.push(tokenCustom);
-				boxArray.push(tokenBox);
+			if (level == 3) {
+				inprogress = true;
+				maxScore = 20;
+				totalTokens = 5;
+				var xCoordinates = [240, 345, 345, 345, 345];
+				var yCoordinates = [120, 100, 50, -25, -70];
+				var zCoordinates = [920, 750, 645, 645, 645];
+				animate();
+				for (let i = 0; i < totalTokens; i++) {
+					var tokenCustom = createToken(6, 8, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+					tokenCustom.position.set(xCoordinates[i], yCoordinates[i], zCoordinates[i]);
+					const tokenBox = new Box3(); //bounding box
+					tokenCustom.geometry.computeBoundingBox();
+		
+					new Vector3();
+					tokenBox.getCenter();
+		
+					scene.add(tokenCustom);
+					tokensArray.push(tokenCustom);
+					boxArray.push(tokenBox);
+				}
 			}
-		}
 		if (level == 4) { //end of the game
 			timer.innerHTML = "<h1>Game Complete</h1>" + "<h2>Time Taken</h2>"
 				+ '<div class ="timerSec" style="background: black">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
