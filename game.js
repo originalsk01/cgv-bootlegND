@@ -72,7 +72,7 @@ var renderFrames = 0;
 //timer variables
 
 var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime, endTime
-var levelDuration = 3
+var levelDuration = 0.1
 var timeTaken = [0, 0]
 var inprogress = true
 
@@ -674,7 +674,7 @@ function animate() {
 	}
 
 
-	//update timer
+	//update timertimer
 	var timeRemaining = time_remaining(endTime)
 	minutes = timeRemaining["minutes"]
 	seconds = timeRemaining["seconds"]
@@ -698,7 +698,7 @@ function animate() {
 	if (tokenScore == maxScore) { // checking if they have won the game
 		timeTaken = time_taken(gameStart);
 		var minutes_taken = timeTaken["minutes"]
-		var seconds_taken = timeTaken["seconds"]
+		var seconds_taken = timeTaken["sectimeronds"]
 		timeTaken[0] = minutes_taken
 		timeTaken[1] = seconds_taken
 		inprogress = false

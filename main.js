@@ -24,12 +24,20 @@ const intructions = document.getElementById("instance");
     "</div>"+
     "<h4> (Click anywhere to start)</h4>" 
 
-
+var inprogress = false;
 document.addEventListener("click",startGame);
-function startGame(){
-    instructions.innerHTML = ''
-    const game = new Game();
-    game.init();
 
+function startGame(){
+
+    if(!inprogress){
+        inprogress = true;
+        instructions.innerHTML = ''
+        const game = new Game();
+        game.init();
+        console.log("onclick")
+    
+    }
+    
+ 
 }
 
