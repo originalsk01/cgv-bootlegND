@@ -27,12 +27,14 @@ study when they wake up! Youre new to the pilot game but youre a quick learner. 
 "</div>" + 
 "</body>"
 document.addEventListener("click",startGame);
+var gameStart=false
 function startGame(){
+    if(gameStart==false){
     NewStuff.innerHTML = ''
     document.getElementById('instructions').className = '';
     document.body.style.marginTop = 0;
     const game = new Game();
-    game.initGame();
-
+    gameStart=true
+        game.init();
+    }
 }
-
