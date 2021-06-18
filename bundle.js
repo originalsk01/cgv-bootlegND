@@ -56297,6 +56297,10 @@
 	// player control global variables
 	let keys;
 
+
+	//cubemap
+	var cubeCamera = [];
+
 	// flight camera a& controls global variables
 	let flightCamera, minimapCamera, mapWidth = 240, mapHeight = 160;
 	let acceleration = 0;
@@ -56333,6 +56337,8 @@
 	var totalTokens = 1;
 	var tokenScore = 0;
 	var maxScore = 1;
+
+	var pause = false;
 
 
 
@@ -56385,6 +56391,7 @@
 			]);
 			scene.background = skyBoxtexture;
 
+		
 
 
 			// Physics world
@@ -56670,6 +56677,32 @@
 				return board;
 			};
 
+			const createFloor = (x,y,z, scaleLength, scaleWidth, scaleHeight) => {
+				const board = new Group();
+				const platformGeometries = [];
+				const platformBodies = [];
+				let newPlatform;
+				let colorMap;
+				//floor 
+				colorMap = new TextureLoader().load("./textures/lime_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
+				
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+				newPlatform.cannonPlatform.id;
+
+				for (let i = 0; i < platformGeometries.length; i++) {
+					board.add(platformGeometries[i]);
+					world.addBody(platformBodies[i]);
+				}
+			
+				return board;
+			};
+
+			// Starting Platform
+			const floorPlatform = createFloor(-10,0,0, 10,10,1);
+			scene.add(floorPlatform);
+
 			// Starting room
 			// const gameboard = createGameBoard(0,0,0, 0.5,0.5,0.5);
 			// scene.add(gameboard);
@@ -56855,7 +56888,8 @@
 			for (let i = 0; i < totalTokens; i++) {
 
 
-				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
+				var tokenCustom = createToken(6, 8, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 				//Generate random positions for each of the tokens
 				tokenCustom.position.set(12, 30, 200);
 				const tokenBox = new Box3(); //bounding box
@@ -56943,106 +56977,113 @@
 
 		/*************************************************************************************************************/
 
+		if (!pause) {
+			//check for token intersection
+			if (renderFrames >= 10) {
+				//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
+				for (let k = 0; k < tokensArray.length; k++) {
+					boxArray[k]
+						.copy(tokensArray[k].geometry.boundingBox)
+						.applyMatrix4(tokensArray[k].matrixWorld);
+					//Determine if player touches token
+					new Color(0x0000ff);
+					if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
+						tokenScore += 1;
 
-		//check for token intersection
-		if (renderFrames >= 10) {
-			//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
-			for (let k = 0; k < tokensArray.length; k++) {
-				boxArray[k]
-					.copy(tokensArray[k].geometry.boundingBox)
-					.applyMatrix4(tokensArray[k].matrixWorld);
-				//Determine if player touches token
-				new Color(0x0000ff);
-				if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
-					tokenScore += 1;
+						//Make outer shape of token transparent
+						tokensArray[k].material.transparent = true;
+						tokensArray[k].material.opacity = 0;
+						//Make inner shape of token transparent
+						innerCustomArray[k].material.transparent = true;
+						innerCustomArray[k].material.opacity = 0;
 
-					//Make outer shape of token transparent
-					tokensArray[k].material.transparent = true;
-					tokensArray[k].material.opacity = 0;
-					//Make inner shape of token transparent
-					innerCustomArray[k].material.transparent = true;
-					innerCustomArray[k].material.opacity = 0;
-
-					
-					tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
+						
+						tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
+					}
 				}
 			}
+
+
+			//update timertimer
+			var timeRemaining = time_remaining(endTime);
+			minutes = timeRemaining["minutes"];
+			seconds = timeRemaining["seconds"];
+			if (minutes <= 0 && seconds <= 0) {
+				timeTaken = time_taken(gameStart$1);
+				var minutes_taken = timeTaken["minutes"];
+				var seconds_taken = timeTaken["seconds"];
+				timeTaken[0] = minutes_taken;
+				timeTaken[1] = seconds_taken;
+				inprogress = false;
+			}
+			if (minutes > 0 && seconds > 30 && inprogress) {
+				timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+					+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+			}
+
+			if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
+				timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+					+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+			}
+			if (tokenScore == maxScore) { // checking if they have won the game
+				timeTaken = time_taken(gameStart$1);
+				var minutes_taken = timeTaken["minutes"];
+				var seconds_taken = timeTaken["sectimeronds"];
+				timeTaken[0] = minutes_taken;
+				timeTaken[1] = seconds_taken;
+				inprogress = false;
+
+			}
+			if (health <= 0) {//if the player loses all thier health end the game
+				timeTaken = time_taken(gameStart$1);
+				var minutes_taken = timeTaken["minutes"];
+				var seconds_taken = timeTaken["seconds"];
+				timeTaken[0] = minutes_taken;
+				timeTaken[1] = seconds_taken;
+				inprogress = false;
+			}
+
+
+
+			/************************************************************************************************************************** */
+
+
+			// take timestep in physics simulation
+			stepPhysicsWorld();
+
+			// update three.js meshes according to cannon-es simulations
+			updatePhysicsBodies();
+
+			// update flight camera
+			fly();
+			// models animations
+			clock.getDelta();
+
+			stats.update();
+			//// render three.js
+
+			var w = window.innerWidth, h = window.innerHeight;
+
+
+			renderer.setViewport(0, 0, w, h);
+			// renderer.clear()
+			renderer.render(scene, flightCamera);
+
+			//Renderer automaitcally clear before rendering new image so disable temporarily
+			renderer.autoClear = false;
+			renderer.setViewport(w - mapWidth - 20, h - mapHeight - 10, mapWidth, mapHeight);
+			for (var i = 0; i<cubeCamera.length; i++){
+				cubeCamera[i].update(renderer,scene);
+			}
+
+			//Change to minimapCamera 
+			renderer.render(scene, minimapCamera);
+			// minimap (overhead orthogonal camera)
+			//  lower_left_x, lower_left_y, viewport_width, viewport_height
+
 		}
 
-
-		//update timertimer
-		var timeRemaining = time_remaining(endTime);
-		minutes = timeRemaining["minutes"];
-		seconds = timeRemaining["seconds"];
-		if (minutes <= 0 && seconds <= 0) {
-			timeTaken = time_taken(gameStart$1);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["seconds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-		}
-		if (minutes > 0 && seconds > 30 && inprogress) {
-			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
-				+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
-		}
-
-		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
-			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
-				+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
-		}
-		if (tokenScore == maxScore) { // checking if they have won the game
-			timeTaken = time_taken(gameStart$1);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["sectimeronds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-
-		}
-		if (health <= 0) {//if the player loses all thier health end the game
-			timeTaken = time_taken(gameStart$1);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["seconds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-		}
-
-
-
-		/************************************************************************************************************************** */
-
-
-		// take timestep in physics simulation
-		stepPhysicsWorld();
-
-		// update three.js meshes according to cannon-es simulations
-		updatePhysicsBodies();
-
-		// update flight camera
-		fly();
-		// models animations
-		clock.getDelta();
-
-		stats.update();
-		//// render three.js
-
-		var w = window.innerWidth, h = window.innerHeight;
-
-
-		renderer.setViewport(0, 0, w, h);
-		// renderer.clear()
-		renderer.render(scene, flightCamera);
-
-		//Renderer automaitcally clear before rendering new image so disable temporarily
-		renderer.autoClear = false;
-		renderer.setViewport(w - mapWidth - 20, h - mapHeight - 10, mapWidth, mapHeight);
-		//Change to minimapCamera 
-		renderer.render(scene, minimapCamera);
-		// minimap (overhead orthogonal camera)
-		//  lower_left_x, lower_left_y, viewport_width, viewport_height
-
+		
 
 	}
 
@@ -57097,6 +57138,12 @@
 		return model.scene.children[0]
 	}
 
+	document.addEventListener('keydown', function(event) {
+	    if (event.code == 'KeyP') {
+	      pause=!pause;
+	    }
+	});
+
 	const timer = document.getElementById("timer");
 	function nextLevel() {
 		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
@@ -57112,8 +57159,7 @@
 				var zCoordinates = [500, 800, 1125];
 				animate();
 				for (let i = 0; i < totalTokens; i++) {
-					var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-					var randomZ = Math.floor(Math.random() * 250);
+					var tokenCustom = createToken(6,8, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 					tokenCustom.position.set(xCoordinates[i], yCoordinates[i], zCoordinates[i]); //sets location of thetoken to be in a random line location
 					const tokenBox = new Box3(); //bounding box
 					tokenCustom.geometry.computeBoundingBox();
@@ -57127,27 +57173,28 @@
 				}
 		
 			}
-		if (level == 3) {
-			inprogress = true;
-			maxScore = 10;
-			totalTokens = 10;
-
-			animate();
-			for (let i = 0; i < totalTokens; i++) {
-				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-				var randomZ = Math.floor(Math.random() * 250);
-				tokenCustom.position.set(5, 25, randomZ);
-				const tokenBox = new Box3(); //bounding box
-				tokenCustom.geometry.computeBoundingBox();
-
-				new Vector3();
-				tokenBox.getCenter();
-
-				scene.add(tokenCustom);
-				tokensArray.push(tokenCustom);
-				boxArray.push(tokenBox);
+			if (level == 3) {
+				inprogress = true;
+				maxScore = 9;
+				totalTokens = 9;
+				var xCoordinates = [240, 345, 345, 345, 345];
+				var yCoordinates = [120, 100, 50, -25, -70];
+				var zCoordinates = [920, 750, 645, 645, 645];
+				animate();
+				for (let i = 0; i < 5; i++) {
+					var tokenCustom = createToken(6, 8, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+					tokenCustom.position.set(xCoordinates[i], yCoordinates[i], zCoordinates[i]);
+					const tokenBox = new Box3(); //bounding box
+					tokenCustom.geometry.computeBoundingBox();
+		
+					new Vector3();
+					tokenBox.getCenter();
+		
+					scene.add(tokenCustom);
+					tokensArray.push(tokenCustom);
+					boxArray.push(tokenBox);
+				}
 			}
-		}
 		if (level == 4) { //end of the game
 			timer.innerHTML = "<h1>Game Complete</h1>" + "<h2>Time Taken</h2>"
 				+ '<div class ="timerSec" style="background: black">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
@@ -57231,13 +57278,24 @@
 		//Opacities may be set in order to alter the appearance as well as make the inner object visible
 		var innerGeometry = new OctahedronGeometry(innerRadius, innerDetail);
 
-		var innerMaterial = new MeshLambertMaterial({
-			color: innerColour,
-			transparent: true,
-			opacity: innerOpacity,
-		});
+		// var innerMaterial = new THREE.MeshLambertMaterial({
+		// 	color: innerColour,
+		// 	transparent: true,
+		// 	opacity: innerOpacity,
+		// })
+		var cubeRenderTarget = new WebGLCubeRenderTarget( 128, { format: RGBFormat, generateMipmaps: true, minFilter:LinearMipmapLinearFilter } );
+		var cubeCam = new CubeCamera(.1, 1000, cubeRenderTarget);
+		cubeCamera.push(cubeCam);
 
+		var innerMaterial = new MeshPhongMaterial({
+			emissive: 0xffffff,
+			shininess: 100,
+			color: 0xffffff,
+			specular: 0xffffff,
+			envMap: cubeRenderTarget.texture
+		  });
 		var innerCustom = new Mesh(innerGeometry, innerMaterial);
+		innerCustom.add(cubeCam);
 
 		var outerGeometry = new OctahedronGeometry(
 			outerRadius,
