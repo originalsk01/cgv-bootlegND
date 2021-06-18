@@ -56281,15 +56281,6 @@
 	let scene, stats, renderer, clock;
 	let shipModel;
 
-
-	// var ctx = new AudioContext();
-	//   var audio = document.getElementById('myAudio');
-	//   var audioSrc = ctx.createMediaElementSource(audio);
-	//   var analyser = ctx.createAnalyser();
-
-
-
-
 	// global asset paths
 	const shipPath =
 		"/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
@@ -56333,7 +56324,7 @@
 
 	//timer variables
 
-	var minutes, seconds, gameStart, gameLoad, endTime;
+	var minutes, seconds, gameStart$1, gameLoad, endTime;
 	var levelDuration = 3;
 	var timeTaken = [0, 0];
 	var inprogress = true;
@@ -56342,6 +56333,8 @@
 	var totalTokens = 1;
 	var tokenScore = 0;
 	var maxScore = 1;
+
+	var pause = false;
 
 
 
@@ -56407,14 +56400,6 @@
 
 			stats = new Stats();
 			document.body.appendChild(stats.dom);
-
-			// Normale camera
-			//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 )
-
-			// Normal camera initial position and orientation
-			//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
-			//camera.position.set(0,10,10)
-
 			// Initialise flight camera
 			const fcFielOfView = 75;
 			const fcNear = 0.1;
@@ -56540,7 +56525,6 @@
 				material: groundMaterial,
 			});
 			groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
-			//world.addBody(groundBody)
 
 			//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
 
@@ -56582,7 +56566,6 @@
 				// merge into single super buffer geometry;
 				const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
 				// centre super geometry at local origin
-				//geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
 
 				geometriesTiles.applyMatrix4(new Matrix4().makeTranslation(-length / 2, -height / 2, -width / 2));
 				geometriesTiles.applyMatrix4(new Matrix4().makeScale(gridSquareSize, gridSquareSize, gridSquareSize));
@@ -56668,10 +56651,6 @@
 					platformGeometries.push(newPlatform.threePlatform);
 					platformBodies.push(newPlatform.cannonPlatform);
 				}
-
-				// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
-				// token.position.set(20*x,20*y,20*z)
-				// scene.add(token)
 			
 				for (let i = 0; i < platformGeometries.length; i++) {
 					board.add(platformGeometries[i]);
@@ -56809,10 +56788,6 @@
 			shipModel = new Object3D;
 			shipModel = await loadModel(shipPath);
 
-			// Rotate children of ship model to correct their orientation
-			//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-			//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-
 			shipModel.applyMatrix4(new Matrix4().makeScale(1.9, 1.9, 1.9));
 			shipModel.applyMatrix4(new Matrix4().makeTranslation(-5, 0, -5));
 
@@ -56826,10 +56801,8 @@
 			shipBody = new Body({
 				mass: 1,
 				material: slipperyMaterial,
-				//angularFactor: new CANNON.Vec3(0,1,0),
 				shape: S(shipModel).shape,
-				//linearDamping: 0.5,
-				//angularDamping: 0.9,
+
 			});
 			shipBody.position.set(0, 10, 0);
 
@@ -56837,7 +56810,7 @@
 			world.addBody(shipBody);
 			var lastCollisionTime = new Date().getTime();
 			shipBody.addEventListener("collide", function (e) {
-				timeTaken = time_taken(gameStart);
+				timeTaken = time_taken(gameStart$1);
 				timeTaken["minutes"];
 				timeTaken["seconds"];
 				const hurtListener = new AudioListener();
@@ -56888,7 +56861,6 @@
 			);
 			//Compute initial bounding box
 			playerCustom.geometry.computeBoundingBox();
-			//playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
 
 			new Vector3(2, 5, 8);
 			playerBox.getCenter();
@@ -56901,10 +56873,6 @@
 
 			for (let i = 0; i < totalTokens; i++) {
 
-				//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
-				// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
-				// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-				// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
 
 				//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
 				var tokenCustom = createToken(6, 8, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
@@ -56932,7 +56900,7 @@
 			clock = new Clock();
 
 			gameLoad = Date.parse(new Date());
-			gameStart = new Date();
+			gameStart$1 = new Date();
 			endTime = new Date(gameLoad + levelDuration * 60 * 1000);
 			animate();
 		}
@@ -56955,14 +56923,7 @@
 		if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
 			if (keys.w) { pitchSpeed = -1; } else if (keys.s) { pitchSpeed = 1; } else { pitchSpeed = 0; }
 			if (keys.a) { rollSpeed = 0.75; } else if (keys.d) { rollSpeed = -0.75; } else { rollSpeed = 0; }
-			// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
 			if (keys.arrowleft) { rollSpeed += 2; } else if (keys.arrowright) { rollSpeed += -2; } else { rollSpeed += 0; }
-
-			// if (mouseY<0) { pitchSpeed = -1 } else if (mouseY>0) { pitchSpeed = 1 } else { pitchSpeed = 0 }
-
-			// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
-			// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
-			// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
 
 			var directionVector = new Vec3(pitchSpeed, yawSpeed, rollSpeed);
 
@@ -57002,109 +56963,109 @@
 
 		/*************************************************************************************************************/
 
+		if (!pause) {
+			//check for token intersection
+			if (renderFrames >= 10) {
+				//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
+				for (let k = 0; k < tokensArray.length; k++) {
+					boxArray[k]
+						.copy(tokensArray[k].geometry.boundingBox)
+						.applyMatrix4(tokensArray[k].matrixWorld);
+					//Determine if player touches token
+					new Color(0x0000ff);
+					if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
+						tokenScore += 1;
 
-		//check for token intersection
-		if (renderFrames >= 10) {
-			//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
-			for (let k = 0; k < tokensArray.length; k++) {
-				boxArray[k]
-					.copy(tokensArray[k].geometry.boundingBox)
-					.applyMatrix4(tokensArray[k].matrixWorld);
-				//Determine if player touches token
-				new Color(0x0000ff);
-				if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
-					tokenScore += 1;
+						//Make outer shape of token transparent
+						tokensArray[k].material.transparent = true;
+						tokensArray[k].material.opacity = 0;
+						//Make inner shape of token transparent
+						innerCustomArray[k].material.transparent = true;
+						innerCustomArray[k].material.opacity = 0;
 
-					//Make outer shape of token transparent
-					tokensArray[k].material.transparent = true;
-					tokensArray[k].material.opacity = 0;
-					//Make inner shape of token transparent
-					innerCustomArray[k].material.transparent = true;
-					innerCustomArray[k].material.opacity = 0;
-
-					//tokensArray[k].material.color.lerp();
-
-					tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
+						
+						tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
+					}
 				}
 			}
+
+
+			//update timertimer
+			var timeRemaining = time_remaining(endTime);
+			minutes = timeRemaining["minutes"];
+			seconds = timeRemaining["seconds"];
+			if (minutes <= 0 && seconds <= 0) {
+				timeTaken = time_taken(gameStart$1);
+				var minutes_taken = timeTaken["minutes"];
+				var seconds_taken = timeTaken["seconds"];
+				timeTaken[0] = minutes_taken;
+				timeTaken[1] = seconds_taken;
+				inprogress = false;
+			}
+			if (minutes > 0 && seconds > 30 && inprogress) {
+				timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+					+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+			}
+
+			if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
+				timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+					+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+			}
+			if (tokenScore == maxScore) { // checking if they have won the game
+				timeTaken = time_taken(gameStart$1);
+				var minutes_taken = timeTaken["minutes"];
+				var seconds_taken = timeTaken["sectimeronds"];
+				timeTaken[0] = minutes_taken;
+				timeTaken[1] = seconds_taken;
+				inprogress = false;
+
+			}
+			if (health <= 0) {//if the player loses all thier health end the game
+				timeTaken = time_taken(gameStart$1);
+				var minutes_taken = timeTaken["minutes"];
+				var seconds_taken = timeTaken["seconds"];
+				timeTaken[0] = minutes_taken;
+				timeTaken[1] = seconds_taken;
+				inprogress = false;
+			}
+
+
+
+			/************************************************************************************************************************** */
+
+
+			// take timestep in physics simulation
+			stepPhysicsWorld();
+
+			// update three.js meshes according to cannon-es simulations
+			updatePhysicsBodies();
+
+			// update flight camera
+			fly();
+			// models animations
+			clock.getDelta();
+
+			stats.update();
+			//// render three.js
+
+			var w = window.innerWidth, h = window.innerHeight;
+
+
+			renderer.setViewport(0, 0, w, h);
+			// renderer.clear()
+			renderer.render(scene, flightCamera);
+
+			//Renderer automaitcally clear before rendering new image so disable temporarily
+			renderer.autoClear = false;
+			renderer.setViewport(w - mapWidth - 20, h - mapHeight - 10, mapWidth, mapHeight);
+			//Change to minimapCamera 
+			renderer.render(scene, minimapCamera);
+			// minimap (overhead orthogonal camera)
+			//  lower_left_x, lower_left_y, viewport_width, viewport_height
+
 		}
 
-
-		//update timertimer
-		var timeRemaining = time_remaining(endTime);
-		minutes = timeRemaining["minutes"];
-		seconds = timeRemaining["seconds"];
-		if (minutes <= 0 && seconds <= 0) {
-			timeTaken = time_taken(gameStart);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["seconds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-		}
-		if (minutes > 0 && seconds > 30 && inprogress) {
-			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
-				+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
-		}
-
-		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
-			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
-				+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
-		}
-		if (tokenScore == maxScore) { // checking if they have won the game
-			timeTaken = time_taken(gameStart);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["sectimeronds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-
-		}
-		if (health <= 0) {//if the player loses all thier health end the game
-			timeTaken = time_taken(gameStart);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["seconds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-		}
-
-
-
-		/************************************************************************************************************************** */
-
-
-		// take timestep in physics simulation
-		stepPhysicsWorld();
-
-		// // update three.js meshes according to cannon-es simulations
-		updatePhysicsBodies();
-
-		// update flight camera
-		fly();
-		// models animations
-		clock.getDelta();
-
-		stats.update();
-		//// render three.js
-
-		//renderer.render(scene, camera)
-		//controls.update()
-		var w = window.innerWidth, h = window.innerHeight;
-
-
-		renderer.setViewport(0, 0, w, h);
-		// renderer.clear()
-		renderer.render(scene, flightCamera);
-
-		//Renderer automaitcally clear before rendering new image so disable temporarily
-		renderer.autoClear = false;
-		renderer.setViewport(w - mapWidth - 20, h - mapHeight - 10, mapWidth, mapHeight);
-		//Change to minimapCamera 
-		renderer.render(scene, minimapCamera);
-		// minimap (overhead orthogonal camera)
-		//  lower_left_x, lower_left_y, viewport_width, viewport_height
-
+		
 
 	}
 
@@ -57159,6 +57120,12 @@
 		return model.scene.children[0]
 	}
 
+	document.addEventListener('keydown', function(event) {
+	    if (event.code == 'KeyP') {
+	      pause=!pause;
+	    }
+	});
+
 	const timer = document.getElementById("timer");
 	function nextLevel() {
 		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
@@ -57190,13 +57157,13 @@
 			}
 			if (level == 3) {
 				inprogress = true;
-				maxScore = 20;
-				totalTokens = 5;
+				maxScore = 9;
+				totalTokens = 9;
 				var xCoordinates = [240, 345, 345, 345, 345];
 				var yCoordinates = [120, 100, 50, -25, -70];
 				var zCoordinates = [920, 750, 645, 645, 645];
 				animate();
-				for (let i = 0; i < totalTokens; i++) {
+				for (let i = 0; i < 5; i++) {
 					var tokenCustom = createToken(6, 8, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 					tokenCustom.position.set(xCoordinates[i], yCoordinates[i], zCoordinates[i]);
 					const tokenBox = new Box3(); //bounding box
@@ -57365,24 +57332,6 @@
 		bar.css('width', healthBarWidth + '%');
 	}
 
-	// const intructions = document.getElementById("instance");
-	// 	instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
-	//     "<h4> (Click anywhere to start)</h4>" +
-	//     "<h2>Instructions</h2>"+ 
-	//     "<div id='leftHandControls'> <h3> Left Hand controls </h3>" +
-	//         "<div>Tilt Left: A</div>" +
-	//         "<div>Tilt Right:D</div>"+
-	//         "<div>Tilt Up:W</div>"+
-	//         "<div>Tilt Down:S</div>"+
-	//     "</div>"+
-	//     "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
-	//     "<div>Turn Left: &#8592</div>" +
-	//     "<div>Turn Right:&#8594</div>"+
-	//     "<div>Move Forward:&#8593</div>"+
-	//     "<div>Move Back:&#8595</div>"+
-	//     "</div>"+
-	//     "<h4> (Click anywhere to start)</h4>" 
-
 	const NewStuff = document.getElementById("instructions");
 
 	NewStuff.innerHTML = "<body class='intro'>" + 
@@ -57407,12 +57356,16 @@ study when they wake up! Youre new to the pilot game but youre a quick learner. 
 	"<p>Move Back: &#8595</p>" + 
 	"<h1>(Click anywhere to start)</h1>";
 	document.addEventListener("click",startGame);
+	var gameStart=false;
 	function startGame(){
+	    if(gameStart==false){
 	    NewStuff.innerHTML = '';
 	    document.getElementById('instructions').className = '';
 	    document.body.style.marginTop = 0;
 	    const game = new Game();
-	    game.init();
+	    gameStart=true;
+	        game.init();
+	    }
 
 	}
 
