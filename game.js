@@ -35,6 +35,9 @@ const blue = "rgb(110,197,233)";
 const vibrantYellow = new THREE.Color(0xf49f1c);
 const darkBlue = new THREE.Color(0x003380);
 
+//Obstacles
+let squareRing2, squareRing2;
+
 // cannon-es global variables
 let world;
 let shipBody;
@@ -446,10 +449,20 @@ class Game {
 			return board;
 		};
 
+		
+
+
 		// Add gameboard to world
 
 		const gameboard = createGameBoard();
 		scene.add(gameboard);
+
+		//Add obstacles
+		squareRing = createSquareRing(0,15,15)
+        // scene.add(squareRing)
+
+		squareRing2 = createSquareRing(-10, 10, 10)
+		// scene.add(squareRing2)
 
 		//////////////// ADD PLAYER SHIP //////////////////////////
 
@@ -975,6 +988,48 @@ function createToken(
 	outerCustom.add(innerCustom)
 	innerCustomArray.push(innerCustom) // use separate array for innerCustom which will be global so that we can access them
 	return outerCustom
+}
+
+const createSquareRing = (x,y,z) =>{
+	const board = new THREE.Group();
+	const platformGeometries = [];
+	const platformBodies = [];
+	let newPlatform;
+	let colorMap;
+	
+	//ceiling
+	colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+	newPlatform = placePlatform(createPlatform(5, 5, 1, colorMap), x-1, y+5, z-1);
+	platformGeometries.push(newPlatform.threePlatform);
+	platformBodies.push(newPlatform.cannonPlatform);
+	//world boundaries
+	colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
+	newPlatform = placePlatform(createPlatform(5, 1, 6, colorMap), x-1, y, z+4);
+	platformGeometries.push(newPlatform.threePlatform);
+	platformBodies.push(newPlatform.cannonPlatform);
+
+	colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+	newPlatform = placePlatform(createPlatform(5, 1, 5, colorMap), x-1, y, z-1);
+	platformGeometries.push(newPlatform.threePlatform);
+	platformBodies.push(newPlatform.cannonPlatform);
+
+	//floor 
+	colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
+	newPlatform = placePlatform(createPlatform(5, 5, 1, colorMap), x-1, y, z-1);
+	platformGeometries.push(newPlatform.threePlatform);
+	platformBodies.push(newPlatform.cannonPlatform);
+	floor_id = newPlatform.cannonPlatform.id
+
+	// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
+	// token.position.set(20*x,20*y,20*z)
+	// scene.add(token)
+
+	for (let i = 0; i < platformGeometries.length; i++) {
+		board.add(platformGeometries[i]);
+		world.addBody(platformBodies[i]);
+	}
+
+	return board;
 }
 // function AddMinutesToDate(date, minutes) {
 // 	return new Date(date.getTime() + minutes * 60000);
