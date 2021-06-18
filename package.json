@@ -13,5 +13,8 @@
     "cannon-es": "^0.17.1",
     "three": "^0.129.0",
     "three-to-cannon": "^4.0.2"
+  },
+  "devDependencies": {
+    "rollup-plugin-styles": "^3.14.1"
   }
 }
