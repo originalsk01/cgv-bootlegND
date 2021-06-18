@@ -132,8 +132,6 @@ class Game {
 		]);
 		scene.background = skyBoxtexture;
 
-	
-
 
 		// Physics world
 		world = new CANNON.World({
@@ -195,18 +193,11 @@ class Game {
 			});
 			playonce = false
 		}
-		// Axes Helper
-		const axes = new THREE.AxesHelper(100);
-		scene.add(axes);
-
-		// X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
-		const gridSize = 500;
-		const gridDivisions = 50;
-		const gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
-		scene.add(gridHelper);
 
 
 		// Size of one unit for world coordinates if Grid used as basis
+		const gridSize = 500;
+		const gridDivisions = 50;
 		const gridSquareSize = gridSize / gridDivisions;
 
 		// Lights
