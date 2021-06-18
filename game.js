@@ -134,8 +134,6 @@ class Game {
 		]);
 		scene.background = skyBoxtexture;
 
-	
-
 
 		// Physics world
 		world = new CANNON.World({
@@ -197,32 +195,36 @@ class Game {
 			});
 			playonce = false
 		}
-		// Axes Helper
-		const axes = new THREE.AxesHelper(100);
-		scene.add(axes);
-
-		// X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
-		const gridSize = 500;
-		const gridDivisions = 50;
-		const gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
-		scene.add(gridHelper);
 
 
 		// Size of one unit for world coordinates if Grid used as basis
+		const gridSize = 500;
+		const gridDivisions = 50;
 		const gridSquareSize = gridSize / gridDivisions;
 
 		// Lights
-		const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+		const ambientLight = new THREE.AmbientLight(0xffffff, 0.25);
 		scene.add(ambientLight);
 
-		const dirLight = new THREE.DirectionalLight(0xffffff);
-		dirLight.position.set(0, 200, 100);
-		dirLight.castShadow = true;
-		dirLight.shadow.camera.top = 180;
-		dirLight.shadow.camera.bottom = -100;
-		dirLight.shadow.camera.left = -120;
-		dirLight.shadow.camera.right = 120;
-		scene.add(dirLight);
+		// const dirLight = new THREE.DirectionalLight(0xffffff,5);
+		// dirLight.position.set(-20, 200,500);
+		// dirLight.castShadow = true;
+		// dirLight.shadow.camera.top = 180;
+		// dirLight.shadow.camera.bottom = -100;
+		// dirLight.shadow.camera.left = -120;
+		// dirLight.shadow.camera.right = 120;
+		// scene.add(dirLight);
+
+		const spotLight = new THREE.SpotLight( 0xffffff,1);
+		spotLight.position.set( -750, 1000, 1000 );
+		spotLight.castShadow = true;
+		spotLight.shadow.mapSize.width = 1024;
+		spotLight.shadow.mapSize.height = 1024;
+		spotLight.shadow.camera.near = 500;
+		spotLight.shadow.camera.far = 4000;
+		spotLight.shadow.camera.fov = 30;
+
+		scene.add( spotLight );
 
 		// Materials
 		const groundMaterial = new CANNON.Material("groundMaterial");
@@ -313,6 +315,7 @@ class Game {
 
 			// merge into single super buffer geometry;
 			const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
+			
 			// centre super geometry at local origin
 
 			geometriesTiles.applyMatrix4(new THREE.Matrix4().makeTranslation(-length / 2, -height / 2, -width / 2));
@@ -321,6 +324,7 @@ class Game {
 
 			// create one mega big platform mesh from super geometry
 			const platform = new THREE.Mesh(geometriesTiles, tileMaterial);
+			
 
 			// place lower left corner of platform mesh  at X-Z (0,0)
 			platform.translateX((gridSquareSize * length) / 2);
@@ -349,7 +353,6 @@ class Game {
 			const platformPos = new THREE.Vector3();
 			platform.getWorldPosition(platformPos);
 			platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
-
 			return {
 				threePlatform: platform,
 				cannonPlatform: platformBody,
@@ -608,7 +611,7 @@ class Game {
 
 		shipModel.applyMatrix4(new THREE.Matrix4().makeScale(1.9, 1.9, 1.9));
 		shipModel.applyMatrix4(new THREE.Matrix4().makeTranslation(-5, 0, -5));
-
+		shipModel.castShadow = true
 		scene.add(shipModel)
 		shipModel.add(flightCamera)
 
@@ -650,9 +653,6 @@ class Game {
 				updateHealth(damage);
 				lastCollisionTime = new Date().getTime();
 			}
-
-			
-
 
 		});
 

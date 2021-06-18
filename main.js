@@ -37,6 +37,4 @@ function startGame(){
     gameStart=true
         game.init();
     }
-
 }
-
