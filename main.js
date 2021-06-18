@@ -22,13 +22,13 @@ const NewStuff = document.getElementById("instructions");
 
 NewStuff.innerHTML = "<body class='intro'>" + 
 "<div class= 'wrapper'>" + '<div class= "scroll-text">' +
-"<h1>Welcome to: Space Invaders except its a project made by coms students tryna survive the Rona</h1>" + 
+"<h1>Welcome to: Space Invaders except its a project made by Coms students tryna survive the Rona</h1>" + 
 "<h2>And also its not really space invaders </h2>" +
-"<h3>Part II</h3>" +
+"<h3>Part II (dont sue us Disney pls)</h3>" +
 "<h4>Instructions </h4>" +
-"<p>You are a rookie pilot Ricch Heard with 10 PhDs in everyfield aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and PRAvenman VESHim'l have been knocked out from stress of studying for\
-their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper tokens so they can buy past papers to help them \
-study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Captain! Heres your manual</p> " + 
+"<p>You are a Padawan Jedi pilot Ricch Heard with 42 PhDs in everyfield (except flying because all the energade , coke and redbull you drink gives you the jitters!) aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and Padawan PRAvenman VESHim'l have been knocked out from stress of studying for\
+their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper Tokens so they can buy past papers to help them \
+study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Master! Heres your Sacred Text</p> " + 
 "<h2>Left Hand controls</h2>" +
 "<p>Tilt Left : A</p>" + 
 "<p>Tilt Right : D</p>" + 
