@@ -56334,59 +56334,116 @@
 
 
 	function initCannonWorld(){
-				// Physics world
-				world = new World({});
-				world.gravity.set(0, 0, 0);
-				world.broadphase = new NaiveBroadphase(); // Detect coilliding objects
-		
-				// Materials
-				groundMaterial = new Material("groundMaterial");
-		
-				// Adjust constraint equation parameters for ground/ground contact
-				const ground_ground_cm = new ContactMaterial(
-					groundMaterial,
-					groundMaterial,
-					{
-						friction: 0.4,
-						restitution: 0.3,
-						contactEquationStiffness: 1e8,
-						contactEquationRelaxation: 3,
-						frictionEquationStiffness: 1e8,
-						frictionEquationRegularizationTime: 3,
-					}
-				);
-		
-				// Add contact material to the world
-				world.addContactMaterial(ground_ground_cm);
-		
-				// Create a slippery material (friction coefficient = 0.0)
-				slipperyMaterial = new Material("slipperyMaterial");
-		
-				// The ContactMaterial defines what happens when two materials meet.
-				// In this case we want friction coefficient = 0.0 when the slippery material touches ground.
-				const slippery_ground_cm = new ContactMaterial(
-					groundMaterial,
-					slipperyMaterial,
-					{
-						friction: 0.0,
-						restitution: 0.3,
-						contactEquationStiffness: 1e8,
-						contactEquationRelaxation: 3,
-					}
-				);
-		
-				// We must add the contact materials to the world
-				world.addContactMaterial(slippery_ground_cm);
-		
-				// // Create a static ground plane for the ground
-				// const groundBody = new CANNON.Body({
-				// 	type: CANNON.Body.STATIC, // can also be achieved by setting the mass to 0
-				// 	shape: new CANNON.Plane(),
-				// 	material: groundMaterial,
-				// });
-				// groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
-				// //world.addBody(groundBody)
+		// Physics world
+		world = new World({});
+		world.gravity.set(0, 0, 0);
+		world.broadphase = new NaiveBroadphase(); // Detect coilliding objects
+
+		// Materials
+		groundMaterial = new Material("groundMaterial");
+
+		// Adjust constraint equation parameters for ground/ground contact
+		const ground_ground_cm = new ContactMaterial(
+			groundMaterial,
+			groundMaterial,
+			{
+				friction: 0.4,
+				restitution: 0.3,
+				contactEquationStiffness: 1e8,
+				contactEquationRelaxation: 3,
+				frictionEquationStiffness: 1e8,
+				frictionEquationRegularizationTime: 3,
+			}
+		);
+
+		// Add contact material to the world
+		world.addContactMaterial(ground_ground_cm);
+
+		// Create a slippery material (friction coefficient = 0.0)
+		slipperyMaterial = new Material("slipperyMaterial");
+
+		// The ContactMaterial defines what happens when two materials meet.
+		// In this case we want friction coefficient = 0.0 when the slippery material touches ground.
+		const slippery_ground_cm = new ContactMaterial(
+			groundMaterial,
+			slipperyMaterial,
+			{
+				friction: 0.0,
+				restitution: 0.3,
+				contactEquationStiffness: 1e8,
+				contactEquationRelaxation: 3,
+			}
+		);
+
+		// We must add the contact materials to the world
+		world.addContactMaterial(slippery_ground_cm);
+
+		// // Create a static ground plane for the ground
+		// const groundBody = new CANNON.Body({
+		// 	type: CANNON.Body.STATIC, // can also be achieved by setting the mass to 0
+		// 	shape: new CANNON.Plane(),
+		// 	material: groundMaterial,
+		// });
+		// groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
+		// //world.addBody(groundBody)
 	}
+
+			// Function to add multiple platforms into a gameboard
+			// allow different textures/colours for different sections
+
+
+			// Starting room
+			// const gameboard = createGameBoard(0,0,0, 0.5,0.5,0.5);
+			// scene.add(gameboard);
+
+
+			
+			// Ring obstacles to  drop tunnel
+			const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
+			scene.add(ringOne);
+
+			const ringTwo = createSquareRing(-10, 5, 50 , 1,1,1, true);
+			scene.add(ringTwo);
+
+			const ringThree = createSquareRing(0, 8, 80 , 1,1,1, true);
+			scene.add(ringThree);
+
+			const ringFour = createSquareRing(13, 2, 110 , 1,1,1, false);
+			scene.add(ringFour);
+
+			const ringFive = createSquareRing(23, 10, 90 , 1,1,1, false);
+			scene.add(ringFive);
+
+			const ringSix = createSquareRing(33, 7, 75 , 1,1,1, true);
+			scene.add(ringSix);
+
+			
+			var tunnel = createTunnelDown(33, -10, 65 ,1 ,1 ,3);
+			scene.add(tunnel);
+
+
+
+
+			// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
+			// scene.add(ringOne)
+
+			// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
+			// scene.add(ringOne)
+
+			// const ringTwo = createSquareRing(10, 0, 20 , 1, 0.8, 0.8, false);
+			// scene.add(ringTwo)
+
+			// const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
+			// scene.add(ringThree)
+
+			// //Drop Tunnel
+			// const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
+			// scene.add(dropTunnel)
+
+			// Room two
+			// const gameboardTwo = createGameBoard(150,160,118, 1,1,1);
+			// scene.add(gameboardTwo);
+
 
 	async function initShip(){
 				//////////////// ADD PLAYER SHIP //////////////////////////
@@ -56516,10 +56573,24 @@
 			// const secondLevelLoader = new THREE.CubeTextureLoader();
 
 			// Add level 1 gameboard
-			const gameboardlev1 = createGameBoard(level);
+			// const gameboardlev1 = createGameBoard(level);
+
+			
+
+
 			scene.add(gameboardlev1);
 
 			await initShip();
+
+			//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
+			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+			//Generate random positions for each of the tokens
+			tokenCustom.position.set(12, 30, 200);
+			new Box3(); //bounding box
+			// ensure the bounding box is computed for its geometry
+			// this should be done only once (assuming static geometries)
+			tokenCustom.geometry.computeBoundingBox();
+			//tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
 
 			initShipBB();
 
@@ -56738,6 +56809,30 @@
 			levelTokens(level);
 
 		}
+			if (level == 2) {
+				//increase level goal
+				inprogress = true;
+				maxScore = 3;
+				totalTokens = 3;
+				var xCoordinates = [-80, 12, 130];
+				var yCoordinates = [80, 110, 55];
+				var zCoordinates = [500, 800, 1125];
+				animate();
+				for (let i = 0; i < totalTokens; i++) {
+					var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+					tokenCustom.position.set(xCoordinates[i], yCoordinates[i], zCoordinates[i]); //sets location of thetoken to be in a random line location
+					const tokenBox = new Box3(); //bounding box
+					tokenCustom.geometry.computeBoundingBox();
+		
+					new Vector3();
+					tokenBox.getCenter();
+		
+					scene.add(tokenCustom);
+					tokensArray.push(tokenCustom);
+					boxArray.push(tokenBox);
+				}
+		
+			}
 		if (level == 3) {
 			inprogress = true;
 			maxScore = 10;
@@ -57020,78 +57115,56 @@
 		};
 	};
 
-	// Function to add multiple platforms into a gameboard
-	// allow different textures/colours for different sections
-
-	const createGameBoard = (level)=>{
-		if(level==1){
-			return createGameBoardLev1()	
-		}
-	};
-
-	const createGameBoardLev1 = () => {
-
+	const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight, isZAxis) =>{
 		const board = new Group();
 		const platformGeometries = [];
 		const platformBodies = [];
 		let newPlatform;
 		let colorMap;
-
-		colorMap = new TextureLoader().load("./textures/lime_floor.png");
-		newPlatform = placePlatform(createPlatform(1, 50, 50, colorMap), -25, 0, -25);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
-
-		//final wall
+		
+		//ceiling
 		colorMap = new TextureLoader().load("./textures/dark_floor.png");
-		newPlatform = placePlatform(createPlatform(1, 30, 30, colorMap), 25, 0, -25);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
-		colorMap = new TextureLoader().load("./textures/dark_floor.png");
-		newPlatform = placePlatform(createPlatform(1, 20, 20, colorMap), 25, 40, -25);
+		newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y+5*scaleWidth, z-1*scaleHeight);
 		platformGeometries.push(newPlatform.threePlatform);
 		platformBodies.push(newPlatform.cannonPlatform);
 
 		//floor 
 		colorMap = new TextureLoader().load("./textures/lime_floor.png");
-		newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 0, -25);
+		newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
 		platformGeometries.push(newPlatform.threePlatform);
 		platformBodies.push(newPlatform.cannonPlatform);
 		newPlatform.cannonPlatform.id;
 
-		// for (var i = 0; i < 35; i++) {
-		// 	var randX = Math.floor(Math.random() * 250);
-		// 	var randY = Math.floor(Math.random() * 250);
-		// 	var randZ = Math.floor(Math.random() * 100) + 10;
-		// 	colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
-		// 	newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, 30, randY);
-		// 	platformGeometries.push(newPlatform.threePlatform);
-		// 	platformBodies.push(newPlatform.cannonPlatform);
-		// }
+		if (isZAxis) {
+			//world boundaries
+			colorMap = new TextureLoader().load("./textures/light_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*6 -2, colorMap), x+3*scaleLength, y+1, z-1*scaleHeight);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+		
+			colorMap = new TextureLoader().load("./textures/dark_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+		}else {
+			//world boundaries
+			colorMap = new TextureLoader().load("./textures/light_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*6, colorMap), x-1*scaleLength, y, z+4*scaleHeight);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+		
+			colorMap = new TextureLoader().load("./textures/dark_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+		}
 
 
-		//ceiling
-		colorMap = new TextureLoader().load("./textures/dark_floor.png");
-		newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 50, -25);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
-		//world boundaries
-		colorMap = new TextureLoader().load("./textures/light_floor.png");
-		newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -26, 0, 25);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
+		
 
-		colorMap = new TextureLoader().load("./textures/dark_floor.png");
-		newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
-
-
-		// //guide wall block
-		// colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
-		// newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2)
-		// platformGeometries.push(newPlatform.threePlatform)
-		// platformBodies.push(newPlatform.cannonPlatform)
+		// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
+		// token.position.set(20*x,20*y,20*z)
+		// scene.add(token)
 
 		for (let i = 0; i < platformGeometries.length; i++) {
 			board.add(platformGeometries[i]);
@@ -57099,6 +57172,49 @@
 		}
 
 		return board;
+	};
+
+
+	const createTunnelDown = (x,y,z, scaleLength, scaleWidth, scaleHeight) =>{
+		const mazeGroup = new Group();
+		const platformGeometries = [];
+		const platformBodies = [];
+		let newPlatform;
+		let colorMap;
+		
+		colorMap = new TextureLoader().load("./textures/light_floor.png");
+		newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5-1 , colorMap), x+3*scaleLength, y+1, z-1*scaleHeight);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+
+		colorMap = new TextureLoader().load("./textures/dark_floor.png");
+		newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5-1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+
+		colorMap = new TextureLoader().load("./textures/dark_floor.png");
+		newPlatform = placePlatform(createPlatform(scaleLength*5 -1, scaleWidth*1, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+
+		colorMap = new TextureLoader().load("./textures/dark_floor.png");
+		newPlatform = placePlatform(createPlatform(scaleLength*5 -1, scaleWidth*1, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z+1);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+
+		//floor 
+		colorMap = new TextureLoader().load("./textures/lime_floor.png");
+		newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y-5, z-1*scaleHeight);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+		newPlatform.cannonPlatform.id;
+
+		for (let i = 0; i < platformGeometries.length; i++) {
+			mazeGroup.add(platformGeometries[i]);
+			world.addBody(platformBodies[i]);
+		}
+
+		return mazeGroup;
 	};
 
 
