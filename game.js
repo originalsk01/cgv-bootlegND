@@ -1,25 +1,13 @@
 import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import Stats from "three/examples/jsm/libs/stats.module.js";
 import * as CANNON from "cannon-es";
-
 import { threeToCannon, ShapeType } from "three-to-cannon";
-import { DstColorFactor } from "three";
 
 // three.js global vars
 let camera, scene, stats, renderer, clock, controls;
 let shipModel;
-
-
-// var ctx = new AudioContext();
-//   var audio = document.getElementById('myAudio');
-//   var audioSrc = ctx.createMediaElementSource(audio);
-//   var analyser = ctx.createAnalyser();
-
-
-
 
 // global asset paths
 const shipPath =
@@ -151,14 +139,6 @@ class Game {
 
 		stats = new Stats();
 		document.body.appendChild(stats.dom);
-
-		// Normale camera
-		//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 )
-
-		// Normal camera initial position and orientation
-		//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
-		//camera.position.set(0,10,10)
-
 		// Initialise flight camera
 		const fcFielOfView = 75;
 		const fcNear = 0.1;
@@ -284,7 +264,6 @@ class Game {
 			material: groundMaterial,
 		});
 		groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
-		//world.addBody(groundBody)
 
 		//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
 
@@ -326,7 +305,6 @@ class Game {
 			// merge into single super buffer geometry;
 			const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
 			// centre super geometry at local origin
-			//geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
 
 			geometriesTiles.applyMatrix4(new THREE.Matrix4().makeTranslation(-length / 2, -height / 2, -width / 2));
 			geometriesTiles.applyMatrix4(new THREE.Matrix4().makeScale(gridSquareSize, gridSquareSize, gridSquareSize));
@@ -431,14 +409,6 @@ class Game {
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
-
-
-			// //guide wall block
-			// colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
-			// newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2)
-			// platformGeometries.push(newPlatform.threePlatform)
-			// platformBodies.push(newPlatform.cannonPlatform)
-
 			for (let i = 0; i < platformGeometries.length; i++) {
 				board.add(platformGeometries[i]);
 				world.addBody(platformBodies[i]);
@@ -490,13 +460,6 @@ class Game {
 				platformGeometries.push(newPlatform.threePlatform);
 				platformBodies.push(newPlatform.cannonPlatform);
 			}
-
-
-			
-		
-			// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
-			// token.position.set(20*x,20*y,20*z)
-			// scene.add(token)
 		
 			for (let i = 0; i < platformGeometries.length; i++) {
 				board.add(platformGeometries[i]);
@@ -608,10 +571,6 @@ class Game {
 		shipModel = new THREE.Object3D
 		shipModel = await loadModel(shipPath)
 
-		// Rotate children of ship model to correct their orientation
-		//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-		//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-
 		shipModel.applyMatrix4(new THREE.Matrix4().makeScale(1.9, 1.9, 1.9));
 		shipModel.applyMatrix4(new THREE.Matrix4().makeTranslation(-5, 0, -5));
 
@@ -625,10 +584,8 @@ class Game {
 		shipBody = new CANNON.Body({
 			mass: 1,
 			material: slipperyMaterial,
-			//angularFactor: new CANNON.Vec3(0,1,0),
 			shape: threeToCannon(shipModel).shape,
-			//linearDamping: 0.5,
-			//angularDamping: 0.9,
+
 		})
 		shipBody.position.set(0, 10, 0)
 
@@ -687,7 +644,6 @@ class Game {
 		);
 		//Compute initial bounding box
 		playerCustom.geometry.computeBoundingBox();
-		//playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
 
 		var playerCenter = new THREE.Vector3(2, 5, 8);
 		playerCenter = playerBox.getCenter();
@@ -700,12 +656,7 @@ class Game {
 
 		for (let i = 0; i < totalTokens; i++) {
 
-			//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
-			// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
-			// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-			// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
 
-			//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
 			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 			//Generate random positions for each of the tokens
 			tokenCustom.position.set(12, 30, 200);
@@ -754,14 +705,7 @@ function fly() {
 	if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
 		if (keys.w) { pitchSpeed = -1 } else if (keys.s) { pitchSpeed = 1 } else { pitchSpeed = 0 }
 		if (keys.a) { rollSpeed = 0.75 } else if (keys.d) { rollSpeed = -0.75 } else { rollSpeed = 0 }
-		// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
 		if (keys.arrowleft) { rollSpeed += 2 } else if (keys.arrowright) { rollSpeed += -2 } else { rollSpeed += 0 }
-
-		// if (mouseY<0) { pitchSpeed = -1 } else if (mouseY>0) { pitchSpeed = 1 } else { pitchSpeed = 0 }
-
-		// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
-		// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
-		// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
 
 		var directionVector = new CANNON.Vec3(pitchSpeed, yawSpeed, rollSpeed)
 
@@ -821,8 +765,7 @@ function animate() {
 				innerCustomArray[k].material.transparent = true;
 				innerCustomArray[k].material.opacity = 0;
 
-				//tokensArray[k].material.color.lerp();
-
+				
 				tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
 			}
 		}
@@ -876,7 +819,7 @@ function animate() {
 	// take timestep in physics simulation
 	stepPhysicsWorld()
 
-	// // update three.js meshes according to cannon-es simulations
+	// update three.js meshes according to cannon-es simulations
 	updatePhysicsBodies()
 
 	// update flight camera
@@ -887,8 +830,6 @@ function animate() {
 	stats.update()
 	//// render three.js
 
-	//renderer.render(scene, camera)
-	//controls.update()
 	var w = window.innerWidth, h = window.innerHeight;
 
 

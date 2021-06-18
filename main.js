@@ -1,23 +1,5 @@
 import Game from './game.js';
 
-// const intructions = document.getElementById("instance");
-// 	instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
-//     "<h4> (Click anywhere to start)</h4>" +
-//     "<h2>Instructions</h2>"+ 
-//     "<div id='leftHandControls'> <h3> Left Hand controls </h3>" +
-//         "<div>Tilt Left: A</div>" +
-//         "<div>Tilt Right:D</div>"+
-//         "<div>Tilt Up:W</div>"+
-//         "<div>Tilt Down:S</div>"+
-//     "</div>"+
-//     "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
-//     "<div>Turn Left: &#8592</div>" +
-//     "<div>Turn Right:&#8594</div>"+
-//     "<div>Move Forward:&#8593</div>"+
-//     "<div>Move Back:&#8595</div>"+
-//     "</div>"+
-//     "<h4> (Click anywhere to start)</h4>" 
-
 const NewStuff = document.getElementById("instructions");
 
 NewStuff.innerHTML = "<body class='intro'>" + 
@@ -45,12 +27,16 @@ study when they wake up! Youre new to the pilot game but youre a quick learner. 
 "</div>" + 
 "</body>"
 document.addEventListener("click",startGame);
+var gameStart=false
 function startGame(){
+    if(gameStart==false){
     NewStuff.innerHTML = ''
     document.getElementById('instructions').className = '';
     document.body.style.marginTop = 0;
     const game = new Game();
-    game.init();
+    gameStart=true
+        game.init();
+    }
 
 }
 

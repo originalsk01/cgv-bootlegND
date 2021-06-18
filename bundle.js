@@ -56333,7 +56333,7 @@
 
 	//timer variables
 
-	var minutes, seconds, gameStart, gameLoad, endTime;
+	var minutes, seconds, gameStart$1, gameLoad, endTime;
 	var levelDuration = 3;
 	var timeTaken = [0, 0];
 	var inprogress = true;
@@ -56814,7 +56814,7 @@
 			world.addBody(shipBody);
 			var lastCollisionTime = new Date().getTime();
 			shipBody.addEventListener("collide", function (e) {
-				timeTaken = time_taken(gameStart);
+				timeTaken = time_taken(gameStart$1);
 				timeTaken["minutes"];
 				timeTaken["seconds"];
 				const hurtListener = new AudioListener();
@@ -56865,7 +56865,6 @@
 			);
 			//Compute initial bounding box
 			playerCustom.geometry.computeBoundingBox();
-			//playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
 
 			new Vector3(2, 5, 8);
 			playerBox.getCenter();
@@ -56878,12 +56877,7 @@
 
 			for (let i = 0; i < totalTokens; i++) {
 
-				//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
-				// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
-				// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-				// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
 
-				//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
 				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 				//Generate random positions for each of the tokens
 				tokenCustom.position.set(12, 30, 200);
@@ -56909,7 +56903,7 @@
 			clock = new Clock();
 
 			gameLoad = Date.parse(new Date());
-			gameStart = new Date();
+			gameStart$1 = new Date();
 			endTime = new Date(gameLoad + levelDuration * 60 * 1000);
 			animate();
 		}
@@ -56932,14 +56926,7 @@
 		if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
 			if (keys.w) { pitchSpeed = -1; } else if (keys.s) { pitchSpeed = 1; } else { pitchSpeed = 0; }
 			if (keys.a) { rollSpeed = 0.75; } else if (keys.d) { rollSpeed = -0.75; } else { rollSpeed = 0; }
-			// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
 			if (keys.arrowleft) { rollSpeed += 2; } else if (keys.arrowright) { rollSpeed += -2; } else { rollSpeed += 0; }
-
-			// if (mouseY<0) { pitchSpeed = -1 } else if (mouseY>0) { pitchSpeed = 1 } else { pitchSpeed = 0 }
-
-			// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
-			// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
-			// if (keys.a) { yawSpeed = 1 } else if (keys.d){ yawSpeed = -1 } else { yawSpeed = 0 }
 
 			var directionVector = new Vec3(pitchSpeed, yawSpeed, rollSpeed);
 
@@ -56999,8 +56986,7 @@
 					innerCustomArray[k].material.transparent = true;
 					innerCustomArray[k].material.opacity = 0;
 
-					//tokensArray[k].material.color.lerp();
-
+					
 					tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
 				}
 			}
@@ -57012,7 +56998,7 @@
 		minutes = timeRemaining["minutes"];
 		seconds = timeRemaining["seconds"];
 		if (minutes <= 0 && seconds <= 0) {
-			timeTaken = time_taken(gameStart);
+			timeTaken = time_taken(gameStart$1);
 			var minutes_taken = timeTaken["minutes"];
 			var seconds_taken = timeTaken["seconds"];
 			timeTaken[0] = minutes_taken;
@@ -57029,7 +57015,7 @@
 				+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 		}
 		if (tokenScore == maxScore) { // checking if they have won the game
-			timeTaken = time_taken(gameStart);
+			timeTaken = time_taken(gameStart$1);
 			var minutes_taken = timeTaken["minutes"];
 			var seconds_taken = timeTaken["sectimeronds"];
 			timeTaken[0] = minutes_taken;
@@ -57038,7 +57024,7 @@
 
 		}
 		if (health <= 0) {//if the player loses all thier health end the game
-			timeTaken = time_taken(gameStart);
+			timeTaken = time_taken(gameStart$1);
 			var minutes_taken = timeTaken["minutes"];
 			var seconds_taken = timeTaken["seconds"];
 			timeTaken[0] = minutes_taken;
@@ -57054,7 +57040,7 @@
 		// take timestep in physics simulation
 		stepPhysicsWorld();
 
-		// // update three.js meshes according to cannon-es simulations
+		// update three.js meshes according to cannon-es simulations
 		updatePhysicsBodies();
 
 		// update flight camera
@@ -57065,8 +57051,6 @@
 		stats.update();
 		//// render three.js
 
-		//renderer.render(scene, camera)
-		//controls.update()
 		var w = window.innerWidth, h = window.innerHeight;
 
 
@@ -57342,24 +57326,6 @@
 		bar.css('width', healthBarWidth + '%');
 	}
 
-	// const intructions = document.getElementById("instance");
-	// 	instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
-	//     "<h4> (Click anywhere to start)</h4>" +
-	//     "<h2>Instructions</h2>"+ 
-	//     "<div id='leftHandControls'> <h3> Left Hand controls </h3>" +
-	//         "<div>Tilt Left: A</div>" +
-	//         "<div>Tilt Right:D</div>"+
-	//         "<div>Tilt Up:W</div>"+
-	//         "<div>Tilt Down:S</div>"+
-	//     "</div>"+
-	//     "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
-	//     "<div>Turn Left: &#8592</div>" +
-	//     "<div>Turn Right:&#8594</div>"+
-	//     "<div>Move Forward:&#8593</div>"+
-	//     "<div>Move Back:&#8595</div>"+
-	//     "</div>"+
-	//     "<h4> (Click anywhere to start)</h4>" 
-
 	const NewStuff = document.getElementById("instructions");
 
 	NewStuff.innerHTML = "<body class='intro'>" + 
@@ -57384,12 +57350,16 @@ study when they wake up! Youre new to the pilot game but youre a quick learner. 
 	"<p>Move Back: &#8595</p>" + 
 	"<h1>(Click anywhere to start)</h1>";
 	document.addEventListener("click",startGame);
+	var gameStart=false;
 	function startGame(){
+	    if(gameStart==false){
 	    NewStuff.innerHTML = '';
 	    document.getElementById('instructions').className = '';
 	    document.body.style.marginTop = 0;
 	    const game = new Game();
-	    game.init();
+	    gameStart=true;
+	        game.init();
+	    }
 
 	}
 
