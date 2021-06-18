@@ -60,6 +60,71 @@
 		
 		transition: width .5s linear;
 		}
+
+    body{
+		    background: rgb(20, 20, 20);
+        overflow: hidden;
+        margin: 40% 0 0 0;
+        position: relative;
+	  }
+
+
+      .intro {
+        background: rgb(20, 20, 20);
+        overflow: hidden;
+        font-family: 'Roboto';
+
+        margin: 40% 0 0 0;
+        position: relative;
+      }
+
+      .intro::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        width: 100%;
+        height: 50%;
+        background: linear-gradient(
+          180deg,
+          rgba(20, 20, 20, 1) 40%,
+          rgba(20, 20, 20, 0) 100%
+        );
+      }
+
+      .wrapper {
+        display: flex;
+        height: 100%;
+        width: 80%;
+        margin: 0 auto;
+        perspective: 500px;
+      }
+
+      .scroll-text {
+        color: rgb(255, 202, 10);
+        font-size: 2vw;
+        line-height: 1.5em;
+        font-weight: bold;
+        text-align: justify;
+        position: relative;
+        animation: scroll 70s linear infinite;
+      }
+
+      h1,
+      h2,
+      h3 {
+        text-align: center;
+      }
+
+      @keyframes scroll {
+        from {
+          top: 0;
+          transform: translateZ(0) rotateX(4deg);
+        }
+        to {
+          top: -6000px;
+          transform: translateZ(-1000px) rotateX(6deg);
+        }
+      }
 		</style>
 		<script type="module" src="./bundle.js" defer></script>
 
@@ -75,6 +140,7 @@
   <div class="bar">
   	  <div class="hit"></div>
 		<audio id="myAudio" src="DOMN.mp3"></audio>
+		<audio id="myAudiohurt" src="classic_hurt.mp3"></audio>
   </div>
  
 </div>
