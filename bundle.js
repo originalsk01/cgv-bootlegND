@@ -56388,61 +56388,6 @@
 		// //world.addBody(groundBody)
 	}
 
-			// Function to add multiple platforms into a gameboard
-			// allow different textures/colours for different sections
-
-
-			// Starting room
-			// const gameboard = createGameBoard(0,0,0, 0.5,0.5,0.5);
-			// scene.add(gameboard);
-
-
-			
-			// Ring obstacles to  drop tunnel
-			const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
-			scene.add(ringOne);
-
-			const ringTwo = createSquareRing(-10, 5, 50 , 1,1,1, true);
-			scene.add(ringTwo);
-
-			const ringThree = createSquareRing(0, 8, 80 , 1,1,1, true);
-			scene.add(ringThree);
-
-			const ringFour = createSquareRing(13, 2, 110 , 1,1,1, false);
-			scene.add(ringFour);
-
-			const ringFive = createSquareRing(23, 10, 90 , 1,1,1, false);
-			scene.add(ringFive);
-
-			const ringSix = createSquareRing(33, 7, 75 , 1,1,1, true);
-			scene.add(ringSix);
-
-			
-			var tunnel = createTunnelDown(33, -10, 65 ,1 ,1 ,3);
-			scene.add(tunnel);
-
-
-
-
-			// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
-			// scene.add(ringOne)
-
-			// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
-			// scene.add(ringOne)
-
-			// const ringTwo = createSquareRing(10, 0, 20 , 1, 0.8, 0.8, false);
-			// scene.add(ringTwo)
-
-			// const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
-			// scene.add(ringThree)
-
-			// //Drop Tunnel
-			// const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
-			// scene.add(dropTunnel)
-
-			// Room two
-			// const gameboardTwo = createGameBoard(150,160,118, 1,1,1);
-			// scene.add(gameboardTwo);
 
 
 	async function initShip(){
@@ -56575,22 +56520,70 @@
 			// Add level 1 gameboard
 			// const gameboardlev1 = createGameBoard(level);
 
+			//scene.add(gameboardlev1);
+
+
+					// Starting room
+			// const gameboard = createGameBoard(0,0,0, 0.5,0.5,0.5);
+			// scene.add(gameboard);
+
+
 			
+			// Ring obstacles to  drop tunnel
+			const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
+			scene.add(ringOne);
+
+			const ringTwo = createSquareRing(-10, 5, 50 , 1,1,1, true);
+			scene.add(ringTwo);
+
+			const ringThree = createSquareRing(0, 8, 80 , 1,1,1, true);
+			scene.add(ringThree);
+
+			const ringFour = createSquareRing(13, 2, 110 , 1,1,1, false);
+			scene.add(ringFour);
+
+			const ringFive = createSquareRing(23, 10, 90 , 1,1,1, false);
+			scene.add(ringFive);
+
+			const ringSix = createSquareRing(33, 7, 75 , 1,1,1, true);
+			scene.add(ringSix);
+
+			
+			var tunnel = createTunnelDown(33, -10, 65 ,1 ,1 ,3);
+			scene.add(tunnel);
 
 
-			scene.add(gameboardlev1);
+			// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
+			// scene.add(ringOne)
+
+			// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
+			// scene.add(ringOne)
+
+			// const ringTwo = createSquareRing(10, 0, 20 , 1, 0.8, 0.8, false);
+			// scene.add(ringTwo)
+
+			// const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
+			// scene.add(ringThree)
+
+			// //Drop Tunnel
+			// const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
+			// scene.add(dropTunnel)
+
+			// Room two
+			// const gameboardTwo = createGameBoard(150,160,118, 1,1,1);
+			// scene.add(gameboardTwo);
 
 			await initShip();
 
-			//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
-			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-			//Generate random positions for each of the tokens
-			tokenCustom.position.set(12, 30, 200);
-			new Box3(); //bounding box
-			// ensure the bounding box is computed for its geometry
-			// this should be done only once (assuming static geometries)
-			tokenCustom.geometry.computeBoundingBox();
-			//tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
+			// //createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
+			// var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+			// //Generate random positions for each of the tokens
+			// tokenCustom.position.set(12, 30, 200);
+			// const tokenBox = new THREE.Box3(); //bounding box
+			// // ensure the bounding box is computed for its geometry
+			// // this should be done only once (assuming static geometries)
+			// tokenCustom.geometry.computeBoundingBox();
+			// //tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
 
 			initShipBB();
 
@@ -57328,24 +57321,6 @@
 		}
 
 	}
-
-	// const intructions = document.getElementById("instance");
-	// 	instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
-	//     "<h4> (Click anywhere to start)</h4>" +
-	//     "<h2>Instructions</h2>"+ 
-	//     "<div id='leftHandControls'> <h3> Left Hand controls </h3>" +
-	//         "<div>Tilt Left: A</div>" +
-	//         "<div>Tilt Right:D</div>"+
-	//         "<div>Tilt Up:W</div>"+
-	//         "<div>Tilt Down:S</div>"+
-	//     "</div>"+
-	//     "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
-	//     "<div>Turn Left: &#8592</div>" +
-	//     "<div>Turn Right:&#8594</div>"+
-	//     "<div>Move Forward:&#8593</div>"+
-	//     "<div>Move Back:&#8595</div>"+
-	//     "</div>"+
-	//     "<h4> (Click anywhere to start)</h4>" 
 
 	const NewStuff = document.getElementById("instructions");
 
