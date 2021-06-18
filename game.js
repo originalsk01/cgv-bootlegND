@@ -32,6 +32,10 @@ let lastCallTime;
 // player control global variables
 let keys
 
+
+//cubemap
+var cubeCamera = [];
+
 var firstPerson
 
 // flight camera a& controls global variables
@@ -128,6 +132,7 @@ class Game {
 		]);
 		scene.background = skyBoxtexture;
 
+	
 
 
 		// Physics world
@@ -869,6 +874,10 @@ function animate() {
 		//Renderer automaitcally clear before rendering new image so disable temporarily
 		renderer.autoClear = false;
 		renderer.setViewport(w - mapWidth - 20, h - mapHeight - 10, mapWidth, mapHeight);
+		for (var i = 0; i<cubeCamera.length; i++){
+			cubeCamera[i].update(renderer,scene)
+		}
+
 		//Change to minimapCamera 
 		renderer.render(scene, minimapCamera);
 		// minimap (overhead orthogonal camera)
@@ -1083,13 +1092,24 @@ function createToken(
 	//Opacities may be set in order to alter the appearance as well as make the inner object visible
 	var innerGeometry = new THREE.OctahedronBufferGeometry(innerRadius, innerDetail)
 
-	var innerMaterial = new THREE.MeshLambertMaterial({
-		color: innerColour,
-		transparent: true,
-		opacity: innerOpacity,
-	})
+	// var innerMaterial = new THREE.MeshLambertMaterial({
+	// 	color: innerColour,
+	// 	transparent: true,
+	// 	opacity: innerOpacity,
+	// })
+	var cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 128, { format: THREE.RGBFormat, generateMipmaps: true, minFilter:THREE.LinearMipmapLinearFilter } );
+	var cubeCam = new THREE.CubeCamera(.1, 1000, cubeRenderTarget);
+	cubeCamera.push(cubeCam);
 
+	var innerMaterial = new THREE.MeshPhongMaterial({
+		emissive: 0xffffff,
+		shininess: 100,
+		color: 0xffffff,
+		specular: 0xffffff,
+		envMap: cubeRenderTarget.texture
+	  });
 	var innerCustom = new THREE.Mesh(innerGeometry, innerMaterial)
+	innerCustom.add(cubeCam);
 
 	var outerGeometry = new THREE.OctahedronBufferGeometry(
 		outerRadius,
