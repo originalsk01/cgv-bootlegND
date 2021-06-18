@@ -56414,124 +56414,6 @@
 				world.addBody(shipBody);
 	}
 
-				const platformPos = new Vector3();
-				platform.getWorldPosition(platformPos);
-				platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
-
-				return {
-					threePlatform: platform,
-					cannonPlatform: platformBody,
-				};
-			};
-
-			const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight, isZAxis) =>{
-				const board = new Group();
-				const platformGeometries = [];
-				const platformBodies = [];
-				let newPlatform;
-				let colorMap;
-				
-				//ceiling
-				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y+5*scaleWidth, z-1*scaleHeight);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-			
-				//floor 
-				colorMap = new TextureLoader().load("./textures/lime_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-				newPlatform.cannonPlatform.id;
-
-				if (isZAxis) {
-					//world boundaries
-					colorMap = new TextureLoader().load("./textures/light_floor.png");
-					newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*6 -2, colorMap), x+3*scaleLength, y+1, z-1*scaleHeight);
-					platformGeometries.push(newPlatform.threePlatform);
-					platformBodies.push(newPlatform.cannonPlatform);
-				
-					colorMap = new TextureLoader().load("./textures/dark_floor.png");
-					newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
-					platformGeometries.push(newPlatform.threePlatform);
-					platformBodies.push(newPlatform.cannonPlatform);
-				}else {
-					//world boundaries
-					colorMap = new TextureLoader().load("./textures/light_floor.png");
-					newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*6, colorMap), x-1*scaleLength, y, z+4*scaleHeight);
-					platformGeometries.push(newPlatform.threePlatform);
-					platformBodies.push(newPlatform.cannonPlatform);
-				
-					colorMap = new TextureLoader().load("./textures/dark_floor.png");
-					newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
-					platformGeometries.push(newPlatform.threePlatform);
-					platformBodies.push(newPlatform.cannonPlatform);
-				}
-
-
-				
-			
-				// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
-				// token.position.set(20*x,20*y,20*z)
-				// scene.add(token)
-			
-				for (let i = 0; i < platformGeometries.length; i++) {
-					board.add(platformGeometries[i]);
-					world.addBody(platformBodies[i]);
-				}
-			
-				return board;
-			};
-
-			// Starting room
-			// const gameboard = createGameBoard(0,0,0, 0.5,0.5,0.5);
-			// scene.add(gameboard);
-
-
-			
-			// Ring obstacles to  drop tunnel
-			const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
-			scene.add(ringOne);
-
-			const ringTwo = createSquareRing(-10, 5, 50 , 1,1,1, true);
-			scene.add(ringTwo);
-
-			const ringThree = createSquareRing(0, 8, 80 , 1,1,1, true);
-			scene.add(ringThree);
-
-			const ringFour = createSquareRing(13, 2, 110 , 1,1,1, false);
-			scene.add(ringFour);
-
-			const ringFive = createSquareRing(23, 10, 90 , 1,1,1, false);
-			scene.add(ringFive);
-
-			const ringSix = createSquareRing(33, 7, 75 , 1,1,1, true);
-			scene.add(ringSix);
-
-			// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
-			// scene.add(ringOne)
-
-			// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
-			// scene.add(ringOne)
-
-			// const ringTwo = createSquareRing(10, 0, 20 , 1, 0.8, 0.8, false);
-			// scene.add(ringTwo)
-
-			// const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
-			// scene.add(ringThree)
-
-			// //Drop Tunnel
-			// const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
-			// scene.add(dropTunnel)
-
-			// Room two
-			// const gameboardTwo = createGameBoard(150,160,118, 1,1,1);
-			// scene.add(gameboardTwo);
-
-
-
-
-			//////////////// ADD PLAYER SHIP //////////////////////////
 
 	function initShipBB(){
 		//////////////// CREATE SHIP BOUNDING BOX //////////////////
@@ -56918,6 +56800,36 @@
 		shipBody.linearDamping = 0.5;
 		shipBody.angularDamping = 0.9;
 
+	}
+
+
+	//check for token intersection
+	function tokenCollisions(){
+		renderFrames += 1;
+		if (renderFrames >= 10) {
+			//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
+			for (let k = 0; k < tokensArray.length; k++) {
+				boxArray[k]
+					.copy(tokensArray[k].geometry.boundingBox)
+					.applyMatrix4(tokensArray[k].matrixWorld);
+				//Determine if player touches token
+				new Color(0x0000ff);
+				if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
+					tokenScore += 1;
+
+					//Make outer shape of token transparent
+					tokensArray[k].material.transparent = true;
+					tokensArray[k].material.opacity = 0;
+					//Make inner shape of token transparent
+					innerCustomArray[k].material.transparent = true;
+					innerCustomArray[k].material.opacity = 0;
+
+					//tokensArray[k].material.color.lerp();
+
+					tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
+				}
+			}
+		}
 	}
 
 	// random float within range
