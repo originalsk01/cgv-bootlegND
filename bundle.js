@@ -7443,7 +7443,7 @@
 	const _vector2$1 = /*@__PURE__*/ new Vector3();
 	const _normalMatrix = /*@__PURE__*/ new Matrix3();
 
-	class Plane$1 {
+	class Plane {
 
 		constructor( normal = new Vector3( 1, 0, 0 ), constant = 0 ) {
 
@@ -7659,7 +7659,7 @@
 
 	}
 
-	Plane$1.prototype.isPlane = true;
+	Plane.prototype.isPlane = true;
 
 	const _v0$1 = /*@__PURE__*/ new Vector3();
 	const _v1$3 = /*@__PURE__*/ new Vector3();
@@ -7848,7 +7848,7 @@
 			if ( target === undefined ) {
 
 				console.warn( 'THREE.Triangle: .getPlane() target is now required' );
-				target = new Plane$1();
+				target = new Plane();
 
 			}
 
@@ -12174,7 +12174,7 @@
 
 	class Frustum {
 
-		constructor( p0 = new Plane$1(), p1 = new Plane$1(), p2 = new Plane$1(), p3 = new Plane$1(), p4 = new Plane$1(), p5 = new Plane$1() ) {
+		constructor( p0 = new Plane(), p1 = new Plane(), p2 = new Plane(), p3 = new Plane(), p4 = new Plane(), p5 = new Plane() ) {
 
 			this.planes = [ p0, p1, p2, p3, p4, p5 ];
 
@@ -14541,7 +14541,7 @@
 			localClippingEnabled = false,
 			renderingShadows = false;
 
-		const plane = new Plane$1(),
+		const plane = new Plane(),
 			viewNormalMatrix = new Matrix3(),
 
 			uniform = { value: null, needsUpdate: false };
@@ -40333,7 +40333,7 @@
 
 	//
 
-	Plane$1.prototype.isIntersectionLine = function ( line ) {
+	Plane.prototype.isIntersectionLine = function ( line ) {
 
 		console.warn( 'THREE.Plane: .isIntersectionLine() has been renamed to .intersectsLine().' );
 		return this.intersectsLine( line );
@@ -52402,85 +52402,7 @@
 	  }
 
 	}
-
-	/**
-	 * A plane, facing in the Z direction. The plane has its surface at z=0 and everything below z=0 is assumed to be solid plane. To make the plane face in some other direction than z, you must put it inside a Body and rotate that body. See the demos.
-	 * @example
-	 *     const planeShape = new CANNON.Plane()
-	 *     const planeBody = new CANNON.Body({ mass: 0, shape:  planeShape })
-	 *     planeBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0) // make it face up
-	 *     world.addBody(planeBody)
-	 */
-	class Plane extends Shape {
-	  /** worldNormal */
-
-	  /** worldNormalNeedsUpdate */
-	  constructor() {
-	    super({
-	      type: Shape.types.PLANE
-	    }); // World oriented normal
-
-	    this.worldNormal = void 0;
-	    this.worldNormalNeedsUpdate = void 0;
-	    this.boundingSphereRadius = void 0;
-	    this.worldNormal = new Vec3();
-	    this.worldNormalNeedsUpdate = true;
-	    this.boundingSphereRadius = Number.MAX_VALUE;
-	  }
-	  /** computeWorldNormal */
-
-
-	  computeWorldNormal(quat) {
-	    const n = this.worldNormal;
-	    n.set(0, 0, 1);
-	    quat.vmult(n, n);
-	    this.worldNormalNeedsUpdate = false;
-	  }
-
-	  calculateLocalInertia(mass, target = new Vec3()) {
-	    return target;
-	  }
-
-	  volume() {
-	    return (// The plane is infinite...
-	      Number.MAX_VALUE
-	    );
-	  }
-
-	  calculateWorldAABB(pos, quat, min, max) {
-	    // The plane AABB is infinite, except if the normal is pointing along any axis
-	    tempNormal.set(0, 0, 1); // Default plane normal is z
-
-	    quat.vmult(tempNormal, tempNormal);
-	    const maxVal = Number.MAX_VALUE;
-	    min.set(-maxVal, -maxVal, -maxVal);
-	    max.set(maxVal, maxVal, maxVal);
-
-	    if (tempNormal.x === 1) {
-	      max.x = pos.x;
-	    } else if (tempNormal.x === -1) {
-	      min.x = pos.x;
-	    }
-
-	    if (tempNormal.y === 1) {
-	      max.y = pos.y;
-	    } else if (tempNormal.y === -1) {
-	      min.y = pos.y;
-	    }
-
-	    if (tempNormal.z === 1) {
-	      max.z = pos.z;
-	    } else if (tempNormal.z === -1) {
-	      min.z = pos.z;
-	    }
-	  }
-
-	  updateBoundingSphereRadius() {
-	    this.boundingSphereRadius = Number.MAX_VALUE;
-	  }
-
-	}
-	const tempNormal = new Vec3();
+	new Vec3();
 	new Vec3();
 	new Vec3();
 	new Vec3();
@@ -56275,11 +56197,17 @@
 	  shapeB: null
 	};
 
-	var x=function(){var t,e,n,i,r=new Vector3;function o(){this.tolerance=-1,this.faces=[],this.newFaces=[],this.assigned=new d,this.unassigned=new d,this.vertices=[];}function s(){this.normal=new Vector3,this.midpoint=new Vector3,this.area=0,this.constant=0,this.outside=null,this.mark=0,this.edge=null;}function p(t,e){this.vertex=t,this.prev=null,this.next=null,this.twin=null,this.face=e;}function f(t){this.point=t,this.prev=null,this.next=null,this.face=null;}function d(){this.head=null,this.tail=null;}return Object.assign(o.prototype,{setFromPoints:function(t){!0!==Array.isArray(t)&&console.error("THREE.ConvexHull: Points parameter is not an array."),t.length<4&&console.error("THREE.ConvexHull: The algorithm needs at least four points."),this.makeEmpty();for(var e=0,n=t.length;e<n;e++)this.vertices.push(new f(t[e]));return this.compute(),this},setFromObject:function(t){var e=[];return t.updateMatrixWorld(!0),t.traverse(function(t){var n,i,r,o=t.geometry;if(void 0!==o&&(o.isGeometry&&(o=o.toBufferGeometry?o.toBufferGeometry():(new BufferGeometry).fromGeometry(o)),o.isBufferGeometry)){var s=o.attributes.position;if(void 0!==s)for(n=0,i=s.count;n<i;n++)(r=new Vector3).fromBufferAttribute(s,n).applyMatrix4(t.matrixWorld),e.push(r);}}),this.setFromPoints(e)},containsPoint:function(t){for(var e=this.faces,n=0,i=e.length;n<i;n++)if(e[n].distanceToPoint(t)>this.tolerance)return !1;return !0},intersectRay:function(t,e){for(var n=this.faces,i=-Infinity,r=Infinity,o=0,s=n.length;o<s;o++){var a=n[o],u=a.distanceToPoint(t.origin),h=a.normal.dot(t.direction);if(u>0&&h>=0)return null;var c=0!==h?-u/h:0;if(!(c<=0)&&(h>0?r=Math.min(c,r):i=Math.max(c,i),i>r))return null}return t.at(-Infinity!==i?i:r,e),e},intersectsRay:function(t){return null!==this.intersectRay(t,r)},makeEmpty:function(){return this.faces=[],this.vertices=[],this},addVertexToFace:function(t,e){return t.face=e,null===e.outside?this.assigned.append(t):this.assigned.insertBefore(e.outside,t),e.outside=t,this},removeVertexFromFace:function(t,e){return t===e.outside&&(e.outside=null!==t.next&&t.next.face===e?t.next:null),this.assigned.remove(t),this},removeAllVerticesFromFace:function(t){if(null!==t.outside){for(var e=t.outside,n=t.outside;null!==n.next&&n.next.face===t;)n=n.next;return this.assigned.removeSubList(e,n),e.prev=n.next=null,t.outside=null,e}},deleteFaceVertices:function(t,e){var n=this.removeAllVerticesFromFace(t);if(void 0!==n)if(void 0===e)this.unassigned.appendChain(n);else {var i=n;do{var r=i.next;e.distanceToPoint(i.point)>this.tolerance?this.addVertexToFace(i,e):this.unassigned.append(i),i=r;}while(null!==i)}return this},resolveUnassignedPoints:function(t){if(!1===this.unassigned.isEmpty()){var e=this.unassigned.first();do{for(var n=e.next,i=this.tolerance,r=null,o=0;o<t.length;o++){var s=t[o];if(0===s.mark){var a=s.distanceToPoint(e.point);if(a>i&&(i=a,r=s),i>1e3*this.tolerance)break}}null!==r&&this.addVertexToFace(e,r),e=n;}while(null!==e)}return this},computeExtremes:function(){var t,e,n,i=new Vector3,r=new Vector3,o=[],s=[];for(t=0;t<3;t++)o[t]=s[t]=this.vertices[0];for(i.copy(this.vertices[0].point),r.copy(this.vertices[0].point),t=0,e=this.vertices.length;t<e;t++){var u=this.vertices[t],h=u.point;for(n=0;n<3;n++)h.getComponent(n)<i.getComponent(n)&&(i.setComponent(n,h.getComponent(n)),o[n]=u);for(n=0;n<3;n++)h.getComponent(n)>r.getComponent(n)&&(r.setComponent(n,h.getComponent(n)),s[n]=u);}return this.tolerance=3*Number.EPSILON*(Math.max(Math.abs(i.x),Math.abs(r.x))+Math.max(Math.abs(i.y),Math.abs(r.y))+Math.max(Math.abs(i.z),Math.abs(r.z))),{min:o,max:s}},computeInitialHull:function(){void 0===t&&(t=new Line3,e=new Plane$1,n=new Vector3);var i,r,o,u,l,p,f,d,m,g=this.vertices,x=this.computeExtremes(),v=x.min,w=x.max,y=0,b=0;for(p=0;p<3;p++)(m=w[p].point.getComponent(p)-v[p].point.getComponent(p))>y&&(y=m,b=p);for(y=0,t.set((r=v[b]).point,(o=w[b]).point),p=0,f=this.vertices.length;p<f;p++)(i=g[p])!==r&&i!==o&&(t.closestPointToPoint(i.point,!0,n),(m=n.distanceToSquared(i.point))>y&&(y=m,u=i));for(y=-1,e.setFromCoplanarPoints(r.point,o.point,u.point),p=0,f=this.vertices.length;p<f;p++)(i=g[p])!==r&&i!==o&&i!==u&&(m=Math.abs(e.distanceToPoint(i.point)))>y&&(y=m,l=i);var T=[];if(e.distanceToPoint(l.point)<0)for(T.push(s.create(r,o,u),s.create(l,o,r),s.create(l,u,o),s.create(l,r,u)),p=0;p<3;p++)d=(p+1)%3,T[p+1].getEdge(2).setTwin(T[0].getEdge(d)),T[p+1].getEdge(1).setTwin(T[d+1].getEdge(0));else for(T.push(s.create(r,u,o),s.create(l,r,o),s.create(l,o,u),s.create(l,u,r)),p=0;p<3;p++)d=(p+1)%3,T[p+1].getEdge(2).setTwin(T[0].getEdge((3-p)%3)),T[p+1].getEdge(0).setTwin(T[d+1].getEdge(1));for(p=0;p<4;p++)this.faces.push(T[p]);for(p=0,f=g.length;p<f;p++)if((i=g[p])!==r&&i!==o&&i!==u&&i!==l){y=this.tolerance;var F=null;for(d=0;d<4;d++)(m=this.faces[d].distanceToPoint(i.point))>y&&(y=m,F=this.faces[d]);null!==F&&this.addVertexToFace(i,F);}return this},reindexFaces:function(){for(var t=[],e=0;e<this.faces.length;e++){var n=this.faces[e];0===n.mark&&t.push(n);}return this.faces=t,this},nextVertexToAdd:function(){if(!1===this.assigned.isEmpty()){var t,e=0,n=this.assigned.first().face,i=n.outside;do{var r=n.distanceToPoint(i.point);r>e&&(e=r,t=i),i=i.next;}while(null!==i&&i.face===n);return t}},computeHorizon:function(t,e,n,i){var r;this.deleteFaceVertices(n),n.mark=1,r=null===e?e=n.getEdge(0):e.next;do{var o=r.twin,s=o.face;0===s.mark&&(s.distanceToPoint(t)>this.tolerance?this.computeHorizon(t,o,s,i):i.push(r)),r=r.next;}while(r!==e);return this},addAdjoiningFace:function(t,e){var n=s.create(t,e.tail(),e.head());return this.faces.push(n),n.getEdge(-1).setTwin(e.twin),n.getEdge(0)},addNewFaces:function(t,e){this.newFaces=[];for(var n=null,i=null,r=0;r<e.length;r++){var o=this.addAdjoiningFace(t,e[r]);null===n?n=o:o.next.setTwin(i),this.newFaces.push(o.face),i=o;}return n.next.setTwin(i),this},addVertexToHull:function(t){var e=[];return this.unassigned.clear(),this.removeVertexFromFace(t,t.face),this.computeHorizon(t.point,null,t.face,e),this.addNewFaces(t,e),this.resolveUnassignedPoints(this.newFaces),this},cleanup:function(){return this.assigned.clear(),this.unassigned.clear(),this.newFaces=[],this},compute:function(){var t;for(this.computeInitialHull();void 0!==(t=this.nextVertexToAdd());)this.addVertexToHull(t);return this.reindexFaces(),this.cleanup(),this}}),Object.assign(s,{create:function(t,e,n){var i=new s,r=new p(t,i),o=new p(e,i),a=new p(n,i);return r.next=a.prev=o,o.next=r.prev=a,a.next=o.prev=r,i.edge=r,i.compute()}}),Object.assign(s.prototype,{getEdge:function(t){for(var e=this.edge;t>0;)e=e.next,t--;for(;t<0;)e=e.prev,t++;return e},compute:function(){void 0===i&&(i=new Triangle);var t=this.edge.tail(),e=this.edge.head(),n=this.edge.next.head();return i.set(t.point,e.point,n.point),i.getNormal(this.normal),i.getMidpoint(this.midpoint),this.area=i.getArea(),this.constant=this.normal.dot(this.midpoint),this},distanceToPoint:function(t){return this.normal.dot(t)-this.constant}}),Object.assign(p.prototype,{head:function(){return this.vertex},tail:function(){return this.prev?this.prev.vertex:null},length:function(){var t=this.head(),e=this.tail();return null!==e?e.point.distanceTo(t.point):-1},lengthSquared:function(){var t=this.head(),e=this.tail();return null!==e?e.point.distanceToSquared(t.point):-1},setTwin:function(t){return this.twin=t,t.twin=this,this}}),Object.assign(d.prototype,{first:function(){return this.head},last:function(){return this.tail},clear:function(){return this.head=this.tail=null,this},insertBefore:function(t,e){return e.prev=t.prev,e.next=t,null===e.prev?this.head=e:e.prev.next=e,t.prev=e,this},insertAfter:function(t,e){return e.prev=t,e.next=t.next,null===e.next?this.tail=e:e.next.prev=e,t.next=e,this},append:function(t){return null===this.head?this.head=t:this.tail.next=t,t.prev=this.tail,t.next=null,this.tail=t,this},appendChain:function(t){for(null===this.head?this.head=t:this.tail.next=t,t.prev=this.tail;null!==t.next;)t=t.next;return this.tail=t,this},remove:function(t){return null===t.prev?this.head=t.next:t.prev.next=t.next,null===t.next?this.tail=t.prev:t.next.prev=t.prev,this},removeSubList:function(t,e){return null===t.prev?this.head=e.next:t.prev.next=e.next,null===e.next?this.tail=t.prev:e.next.prev=t.prev,this},isEmpty:function(){return null===this.head}}),o}();const v=new Vector3,w=new Vector3,y=new Quaternion$1;function b(t){const e=function(t){const e=[];return t.traverse(function(t){t.isMesh&&e.push(t);}),e}(t);if(0===e.length)return null;if(1===e.length)return T(e[0]);let n;const i=[];for(;n=e.pop();)i.push(B(T(n)));return function(t){let e=0;for(let n=0;n<t.length;n++){const i=t[n].attributes.position;i&&3===i.itemSize&&(e+=i.count);}const n=new Float32Array(3*e);let i=0;for(let e=0;e<t.length;e++){const r=t[e].attributes.position;if(r&&3===r.itemSize)for(let t=0;t<r.count;t++)n[i++]=r.getX(t),n[i++]=r.getY(t),n[i++]=r.getZ(t);}return (new BufferGeometry).setAttribute("position",new BufferAttribute(n,3))}(i)}function T(t){let e=t.geometry;return e=e.toBufferGeometry?e.toBufferGeometry():e.clone(),t.updateMatrixWorld(),t.matrixWorld.decompose(v,y,w),e.scale(w.x,w.y,w.z),e}function F(t){const e=t.attributes.position,n=new Float32Array(3*e.count);for(let t=0;t<e.count;t+=3)n[t]=e.getX(t),n[t+1]=e.getY(t),n[t+2]=e.getZ(t);return n}function E(t,e){switch(e){case"x":return t.x;case"y":return t.y;case"z":return t.z}throw new Error(`Unexpected component ${e}`)}function B(t,e=1e-4){e=Math.max(e,Number.EPSILON);const n={},i=t.getIndex(),r=t.getAttribute("position"),o=i?i.count:r.count;let s=0;const a=[],h=[],c=Math.log10(1/e),l=Math.pow(10,c);for(let t=0;t<o;t++){const e=i?i.getX(t):t;let o="";o+=~~(r.getX(e)*l)+",",o+=~~(r.getY(e)*l)+",",o+=~~(r.getZ(e)*l)+",",o in n?a.push(n[o]):(h.push(r.getX(e)),h.push(r.getY(e)),h.push(r.getZ(e)),n[o]=s,a.push(s),s++);}const p=new BufferAttribute(new Float32Array(h),r.itemSize,r.normalized),d=new BufferGeometry;return d.setAttribute("position",p),d.setIndex(a),d}const M=Math.PI/2;var P;!function(t){t.BOX="Box",t.CYLINDER="Cylinder",t.SPHERE="Sphere",t.HULL="ConvexPolyhedron",t.MESH="Trimesh";}(P||(P={}));const S=function(a,u={}){let h;if(u.type===P.BOX)return C(a);if(u.type===P.CYLINDER)return function(e,n){const i=["x","y","z"],o=n.cylinderAxis||"y",s=i.splice(i.indexOf(o),1)&&i,a=(new Box3).setFromObject(e);if(!isFinite(a.min.lengthSq()))return null;const u=a.max[o]-a.min[o],h=.5*Math.max(E(a.max,s[0])-E(a.min,s[0]),E(a.max,s[1])-E(a.min,s[1])),c=new Cylinder(h,h,u,12);c.radiusTop=h,c.radiusBottom=h,c.height=u,c.numSegments=12;const l="y"===o?M:0,p="z"===o?M:0;return {shape:c,orientation:(new Quaternion).setFromEuler(l,p,0,"XYZ").normalize()}}(a,u);if(u.type===P.SPHERE)return function(t,e){if(e.sphereRadius)return {shape:new Sphere(e.sphereRadius)};const n=b(t);return n?(n.computeBoundingSphere(),{shape:new Sphere(n.boundingSphere.radius)}):null}(a,u);if(u.type===P.HULL)return function(t){const e=b(t);if(!e)return null;const r=1e-4;for(let t=0;t<e.attributes.position.count;t++)e.attributes.position.setXYZ(t,e.attributes.position.getX(t)+(Math.random()-.5)*r,e.attributes.position.getY(t)+(Math.random()-.5)*r,e.attributes.position.getZ(t)+(Math.random()-.5)*r);const o=(new x).setFromObject(new Mesh(e)).faces,s=[],a=[];for(let t=0;t<o.length;t++){const e=o[t],i=[];a.push(i);let r=e.edge;do{const t=r.head().point;s.push(new Vec3(t.x,t.y,t.z)),i.push(s.length-1),r=r.next;}while(r!==e.edge)}return {shape:new ConvexPolyhedron({vertices:s,faces:a})}}(a);if(u.type===P.MESH)return h=b(a),h?function(t){const e=F(t);if(!e.length)return null;const n=Object.keys(e).map(Number);return {shape:new Trimesh(e,n)}}(h):null;if(u.type)throw new Error(`[CANNON.threeToCannon] Invalid type "${u.type}".`);if(h=b(a),!h)return null;switch(h.type){case"BoxGeometry":case"BoxBufferGeometry":return z(h);case"CylinderGeometry":case"CylinderBufferGeometry":return function(e){const n=e.parameters,i=new Cylinder(n.radiusTop,n.radiusBottom,n.height,n.radialSegments);return i.radiusTop=n.radiusTop,i.radiusBottom=n.radiusBottom,i.height=n.height,i.numSegments=n.radialSegments,{shape:i,orientation:(new Quaternion).setFromEuler(MathUtils.degToRad(-90),0,0,"XYZ").normalize()}}(h);case"PlaneGeometry":case"PlaneBufferGeometry":return function(t){t.computeBoundingBox();const i=t.boundingBox;return {shape:new Box(new Vec3((i.max.x-i.min.x)/2||.1,(i.max.y-i.min.y)/2||.1,(i.max.z-i.min.z)/2||.1))}}(h);case"SphereGeometry":case"SphereBufferGeometry":return function(t){return {shape:new Sphere(t.parameters.radius)}}(h);case"TubeGeometry":case"BufferGeometry":return C(a);default:return console.warn('Unrecognized geometry: "%s". Using bounding box as shape.',h.type),z(h)}};function z(t){if(!F(t).length)return null;t.computeBoundingBox();const i=t.boundingBox;return {shape:new Box(new Vec3((i.max.x-i.min.x)/2,(i.max.y-i.min.y)/2,(i.max.z-i.min.z)/2))}}function C(t){const i=t.clone();i.quaternion.set(0,0,0,1),i.updateMatrixWorld();const r=(new Box3).setFromObject(i);if(!isFinite(r.min.lengthSq()))return null;const o=new Box(new Vec3((r.max.x-r.min.x)/2,(r.max.y-r.min.y)/2,(r.max.z-r.min.z)/2)),s=r.translate(i.position.negate()).getCenter(new Vector3);return {shape:o,offset:s.lengthSq()?new Vec3(s.x,s.y,s.z):void 0}}
+	var x=function(){var t,e,n,i,r=new Vector3;function o(){this.tolerance=-1,this.faces=[],this.newFaces=[],this.assigned=new d,this.unassigned=new d,this.vertices=[];}function s(){this.normal=new Vector3,this.midpoint=new Vector3,this.area=0,this.constant=0,this.outside=null,this.mark=0,this.edge=null;}function p(t,e){this.vertex=t,this.prev=null,this.next=null,this.twin=null,this.face=e;}function f(t){this.point=t,this.prev=null,this.next=null,this.face=null;}function d(){this.head=null,this.tail=null;}return Object.assign(o.prototype,{setFromPoints:function(t){!0!==Array.isArray(t)&&console.error("THREE.ConvexHull: Points parameter is not an array."),t.length<4&&console.error("THREE.ConvexHull: The algorithm needs at least four points."),this.makeEmpty();for(var e=0,n=t.length;e<n;e++)this.vertices.push(new f(t[e]));return this.compute(),this},setFromObject:function(t){var e=[];return t.updateMatrixWorld(!0),t.traverse(function(t){var n,i,r,o=t.geometry;if(void 0!==o&&(o.isGeometry&&(o=o.toBufferGeometry?o.toBufferGeometry():(new BufferGeometry).fromGeometry(o)),o.isBufferGeometry)){var s=o.attributes.position;if(void 0!==s)for(n=0,i=s.count;n<i;n++)(r=new Vector3).fromBufferAttribute(s,n).applyMatrix4(t.matrixWorld),e.push(r);}}),this.setFromPoints(e)},containsPoint:function(t){for(var e=this.faces,n=0,i=e.length;n<i;n++)if(e[n].distanceToPoint(t)>this.tolerance)return !1;return !0},intersectRay:function(t,e){for(var n=this.faces,i=-Infinity,r=Infinity,o=0,s=n.length;o<s;o++){var a=n[o],u=a.distanceToPoint(t.origin),h=a.normal.dot(t.direction);if(u>0&&h>=0)return null;var c=0!==h?-u/h:0;if(!(c<=0)&&(h>0?r=Math.min(c,r):i=Math.max(c,i),i>r))return null}return t.at(-Infinity!==i?i:r,e),e},intersectsRay:function(t){return null!==this.intersectRay(t,r)},makeEmpty:function(){return this.faces=[],this.vertices=[],this},addVertexToFace:function(t,e){return t.face=e,null===e.outside?this.assigned.append(t):this.assigned.insertBefore(e.outside,t),e.outside=t,this},removeVertexFromFace:function(t,e){return t===e.outside&&(e.outside=null!==t.next&&t.next.face===e?t.next:null),this.assigned.remove(t),this},removeAllVerticesFromFace:function(t){if(null!==t.outside){for(var e=t.outside,n=t.outside;null!==n.next&&n.next.face===t;)n=n.next;return this.assigned.removeSubList(e,n),e.prev=n.next=null,t.outside=null,e}},deleteFaceVertices:function(t,e){var n=this.removeAllVerticesFromFace(t);if(void 0!==n)if(void 0===e)this.unassigned.appendChain(n);else {var i=n;do{var r=i.next;e.distanceToPoint(i.point)>this.tolerance?this.addVertexToFace(i,e):this.unassigned.append(i),i=r;}while(null!==i)}return this},resolveUnassignedPoints:function(t){if(!1===this.unassigned.isEmpty()){var e=this.unassigned.first();do{for(var n=e.next,i=this.tolerance,r=null,o=0;o<t.length;o++){var s=t[o];if(0===s.mark){var a=s.distanceToPoint(e.point);if(a>i&&(i=a,r=s),i>1e3*this.tolerance)break}}null!==r&&this.addVertexToFace(e,r),e=n;}while(null!==e)}return this},computeExtremes:function(){var t,e,n,i=new Vector3,r=new Vector3,o=[],s=[];for(t=0;t<3;t++)o[t]=s[t]=this.vertices[0];for(i.copy(this.vertices[0].point),r.copy(this.vertices[0].point),t=0,e=this.vertices.length;t<e;t++){var u=this.vertices[t],h=u.point;for(n=0;n<3;n++)h.getComponent(n)<i.getComponent(n)&&(i.setComponent(n,h.getComponent(n)),o[n]=u);for(n=0;n<3;n++)h.getComponent(n)>r.getComponent(n)&&(r.setComponent(n,h.getComponent(n)),s[n]=u);}return this.tolerance=3*Number.EPSILON*(Math.max(Math.abs(i.x),Math.abs(r.x))+Math.max(Math.abs(i.y),Math.abs(r.y))+Math.max(Math.abs(i.z),Math.abs(r.z))),{min:o,max:s}},computeInitialHull:function(){void 0===t&&(t=new Line3,e=new Plane,n=new Vector3);var i,r,o,u,l,p,f,d,m,g=this.vertices,x=this.computeExtremes(),v=x.min,w=x.max,y=0,b=0;for(p=0;p<3;p++)(m=w[p].point.getComponent(p)-v[p].point.getComponent(p))>y&&(y=m,b=p);for(y=0,t.set((r=v[b]).point,(o=w[b]).point),p=0,f=this.vertices.length;p<f;p++)(i=g[p])!==r&&i!==o&&(t.closestPointToPoint(i.point,!0,n),(m=n.distanceToSquared(i.point))>y&&(y=m,u=i));for(y=-1,e.setFromCoplanarPoints(r.point,o.point,u.point),p=0,f=this.vertices.length;p<f;p++)(i=g[p])!==r&&i!==o&&i!==u&&(m=Math.abs(e.distanceToPoint(i.point)))>y&&(y=m,l=i);var T=[];if(e.distanceToPoint(l.point)<0)for(T.push(s.create(r,o,u),s.create(l,o,r),s.create(l,u,o),s.create(l,r,u)),p=0;p<3;p++)d=(p+1)%3,T[p+1].getEdge(2).setTwin(T[0].getEdge(d)),T[p+1].getEdge(1).setTwin(T[d+1].getEdge(0));else for(T.push(s.create(r,u,o),s.create(l,r,o),s.create(l,o,u),s.create(l,u,r)),p=0;p<3;p++)d=(p+1)%3,T[p+1].getEdge(2).setTwin(T[0].getEdge((3-p)%3)),T[p+1].getEdge(0).setTwin(T[d+1].getEdge(1));for(p=0;p<4;p++)this.faces.push(T[p]);for(p=0,f=g.length;p<f;p++)if((i=g[p])!==r&&i!==o&&i!==u&&i!==l){y=this.tolerance;var F=null;for(d=0;d<4;d++)(m=this.faces[d].distanceToPoint(i.point))>y&&(y=m,F=this.faces[d]);null!==F&&this.addVertexToFace(i,F);}return this},reindexFaces:function(){for(var t=[],e=0;e<this.faces.length;e++){var n=this.faces[e];0===n.mark&&t.push(n);}return this.faces=t,this},nextVertexToAdd:function(){if(!1===this.assigned.isEmpty()){var t,e=0,n=this.assigned.first().face,i=n.outside;do{var r=n.distanceToPoint(i.point);r>e&&(e=r,t=i),i=i.next;}while(null!==i&&i.face===n);return t}},computeHorizon:function(t,e,n,i){var r;this.deleteFaceVertices(n),n.mark=1,r=null===e?e=n.getEdge(0):e.next;do{var o=r.twin,s=o.face;0===s.mark&&(s.distanceToPoint(t)>this.tolerance?this.computeHorizon(t,o,s,i):i.push(r)),r=r.next;}while(r!==e);return this},addAdjoiningFace:function(t,e){var n=s.create(t,e.tail(),e.head());return this.faces.push(n),n.getEdge(-1).setTwin(e.twin),n.getEdge(0)},addNewFaces:function(t,e){this.newFaces=[];for(var n=null,i=null,r=0;r<e.length;r++){var o=this.addAdjoiningFace(t,e[r]);null===n?n=o:o.next.setTwin(i),this.newFaces.push(o.face),i=o;}return n.next.setTwin(i),this},addVertexToHull:function(t){var e=[];return this.unassigned.clear(),this.removeVertexFromFace(t,t.face),this.computeHorizon(t.point,null,t.face,e),this.addNewFaces(t,e),this.resolveUnassignedPoints(this.newFaces),this},cleanup:function(){return this.assigned.clear(),this.unassigned.clear(),this.newFaces=[],this},compute:function(){var t;for(this.computeInitialHull();void 0!==(t=this.nextVertexToAdd());)this.addVertexToHull(t);return this.reindexFaces(),this.cleanup(),this}}),Object.assign(s,{create:function(t,e,n){var i=new s,r=new p(t,i),o=new p(e,i),a=new p(n,i);return r.next=a.prev=o,o.next=r.prev=a,a.next=o.prev=r,i.edge=r,i.compute()}}),Object.assign(s.prototype,{getEdge:function(t){for(var e=this.edge;t>0;)e=e.next,t--;for(;t<0;)e=e.prev,t++;return e},compute:function(){void 0===i&&(i=new Triangle);var t=this.edge.tail(),e=this.edge.head(),n=this.edge.next.head();return i.set(t.point,e.point,n.point),i.getNormal(this.normal),i.getMidpoint(this.midpoint),this.area=i.getArea(),this.constant=this.normal.dot(this.midpoint),this},distanceToPoint:function(t){return this.normal.dot(t)-this.constant}}),Object.assign(p.prototype,{head:function(){return this.vertex},tail:function(){return this.prev?this.prev.vertex:null},length:function(){var t=this.head(),e=this.tail();return null!==e?e.point.distanceTo(t.point):-1},lengthSquared:function(){var t=this.head(),e=this.tail();return null!==e?e.point.distanceToSquared(t.point):-1},setTwin:function(t){return this.twin=t,t.twin=this,this}}),Object.assign(d.prototype,{first:function(){return this.head},last:function(){return this.tail},clear:function(){return this.head=this.tail=null,this},insertBefore:function(t,e){return e.prev=t.prev,e.next=t,null===e.prev?this.head=e:e.prev.next=e,t.prev=e,this},insertAfter:function(t,e){return e.prev=t,e.next=t.next,null===e.next?this.tail=e:e.next.prev=e,t.next=e,this},append:function(t){return null===this.head?this.head=t:this.tail.next=t,t.prev=this.tail,t.next=null,this.tail=t,this},appendChain:function(t){for(null===this.head?this.head=t:this.tail.next=t,t.prev=this.tail;null!==t.next;)t=t.next;return this.tail=t,this},remove:function(t){return null===t.prev?this.head=t.next:t.prev.next=t.next,null===t.next?this.tail=t.prev:t.next.prev=t.prev,this},removeSubList:function(t,e){return null===t.prev?this.head=e.next:t.prev.next=e.next,null===e.next?this.tail=t.prev:e.next.prev=t.prev,this},isEmpty:function(){return null===this.head}}),o}();const v=new Vector3,w=new Vector3,y=new Quaternion$1;function b(t){const e=function(t){const e=[];return t.traverse(function(t){t.isMesh&&e.push(t);}),e}(t);if(0===e.length)return null;if(1===e.length)return T(e[0]);let n;const i=[];for(;n=e.pop();)i.push(B(T(n)));return function(t){let e=0;for(let n=0;n<t.length;n++){const i=t[n].attributes.position;i&&3===i.itemSize&&(e+=i.count);}const n=new Float32Array(3*e);let i=0;for(let e=0;e<t.length;e++){const r=t[e].attributes.position;if(r&&3===r.itemSize)for(let t=0;t<r.count;t++)n[i++]=r.getX(t),n[i++]=r.getY(t),n[i++]=r.getZ(t);}return (new BufferGeometry).setAttribute("position",new BufferAttribute(n,3))}(i)}function T(t){let e=t.geometry;return e=e.toBufferGeometry?e.toBufferGeometry():e.clone(),t.updateMatrixWorld(),t.matrixWorld.decompose(v,y,w),e.scale(w.x,w.y,w.z),e}function F(t){const e=t.attributes.position,n=new Float32Array(3*e.count);for(let t=0;t<e.count;t+=3)n[t]=e.getX(t),n[t+1]=e.getY(t),n[t+2]=e.getZ(t);return n}function E(t,e){switch(e){case"x":return t.x;case"y":return t.y;case"z":return t.z}throw new Error(`Unexpected component ${e}`)}function B(t,e=1e-4){e=Math.max(e,Number.EPSILON);const n={},i=t.getIndex(),r=t.getAttribute("position"),o=i?i.count:r.count;let s=0;const a=[],h=[],c=Math.log10(1/e),l=Math.pow(10,c);for(let t=0;t<o;t++){const e=i?i.getX(t):t;let o="";o+=~~(r.getX(e)*l)+",",o+=~~(r.getY(e)*l)+",",o+=~~(r.getZ(e)*l)+",",o in n?a.push(n[o]):(h.push(r.getX(e)),h.push(r.getY(e)),h.push(r.getZ(e)),n[o]=s,a.push(s),s++);}const p=new BufferAttribute(new Float32Array(h),r.itemSize,r.normalized),d=new BufferGeometry;return d.setAttribute("position",p),d.setIndex(a),d}const M=Math.PI/2;var P;!function(t){t.BOX="Box",t.CYLINDER="Cylinder",t.SPHERE="Sphere",t.HULL="ConvexPolyhedron",t.MESH="Trimesh";}(P||(P={}));const S=function(a,u={}){let h;if(u.type===P.BOX)return C(a);if(u.type===P.CYLINDER)return function(e,n){const i=["x","y","z"],o=n.cylinderAxis||"y",s=i.splice(i.indexOf(o),1)&&i,a=(new Box3).setFromObject(e);if(!isFinite(a.min.lengthSq()))return null;const u=a.max[o]-a.min[o],h=.5*Math.max(E(a.max,s[0])-E(a.min,s[0]),E(a.max,s[1])-E(a.min,s[1])),c=new Cylinder(h,h,u,12);c.radiusTop=h,c.radiusBottom=h,c.height=u,c.numSegments=12;const l="y"===o?M:0,p="z"===o?M:0;return {shape:c,orientation:(new Quaternion).setFromEuler(l,p,0,"XYZ").normalize()}}(a,u);if(u.type===P.SPHERE)return function(t,e){if(e.sphereRadius)return {shape:new Sphere(e.sphereRadius)};const n=b(t);return n?(n.computeBoundingSphere(),{shape:new Sphere(n.boundingSphere.radius)}):null}(a,u);if(u.type===P.HULL)return function(t){const e=b(t);if(!e)return null;const r=1e-4;for(let t=0;t<e.attributes.position.count;t++)e.attributes.position.setXYZ(t,e.attributes.position.getX(t)+(Math.random()-.5)*r,e.attributes.position.getY(t)+(Math.random()-.5)*r,e.attributes.position.getZ(t)+(Math.random()-.5)*r);const o=(new x).setFromObject(new Mesh(e)).faces,s=[],a=[];for(let t=0;t<o.length;t++){const e=o[t],i=[];a.push(i);let r=e.edge;do{const t=r.head().point;s.push(new Vec3(t.x,t.y,t.z)),i.push(s.length-1),r=r.next;}while(r!==e.edge)}return {shape:new ConvexPolyhedron({vertices:s,faces:a})}}(a);if(u.type===P.MESH)return h=b(a),h?function(t){const e=F(t);if(!e.length)return null;const n=Object.keys(e).map(Number);return {shape:new Trimesh(e,n)}}(h):null;if(u.type)throw new Error(`[CANNON.threeToCannon] Invalid type "${u.type}".`);if(h=b(a),!h)return null;switch(h.type){case"BoxGeometry":case"BoxBufferGeometry":return z(h);case"CylinderGeometry":case"CylinderBufferGeometry":return function(e){const n=e.parameters,i=new Cylinder(n.radiusTop,n.radiusBottom,n.height,n.radialSegments);return i.radiusTop=n.radiusTop,i.radiusBottom=n.radiusBottom,i.height=n.height,i.numSegments=n.radialSegments,{shape:i,orientation:(new Quaternion).setFromEuler(MathUtils.degToRad(-90),0,0,"XYZ").normalize()}}(h);case"PlaneGeometry":case"PlaneBufferGeometry":return function(t){t.computeBoundingBox();const i=t.boundingBox;return {shape:new Box(new Vec3((i.max.x-i.min.x)/2||.1,(i.max.y-i.min.y)/2||.1,(i.max.z-i.min.z)/2||.1))}}(h);case"SphereGeometry":case"SphereBufferGeometry":return function(t){return {shape:new Sphere(t.parameters.radius)}}(h);case"TubeGeometry":case"BufferGeometry":return C(a);default:return console.warn('Unrecognized geometry: "%s". Using bounding box as shape.',h.type),z(h)}};function z(t){if(!F(t).length)return null;t.computeBoundingBox();const i=t.boundingBox;return {shape:new Box(new Vec3((i.max.x-i.min.x)/2,(i.max.y-i.min.y)/2,(i.max.z-i.min.z)/2))}}function C(t){const i=t.clone();i.quaternion.set(0,0,0,1),i.updateMatrixWorld();const r=(new Box3).setFromObject(i);if(!isFinite(r.min.lengthSq()))return null;const o=new Box(new Vec3((r.max.x-r.min.x)/2,(r.max.y-r.min.y)/2,(r.max.z-r.min.z)/2)),s=r.translate(i.position.negate()).getCenter(new Vector3);return {shape:o,offset:s.lengthSq()?new Vec3(s.x,s.y,s.z):void 0}}
 
 	// three.js global vars
-	let scene, stats, renderer, clock;
+	let scene, stats, renderer, axes, gridHelper;
+	let ambientLight, dirLight;
 	let shipModel;
+	const gridSize = 500;
+	const gridDivisions = 50;
+	// Size of one unit for world coordinates if Grid used as basis
+	const gridSquareSize = gridSize / gridDivisions;
+
 
 
 	// var ctx = new AudioContext();
@@ -56343,8 +56271,6 @@
 	var tokenScore = 0;
 	var maxScore = 1;
 
-
-
 	var level = 1;
 	// var levelOneComplete = false
 	//health bar
@@ -56355,461 +56281,173 @@
 	var healthBarWidth = (health / totalHealth) * 100;
 	bar.css('width', healthBarWidth + '%');
 
-	var playonce = true;
+	// Cannon materials
+	let groundMaterial, slipperyMaterial;
 
-	class Game {
+	function initThreeScene(){
+		// Scene
+		scene = new Scene();
 
-		async init() {
-			////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+		stats = new Stats();
+		document.body.appendChild(stats.dom);
 
-			//get html elements
-			document.getElementById("timer");
+		// Axes Helper
+		axes = new AxesHelper(100);
+		scene.add(axes);
 
-			// Scene
-			scene = new Scene();
+		// X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
+		gridHelper = new GridHelper(gridSize, gridDivisions);
+		scene.add(gridHelper);
 
-			//Skybox
+		// Initialise flight camera
+		flightCamera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-			const secondLevelLoader = new CubeTextureLoader();
-			const gloomyskyBoxtexture = secondLevelLoader.load([
-				"textures/penguins/arid_ft.jpg",
-				"textures/penguins/arid_bk.jpg",
-				"textures/penguins/arid_up.jpg",
-				"textures/penguins/arid_dn.jpg",
-				"textures/penguins/arid_rt.jpg",
-				"textures/penguins/arid_lf.jpg",
-			]);
+		//Initialise Minimap Camera
+		minimapCamera = new OrthographicCamera(
+			window.innerWidth / -4,		// Left
+			window.innerWidth / 4,		// Right
+			window.innerHeight / 4,		// Top
+			window.innerHeight / -4,	// Bottom
+			-100,            			// Near 
+			10000						// Far
+		);           			 
+		minimapCamera.up = new Vector3(0, 0, -1);
+		minimapCamera.position.y = 5;
+		minimapCamera.lookAt(new Vector3(0, -1, 0));
+		scene.add(minimapCamera);
 
-			scene.background = gloomyskyBoxtexture;
+		// Lights
+		ambientLight = new AmbientLight(0xffffff, 0.6);
+		scene.add(ambientLight);
 
-			//Skybox
-			const skyBoxLoader = new CubeTextureLoader();
-			const skyBoxtexture = skyBoxLoader.load([
-				"textures/skybox/indigo_ft.jpg",
-				"textures/skybox/indigo_bk.jpg",
-				"textures/skybox/indigo_up.jpg",
-				"textures/skybox/indigo_dn.jpg",
-				"textures/skybox/indigo_rt.jpg",
-				"textures/skybox/indigo_lf.jpg",
-			]);
-			scene.background = skyBoxtexture;
+		dirLight = new DirectionalLight(0xffffff);
+		dirLight.position.set(0, 200, 100);
+		dirLight.castShadow = true;
+		dirLight.shadow.camera.top = 180;
+		dirLight.shadow.camera.bottom = -100;
+		dirLight.shadow.camera.left = -120;
+		dirLight.shadow.camera.right = 120;
+		scene.add(dirLight);
+	}
 
 
-
-			// Physics world
-			world = new World({
-				// gravity: new CANNON.Vec3(0, -9.81, 0), // m/s²
-			});
-			//world.gravity.set(0, -20, 0)
-			world.gravity.set(0, 0, 0);
-			world.broadphase = new NaiveBroadphase(); // Detect coilliding objects
-			world.solver.iterations = 5; // collision detection sampling rate
-
-			stats = new Stats();
-			document.body.appendChild(stats.dom);
-
-			// Normale camera
-			//camera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 1000 )
-
-			// Normal camera initial position and orientation
-			//camera.quaternion.setFromAxisAngle(new CANNON.Vec3(0,1,0), Math.PI)
-			//camera.position.set(0,10,10)
-
-			// Initialise flight camera
-			const fcFielOfView = 75;
-			const fcNear = 0.1;
-			const fcFar = 1000;
-
-			flightCamera = new PerspectiveCamera(fcFielOfView, window.innerWidth / window.innerHeight, fcNear, fcFar);
-
-			//Initialise Minimap Camera
-			minimapCamera = new OrthographicCamera(
-				window.innerWidth / -4,		// Left
-				window.innerWidth / 4,		// Right
-				window.innerHeight / 4,		// Top
-				window.innerHeight / -4,	// Bottom
-				-100,            			// Near 
-				10000);           			// Far 
-			minimapCamera.up = new Vector3(0, 0, -1);
-			minimapCamera.position.y = 5;
-			minimapCamera.lookAt(new Vector3(0, -1, 0));
-			scene.add(minimapCamera);
-
-			// Renderer
-			renderer = new WebGLRenderer({ antialias: true });
-			renderer.setClearColor(blue);
-			renderer.setPixelRatio(window.devicePixelRatio);
-			renderer.setSize(window.innerWidth, window.innerHeight);
-			//renderer.setSize(2*window.innerWidth/3, 2*window.innerHeight/3)
-			window.addEventListener("resize", onWindowResize, false);
-			document.body.appendChild(renderer.domElement);
-
-			//add some background music
-			if (playonce) {
-				const listener = new AudioListener();
-				flightCamera.add(listener);
-
-				// create a global audio source
-				const sound = new Audio(listener);
-
-				// load a sound and set it as the Audio object's buffer
-				const audioLoader = new AudioLoader();
-				audioLoader.load('DOMN.mp3', function (buffer) {
-					sound.setBuffer(buffer);
-					sound.setLoop(true);
-					sound.setVolume(0.2);
-					if (!sound.isPlaying) {
-						sound.play();
+	function initCannonWorld(){
+				// Physics world
+				world = new World({});
+				world.gravity.set(0, 0, 0);
+				world.broadphase = new NaiveBroadphase(); // Detect coilliding objects
+		
+				// Materials
+				groundMaterial = new Material("groundMaterial");
+		
+				// Adjust constraint equation parameters for ground/ground contact
+				const ground_ground_cm = new ContactMaterial(
+					groundMaterial,
+					groundMaterial,
+					{
+						friction: 0.4,
+						restitution: 0.3,
+						contactEquationStiffness: 1e8,
+						contactEquationRelaxation: 3,
+						frictionEquationStiffness: 1e8,
+						frictionEquationRegularizationTime: 3,
 					}
-				});
-				playonce = false;
-			}
-			// Axes Helper
-			const axes = new AxesHelper(100);
-			scene.add(axes);
-
-			// X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
-			const gridSize = 500;
-			const gridDivisions = 50;
-			const gridHelper = new GridHelper(gridSize, gridDivisions);
-			scene.add(gridHelper);
-
-
-			// Size of one unit for world coordinates if Grid used as basis
-			const gridSquareSize = gridSize / gridDivisions;
-
-			// Lights
-			const ambientLight = new AmbientLight(0xffffff, 0.6);
-			scene.add(ambientLight);
-
-			const dirLight = new DirectionalLight(0xffffff);
-			dirLight.position.set(0, 200, 100);
-			dirLight.castShadow = true;
-			dirLight.shadow.camera.top = 180;
-			dirLight.shadow.camera.bottom = -100;
-			dirLight.shadow.camera.left = -120;
-			dirLight.shadow.camera.right = 120;
-			scene.add(dirLight);
-
-			// Materials
-			const groundMaterial = new Material("groundMaterial");
-
-			// Adjust constraint equation parameters for ground/ground contact
-			const ground_ground_cm = new ContactMaterial(
-				groundMaterial,
-				groundMaterial,
-				{
-
-					friction: 0.4,
-					restitution: 0.3,
-					contactEquationStiffness: 1e8,
-					contactEquationRelaxation: 3,
-					frictionEquationStiffness: 1e8,
-					frictionEquationRegularizationTime: 3,
-
-				}
-			);
-
-			// Add contact material to the world
-			world.addContactMaterial(ground_ground_cm);
-
-			// Create a slippery material (friction coefficient = 0.0)
-			const slipperyMaterial = new Material("slipperyMaterial");
-
-			// The ContactMaterial defines what happens when two materials meet.
-			// In this case we want friction coefficient = 0.0 when the slippery material touches ground.
-			const slippery_ground_cm = new ContactMaterial(
-				groundMaterial,
-				slipperyMaterial,
-				{
-
-					friction: 0.0,
-					restitution: 0.3,
-					contactEquationStiffness: 1e8,
-					contactEquationRelaxation: 3,
-				}
-			);
-
-			// We must add the contact materials to the world
-			world.addContactMaterial(slippery_ground_cm);
-
-			// Create a static ground plane for the ground
-			const groundBody = new Body({
-				type: Body.STATIC, // can also be achieved by setting the mass to 0
-				shape: new Plane(),
-				material: groundMaterial,
-			});
-			groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
-			//world.addBody(groundBody)
-
-			//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
-
-			// Function to create a platform of size legth by width in world units
-			// out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
-			// your machine would otherwise die if it tried to render this many grouped objects normally
-			const createPlatform = (length, width, height, tileColorMap) => {
-				const tiles = [];
-
-				const tileGeometry = new BoxGeometry(1, 1, 1);
-
-				//const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
-				const tileMaterial = new MeshPhongMaterial({ map: tileColorMap });
-
-				const midpointOffset = 0.5;
-
-				for (let y = 0; y < height; y++) {
-
-
-					const ypos = y + midpointOffset;
-					for (let x = 0; x < length; x++) {
-
-						const xpos = x + midpointOffset;
-						for (let z = 0; z < width; z++) {
-
-							const zpos = z + midpointOffset;
-							// instead of creating a new geometry, we just clone the bufferGeometry instance
-							const newTile = tileGeometry.clone();
-							//const y =  0 //getRandomInt(0,5)
-							newTile.applyMatrix4(
-								new Matrix4().makeTranslation(xpos, ypos, zpos)
-							);
-							// then, we push this bufferGeometry instance in our array
-							tiles.push(newTile);
-						}
+				);
+		
+				// Add contact material to the world
+				world.addContactMaterial(ground_ground_cm);
+		
+				// Create a slippery material (friction coefficient = 0.0)
+				slipperyMaterial = new Material("slipperyMaterial");
+		
+				// The ContactMaterial defines what happens when two materials meet.
+				// In this case we want friction coefficient = 0.0 when the slippery material touches ground.
+				const slippery_ground_cm = new ContactMaterial(
+					groundMaterial,
+					slipperyMaterial,
+					{
+						friction: 0.0,
+						restitution: 0.3,
+						contactEquationStiffness: 1e8,
+						contactEquationRelaxation: 3,
 					}
-				}
+				);
+		
+				// We must add the contact materials to the world
+				world.addContactMaterial(slippery_ground_cm);
+		
+				// // Create a static ground plane for the ground
+				// const groundBody = new CANNON.Body({
+				// 	type: CANNON.Body.STATIC, // can also be achieved by setting the mass to 0
+				// 	shape: new CANNON.Plane(),
+				// 	material: groundMaterial,
+				// });
+				// groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0); // make it face up
+				// //world.addBody(groundBody)
+	}
 
-				// merge into single super buffer geometry;
-				const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
-				// centre super geometry at local origin
-				//geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
-
-				geometriesTiles.applyMatrix4(new Matrix4().makeTranslation(-length / 2, -height / 2, -width / 2));
-				geometriesTiles.applyMatrix4(new Matrix4().makeScale(gridSquareSize, gridSquareSize, gridSquareSize));
-
-
-				// create one mega big platform mesh from super geometry
-				const platform = new Mesh(geometriesTiles, tileMaterial);
-
-				// place lower left corner of platform mesh  at X-Z (0,0)
-				platform.translateX((gridSquareSize * length) / 2);
-				platform.translateZ((gridSquareSize * width) / 2);
-				platform.translateY((gridSquareSize * height) / 2);
-
-
-				return platform;
-			};
-
-			// Function to set platform postition in gameboard coordinates in world
-			const placePlatform = (platform, x, y, z) => {
-				// translate platform in world coordinates
-				x = x * gridSquareSize;
-				y = y * gridSquareSize;
-				z = z * gridSquareSize;
-				platform.applyMatrix4(new Matrix4().makeTranslation(x, y, z));
-
-				// create cannon body for platform
-				const platformBody = new Body({
-					type: Body.STATIC,
-					material: groundMaterial,
-					shape: S(platform, { type: P.BOX }).shape,
+	async function initShip(){
+				//////////////// ADD PLAYER SHIP //////////////////////////
+				shipModel = new Object3D;
+				shipModel = await loadModel(shipPath);
+		
+				shipModel.applyMatrix4(new Matrix4().makeScale(1.9, 1.9, 1.9));
+				shipModel.applyMatrix4(new Matrix4().makeTranslation(-5, 0, -5));
+		
+				scene.add(shipModel);
+				shipModel.add(flightCamera);
+		
+				flightCamera.position.set(0, 4, 7.5);
+		
+				// create cannon body for ship
+				shipBody = new Body({
+					mass: 1,
+					material: slipperyMaterial,
+					//angularFactor: new CANNON.Vec3(0,1,0),
+					shape: S(shipModel).shape,
+					//linearDamping: 0.5,
+					//angularDamping: 0.9,
 				});
+				shipBody.position.set(0, 10, 0);
+		
+				shipBody.quaternion.setFromAxisAngle(new Vec3(0, 1, 0), Math.PI);
+				world.addBody(shipBody);
+	}
 
-				const platformPos = new Vector3();
-				platform.getWorldPosition(platformPos);
-				platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
 
-				return {
-					threePlatform: platform,
-					cannonPlatform: platformBody,
-				};
-			};
+	function initShipBB(){
+		//////////////// CREATE SHIP BOUNDING BOX //////////////////
+		playerGeometry = new BoxGeometry(2, 2, 2);
+		playerBox = new Box3(); //bounding box
+		playerMaterial = new MeshLambertMaterial({
+			color: 0xff0000,
+			transparent: true,
+			opacity: 0,
+		});
+		playerCustom = new Mesh(playerGeometry, playerMaterial);
+		playerCustom.position.set(
+			shipModel.position.x,
+			shipModel.position.y,
+			shipModel.position.z
+		);
+		//Compute initial bounding box
+		playerCustom.geometry.computeBoundingBox();
 
-			// Function to add multiple platforms into a gameboard
-			// allow different textures/colours for different sections
-			const createGameBoard = ( x, y , z, scaleLength, scaleWidth, scaleHeight,) => {
+		scene.add(playerCustom);
+		playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
 
-				const board = new Group();
-				const platformGeometries = [];
-				const platformBodies = [];
-				let newPlatform;
-				let colorMap;
 
-				colorMap = new TextureLoader().load("./textures/lime_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*50, scaleHeight*50, colorMap), x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-
-				//final wall
-				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*50, scaleHeight*40, colorMap),x+ scaleLength*25,y+ scaleLength*0,z+ scaleHeight*-25);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-
-				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*45, scaleHeight*20, colorMap),x+ scaleLength*25,y+ scaleLength*40,z+ scaleHeight*-35);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-
-				//floor 
-				colorMap = new TextureLoader().load("./textures/lime_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*50, scaleWidth*50, scaleHeight*1, colorMap),x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-				newPlatform.cannonPlatform.id;
-
-				for (var i = 0; i < 30; i++) {
-					var randX = getRandomInt(-25, 0);
-					var randY = getRandomInt(0, 50);
-					getRandomInt(-25, 0);
-					colorMap = new TextureLoader().load("./textures/blue_floor.png");
-					newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, randY, randY);
-					platformGeometries.push(newPlatform.threePlatform);
-					platformBodies.push(newPlatform.cannonPlatform);
-				}
+		
 
 
 
+	}
 
-				//ceiling
-				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*50, scaleWidth*50, scaleHeight*1, colorMap),x+ scaleLength*-25,y+ scaleLength*50,z+ scaleHeight*-25);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-				//world boundaries
-				colorMap = new TextureLoader().load("./textures/light_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*51, scaleWidth*1, scaleHeight*51, colorMap),x+ scaleLength*-26,y+ scaleLength*0,z+ scaleHeight*25);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-
-				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*51, scaleWidth*1, scaleHeight*51, colorMap),x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-
-
-
-				// //guide wall block
-				// colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
-				// newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2)
-				// platformGeometries.push(newPlatform.threePlatform)
-				// platformBodies.push(newPlatform.cannonPlatform)
-
-				for (let i = 0; i < platformGeometries.length; i++) {
-					board.add(platformGeometries[i]);
-					world.addBody(platformBodies[i]);
-				}
-
-				return board;
-			};
-
-			const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight) =>{
-				const board = new Group();
-				const platformGeometries = [];
-				const platformBodies = [];
-				let newPlatform;
-				let colorMap;
-				
-				//ceiling
-				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y+5*scaleWidth, z-1*scaleHeight);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-				//world boundaries
-				colorMap = new TextureLoader().load("./textures/light_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*6, colorMap), x-1*scaleLength, y, z+4*scaleHeight);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-			
-				colorMap = new TextureLoader().load("./textures/dark_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*5, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-			
-				//floor 
-				colorMap = new TextureLoader().load("./textures/lime_floor.png");
-				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
-				platformGeometries.push(newPlatform.threePlatform);
-				platformBodies.push(newPlatform.cannonPlatform);
-				newPlatform.cannonPlatform.id;
-			
-				// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
-				// token.position.set(20*x,20*y,20*z)
-				// scene.add(token)
-			
-				for (let i = 0; i < platformGeometries.length; i++) {
-					board.add(platformGeometries[i]);
-					world.addBody(platformBodies[i]);
-				}
-			
-				return board;
-			};
-
-			// Starting room
-			const gameboard = createGameBoard(0,0,0, 1,1,1);
-			scene.add(gameboard);
-
-
-			
-			// Ring obstacles to  drop tunnel
-			const ringOne = createSquareRing(50, 60, 18 , 1,1,1);
-			scene.add(ringOne);
-
-			const ringTwo = createSquareRing(70, 40, 21 , 1, 0.8, 0.8);
-			scene.add(ringTwo);
-
-			const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
-			scene.add(ringThree);
-
-			//Drop Tunnel
-			const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
-			scene.add(dropTunnel);
-
-			// Room two
-			// const gameboardTwo = createGameBoard(150,160,118, 1,1,1);
-			// scene.add(gameboardTwo);
-
-
-
-
-			//////////////// ADD PLAYER SHIP //////////////////////////
-
-
-			shipModel = new Object3D;
-			shipModel = await loadModel(shipPath);
-
-			// Rotate children of ship model to correct their orientation
-			//shipModel.children[0].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-			//shipModel.children[1].quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0), Math.PI);
-
-			shipModel.applyMatrix4(new Matrix4().makeScale(1.9, 1.9, 1.9));
-			shipModel.applyMatrix4(new Matrix4().makeTranslation(-5, 0, -5));
-
-			scene.add(shipModel);
-			shipModel.add(flightCamera);
-
-			flightCamera.position.set(0, 4, 7.5);
-			
-
-			// create cannon body for ship
-			shipBody = new Body({
-				mass: 1,
-				material: slipperyMaterial,
-				//angularFactor: new CANNON.Vec3(0,1,0),
-				shape: S(shipModel).shape,
-				//linearDamping: 0.5,
-				//angularDamping: 0.9,
-			});
-			shipBody.position.set(0, 10, 0);
-
-			shipBody.quaternion.setFromAxisAngle(new Vec3(0, 1, 0), Math.PI);
-			world.addBody(shipBody);
+	function initShipCollisions(){
+		shipBody.addEventListener("collide", function (e) {
 			var lastCollisionTime = new Date().getTime();
-			shipBody.addEventListener("collide", function (e) {
-				timeTaken = time_taken(gameStart);
-				timeTaken["minutes"];
-				timeTaken["seconds"];
-				const hurtListener = new AudioListener();
+			timeTaken = time_taken(gameStart);
+			const hurtListener = new AudioListener();
 			flightCamera.add(hurtListener);
 
 			// create a global audio source
@@ -56817,94 +56455,85 @@
 
 			// load a sound and set it as the Audio object's buffer
 			const hurtLoader = new AudioLoader();
+
 			hurtLoader.load('classic_hurt.mp3', function (buffer) {
 				hurtSound.setBuffer(buffer);
 				hurtSound.setLoop(false);
 				hurtSound.setVolume(0.2);
 				hurtSound.play();
 			});
-				if (lastCollisionTime + 2000 < new Date().getTime()) {
-					var damage = 5;
-					updateHealth(damage);
-					lastCollisionTime = new Date().getTime();
-				}
 
-				
-
-
-			});
+			if (lastCollisionTime + 2000 < new Date().getTime()) {
+				var damage = 5;
+				updateHealth(damage);
+				lastCollisionTime = new Date().getTime();
+			}
+		});
+	}
 
 
-			// Initialize ship keyboard control
+	class Game {
 
+		async initGame() {
+			
+			////////// INITIALIZE THREE.JS SCENE AND CANNON-ES PHYSICS WORLD //////////////////
+
+			//get html elements
+			document.getElementById("timer");
+
+			initThreeScene();
+
+			initCannonWorld();
+
+			initRenderer();
+
+			//add some background music
+			// if (playonce) {
+			// 	const listener = new THREE.AudioListener();
+			// 	flightCamera.add(listener);
+
+			// 	// create a global audio source
+			// 	const sound = new THREE.Audio(listener);
+
+			// 	// load a sound and set it as the Audio object's buffer
+			// 	const audioLoader = new THREE.AudioLoader();
+			// 	audioLoader.load('DOMN.mp3', function (buffer) {
+			// 		sound.setBuffer(buffer);
+			// 		sound.setLoop(true);
+			// 		sound.setVolume(0.2);
+			// 		if (!sound.isPlaying) {
+			// 			sound.play();
+			// 		}
+			// 	});
+			// 	playonce = false
+			// }
+
+			//Add level 1 skybox
+			const skyBoxLoader = new CubeTextureLoader();
+			setSkyBox(skyBoxLoader,level);
+			// const secondLevelLoader = new THREE.CubeTextureLoader();
+
+			// Add level 1 gameboard
+			const gameboardlev1 = createGameBoard(level);
+			scene.add(gameboardlev1);
+
+			await initShip();
+
+			initShipBB();
+
+			initShipCollisions();
+
+			levelTokens(level);
+		
 			initShipControls();
 
-
-
-			//////////////// CREATE SHIP BOUNDING BOX //////////////////
-			playerGeometry = new BoxGeometry(2, 2, 2);
-			playerBox = new Box3(); //bounding box
-			playerMaterial = new MeshLambertMaterial({
-				color: 0xff0000,
-				transparent: true,
-				opacity: 0,
-			});
-			playerCustom = new Mesh(playerGeometry, playerMaterial);
-			playerCustom.position.set(
-				shipModel.position.x,
-				shipModel.position.y,
-				shipModel.position.z
-			);
-			//Compute initial bounding box
-			playerCustom.geometry.computeBoundingBox();
-			//playerBox.copy( playerCustom.geometry.boundingBox ).applyMatrix4( playerCustom.matrixWorld );
-
-			new Vector3(2, 5, 8);
-			playerBox.getCenter();
-
-			scene.add(playerCustom);
-			playerBox.copy(playerCustom.geometry.boundingBox).applyMatrix4(playerCustom.matrixWorld);
-
-			//////////////// ADD THE TOKENS //////////////////
-			//Create tokens
-
-			for (let i = 0; i < totalTokens; i++) {
-
-				//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
-				// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
-				// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
-				// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
-
-				//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
-				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-				tokenCustom.position.set(0, 20, 20);
-				const tokenBox = new Box3(); //bounding box
-				// ensure the bounding box is computed for its geometry
-				// this should be done only once (assuming static geometries)
-				tokenCustom.geometry.computeBoundingBox();
-				//tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
-
-				//Calculate center of token just for debugging
-				new Vector3();
-				tokenBox.getCenter();
-
-				scene.add(tokenCustom);
-
-				//Since the bounding box for each token must be computed within the animation loop,
-				//we create the tokens and boxes as empty here and add them floorto their respective arrays,
-				//which can be looped through and each token and box can be accessed within the animation loop.
-				tokensArray.push(tokenCustom);
-				boxArray.push(tokenBox);
-			}
-
-			clock = new Clock();
+			new Clock();
 
 			gameLoad = Date.parse(new Date());
 			gameStart = new Date();
 			endTime = new Date(gameLoad + levelDuration * 60 * 1000);
 			animate();
 		}
-
 	}
 
 
@@ -56944,6 +56573,44 @@
 	}
 
 
+	async function setSkyBox(cubeLoader,level){
+		if(level==1){
+			const skyBoxtexture = cubeLoader.load([
+				"textures/skybox/indigo_ft.jpg",
+				"textures/skybox/indigo_bk.jpg",
+				"textures/skybox/indigo_up.jpg",
+				"textures/skybox/indigo_dn.jpg",
+				"textures/skybox/indigo_rt.jpg",
+				"textures/skybox/indigo_lf.jpg",
+			]);
+			scene.background = skyBoxtexture;
+		}
+		else if(level==2){
+			const gloomyskyBoxtexture = cubeLoader.load([
+				"textures/penguins/arid_ft.jpg",
+				"textures/penguins/arid_bk.jpg",
+				"textures/penguins/arid_up.jpg",
+				"textures/penguins/arid_dn.jpg",
+				"textures/penguins/arid_rt.jpg",
+				"textures/penguins/arid_lf.jpg",
+			]);
+			scene.background = gloomyskyBoxtexture;
+		}
+		else;
+	}
+
+
+	// Renderer
+	function initRenderer(){
+		renderer = new WebGLRenderer({ antialias: true });
+		renderer.setClearColor(blue);
+		renderer.setPixelRatio(window.devicePixelRatio);
+		renderer.setSize(window.innerWidth, window.innerHeight);
+		window.addEventListener("resize", onWindowResize, false);
+		document.body.appendChild(renderer.domElement);
+	}
+
+
 	function switchView() {
 		let thirdPersonCam = new Vector3(0, 4, 7.5);
 		let fp = new Vec3(0, 0, -3);
@@ -56956,9 +56623,7 @@
 	}
 
 	function animate() {
-
-		renderFrames += 1;
-
+		
 		if (inprogress == true) {
 			//request render scene at every frame
 			requestAnimationFrame(animate);
@@ -56967,79 +56632,9 @@
 			gameEnd();
 		}
 
-		/*************************************************************************************************************/
+		tokenCollisions();
 
-
-		//check for token intersection
-		if (renderFrames >= 10) {
-			//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
-			for (let k = 0; k < tokensArray.length; k++) {
-				boxArray[k]
-					.copy(tokensArray[k].geometry.boundingBox)
-					.applyMatrix4(tokensArray[k].matrixWorld);
-				//Determine if player touches token
-				new Color(0x0000ff);
-				if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
-					tokenScore += 1;
-
-					//Make outer shape of token transparent
-					tokensArray[k].material.transparent = true;
-					tokensArray[k].material.opacity = 0;
-					//Make inner shape of token transparent
-					innerCustomArray[k].material.transparent = true;
-					innerCustomArray[k].material.opacity = 0;
-
-					//tokensArray[k].material.color.lerp();
-
-					tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
-				}
-			}
-		}
-
-
-		//update timertimer
-		var timeRemaining = time_remaining(endTime);
-		minutes = timeRemaining["minutes"];
-		seconds = timeRemaining["seconds"];
-		if (minutes <= 0 && seconds <= 0) {
-			timeTaken = time_taken(gameStart);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["seconds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-		}
-		if (minutes > 0 && seconds > 30 && inprogress) {
-			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
-				+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
-		}
-
-		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
-			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
-				+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
-		}
-		if (tokenScore == maxScore) { // checking if they have won the game
-			timeTaken = time_taken(gameStart);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["sectimeronds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-
-		}
-		if (health <= 0) {//if the player loses all thier health end the game
-			timeTaken = time_taken(gameStart);
-			var minutes_taken = timeTaken["minutes"];
-			var seconds_taken = timeTaken["seconds"];
-			timeTaken[0] = minutes_taken;
-			timeTaken[1] = seconds_taken;
-			inprogress = false;
-		}
-
-
-
-		/************************************************************************************************************************** */
-
+		updateTimer();
 
 		// take timestep in physics simulation
 		stepPhysicsWorld();
@@ -57050,15 +56645,12 @@
 		// update flight camera
 		fly();
 		// models animations
-		clock.getDelta();
 
 		stats.update();
-		//// render three.js
 
 		//renderer.render(scene, camera)
 		//controls.update()
 		var w = window.innerWidth, h = window.innerHeight;
-
 
 		renderer.setViewport(0, 0, w, h);
 		// renderer.clear()
@@ -57071,8 +56663,6 @@
 		renderer.render(scene, minimapCamera);
 		// minimap (overhead orthogonal camera)
 		//  lower_left_x, lower_left_y, viewport_width, viewport_height
-
-
 	}
 
 	// Update projection when viewing window is resized
@@ -57126,7 +56716,8 @@
 		return model.scene.children[0]
 	}
 
-	const timer = document.getElementById("timer");
+	// const timer = document.getElementById("timer");
+
 	function nextLevel() {
 		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
 			+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
@@ -57136,22 +56727,8 @@
 			inprogress = true;
 			maxScore = 5;
 			totalTokens = 5;
-
 			animate();
-			for (let i = 0; i < totalTokens; i++) {
-				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-				var randomZ = Math.floor(Math.random() * 250);
-				tokenCustom.position.set(5, 25, randomZ); //sets location of thetoken to be in a random line location
-				const tokenBox = new Box3(); //bounding box
-				tokenCustom.geometry.computeBoundingBox();
-
-				new Vector3();
-				tokenBox.getCenter();
-
-				scene.add(tokenCustom);
-				tokensArray.push(tokenCustom);
-				boxArray.push(tokenBox);
-			}
+			levelTokens(level);
 
 		}
 		if (level == 3) {
@@ -57160,20 +56737,7 @@
 			totalTokens = 10;
 
 			animate();
-			for (let i = 0; i < totalTokens; i++) {
-				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-				var randomZ = Math.floor(Math.random() * 250);
-				tokenCustom.position.set(5, 25, randomZ);
-				const tokenBox = new Box3(); //bounding box
-				tokenCustom.geometry.computeBoundingBox();
-
-				new Vector3();
-				tokenBox.getCenter();
-
-				scene.add(tokenCustom);
-				tokensArray.push(tokenCustom);
-				boxArray.push(tokenBox);
-			}
+			levelTokens(level);
 		}
 		if (level == 4) { //end of the game
 			timer.innerHTML = "<h1>Game Complete</h1>" + "<h2>Time Taken</h2>"
@@ -57211,7 +56775,6 @@
 			if (keys[key] !== undefined) keys[key] = false;
 
 		});
-		
 
 		document.addEventListener('mousemove', onDocumentMouseMove, false);
 
@@ -57237,13 +56800,34 @@
 
 	}
 
-	// Randomizers that can be used for building Bufffer geometries
 
-	// random integer within range
-	function getRandomInt(min, max) {
-		min = Math.ceil(min);
-		max = Math.floor(max);
-		return Math.floor(Math.random() * (max - min) + min) //The maximum is exclusive and the minimum is inclusive
+	//check for token intersection
+	function tokenCollisions(){
+		renderFrames += 1;
+		if (renderFrames >= 10) {
+			//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
+			for (let k = 0; k < tokensArray.length; k++) {
+				boxArray[k]
+					.copy(tokensArray[k].geometry.boundingBox)
+					.applyMatrix4(tokensArray[k].matrixWorld);
+				//Determine if player touches token
+				new Color(0x0000ff);
+				if (playerBox.intersectsBox(boxArray[k]) && tokensArray[k].material.color.equals(darkBlue)) {
+					tokenScore += 1;
+
+					//Make outer shape of token transparent
+					tokensArray[k].material.transparent = true;
+					tokensArray[k].material.opacity = 0;
+					//Make inner shape of token transparent
+					innerCustomArray[k].material.transparent = true;
+					innerCustomArray[k].material.opacity = 0;
+
+					//tokensArray[k].material.color.lerp();
+
+					tokensArray[k].material.color.setHex(0xffffff); //Trying to set to transparent when in contact, but failing so it is blue for now
+				}
+			}
+		}
 	}
 
 	// random float within range
@@ -57290,8 +56874,6 @@
 		innerCustomArray.push(innerCustom); // use separate array for innerCustom which will be global so that we can access them
 		return outerCustom
 	}
-
-
 	// function AddMinutesToDate(date, minutes) {
 	// 	return new Date(date.getTime() + minutes * 60000);
 
@@ -57315,6 +56897,7 @@
 		var days = Math.floor(t / (1000 * 60 * 60 * 24));
 		return { 'total': t, 'days': days, 'hours': hours, 'minutes': minutes, 'seconds': seconds };
 	}
+
 	function gameEnd() {
 		if (tokenScore == maxScore) {
 			level += 1;
@@ -57329,13 +56912,289 @@
 
 		}
 
-
-
 	}
 	function updateHealth(damage) {
 		health = health - damage;
 		var healthBarWidth = (health / totalHealth) * 100;
 		bar.css('width', healthBarWidth + '%');
+	}
+
+
+
+	//////////////// MAKE, AND ADD, LEVEL PLATFORMS //////////////////////////
+
+	// Function to create a platform of size legth by width in world units
+	// out of tiles(box geometries) using a BufferGeometry to provide the necessary performance improveement
+	// your machine would otherwise die if it tried to render this many grouped objects normally
+	const createPlatform = (length, width, height, tileColorMap) => {
+		const tiles = [];
+
+		const tileGeometry = new BoxGeometry(1, 1, 1);
+
+		//const tileColorMap = new THREE.TextureLoader().load('./textures/temp_floor.png')
+		const tileMaterial = new MeshPhongMaterial({ map: tileColorMap });
+
+		const midpointOffset = 0.5;
+
+		for (let y = 0; y < height; y++) {
+
+
+			const ypos = y + midpointOffset;
+			for (let x = 0; x < length; x++) {
+
+				const xpos = x + midpointOffset;
+				for (let z = 0; z < width; z++) {
+
+					const zpos = z + midpointOffset;
+					// instead of creating a new geometry, we just clone the bufferGeometry instance
+					const newTile = tileGeometry.clone();
+					//const y =  0 //getRandomInt(0,5)
+					newTile.applyMatrix4(
+						new Matrix4().makeTranslation(xpos, ypos, zpos)
+					);
+					// then, we push this bufferGeometry instance in our array
+					tiles.push(newTile);
+				}
+			}
+		}
+
+		// merge into single super buffer geometry;
+		const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
+		// centre super geometry at local origin
+		//geometriesTiles.applyMatrix4( new THREE.Matrix4().makeTranslation(-length/2,0,-width/2 ) );
+
+		geometriesTiles.applyMatrix4(new Matrix4().makeTranslation(-length / 2, -height / 2, -width / 2));
+		geometriesTiles.applyMatrix4(new Matrix4().makeScale(gridSquareSize, gridSquareSize, gridSquareSize));
+
+
+		// create one mega big platform mesh from super geometry
+		const platform = new Mesh(geometriesTiles, tileMaterial);
+
+		// place lower left corner of platform mesh  at X-Z (0,0)
+		platform.translateX((gridSquareSize * length) / 2);
+		platform.translateZ((gridSquareSize * width) / 2);
+		platform.translateY((gridSquareSize * height) / 2);
+
+
+		return platform;
+	};
+
+	// Function to set platform postition in gameboard coordinates in world
+	const placePlatform = (platform, x, y, z) => {
+		// translate platform in world coordinates
+		x = x * gridSquareSize;
+		y = y * gridSquareSize;
+		z = z * gridSquareSize;
+		platform.applyMatrix4(new Matrix4().makeTranslation(x, y, z));
+
+		// create cannon body for platform
+		const platformBody = new Body({
+			type: Body.STATIC,
+			material: groundMaterial,
+			shape: S(platform, { type: P.BOX }).shape,
+		});
+
+		const platformPos = new Vector3();
+		platform.getWorldPosition(platformPos);
+		platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
+
+		return {
+			threePlatform: platform,
+			cannonPlatform: platformBody,
+		};
+	};
+
+	// Function to add multiple platforms into a gameboard
+	// allow different textures/colours for different sections
+
+	const createGameBoard = (level)=>{
+		if(level==1){
+			return createGameBoardLev1()	
+		}
+	};
+
+	const createGameBoardLev1 = () => {
+
+		const board = new Group();
+		const platformGeometries = [];
+		const platformBodies = [];
+		let newPlatform;
+		let colorMap;
+
+		colorMap = new TextureLoader().load("./textures/lime_floor.png");
+		newPlatform = placePlatform(createPlatform(1, 50, 50, colorMap), -25, 0, -25);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+
+		//final wall
+		colorMap = new TextureLoader().load("./textures/dark_floor.png");
+		newPlatform = placePlatform(createPlatform(1, 30, 30, colorMap), 25, 0, -25);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+		colorMap = new TextureLoader().load("./textures/dark_floor.png");
+		newPlatform = placePlatform(createPlatform(1, 20, 20, colorMap), 25, 40, -25);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+
+		//floor 
+		colorMap = new TextureLoader().load("./textures/lime_floor.png");
+		newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 0, -25);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+		newPlatform.cannonPlatform.id;
+
+		// for (var i = 0; i < 35; i++) {
+		// 	var randX = Math.floor(Math.random() * 250);
+		// 	var randY = Math.floor(Math.random() * 250);
+		// 	var randZ = Math.floor(Math.random() * 100) + 10;
+		// 	colorMap = new THREE.TextureLoader().load("./textures/blue_floor.png");
+		// 	newPlatform = placePlatform(createPlatform(1, 1, 1, colorMap), randX, 30, randY);
+		// 	platformGeometries.push(newPlatform.threePlatform);
+		// 	platformBodies.push(newPlatform.cannonPlatform);
+		// }
+
+
+		//ceiling
+		colorMap = new TextureLoader().load("./textures/dark_floor.png");
+		newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 50, -25);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+		//world boundaries
+		colorMap = new TextureLoader().load("./textures/light_floor.png");
+		newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -26, 0, 25);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+
+		colorMap = new TextureLoader().load("./textures/dark_floor.png");
+		newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
+		platformGeometries.push(newPlatform.threePlatform);
+		platformBodies.push(newPlatform.cannonPlatform);
+
+
+		// //guide wall block
+		// colorMap = new THREE.TextureLoader().load('./textures/blue_floor.png')
+		// newPlatform = placePlatform(createPlatform(2,1,2,colorMap),2,1,2)
+		// platformGeometries.push(newPlatform.threePlatform)
+		// platformBodies.push(newPlatform.cannonPlatform)
+
+		for (let i = 0; i < platformGeometries.length; i++) {
+			board.add(platformGeometries[i]);
+			world.addBody(platformBodies[i]);
+		}
+
+		return board;
+	};
+
+
+	function levelTokens(level){
+		if(level==1){
+			for (let i = 0; i < totalTokens; i++) {
+
+				//const tokenGeometry = new THREE.BoxGeometry(5,5,5);
+				// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
+				// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+				// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
+
+				//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
+				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				var randomZ = Math.floor(Math.random() * 250);
+				tokenCustom.position.set(0, 20, 20);
+				const tokenBox = new Box3(); //bounding box
+				// ensure the bounding box is computed for its geometry
+				// this should be done only once (assuming static geometries)
+				tokenCustom.geometry.computeBoundingBox();
+				//tokenBox.copy( tokenCustom.geometry.boundingBox ).applyMatrix4( tokenCustom.matrixWorld );
+
+				//Calculate center of token just for debugging
+				new Vector3();
+				tokenBox.getCenter();
+
+				scene.add(tokenCustom);
+
+				//Since the bounding box for each token must be computed within the animation loop,
+				//we create the tokens and boxes as empty here and add them floorto their respective arrays,
+				//which can be looped through and each token and box can be accessed within the animation loop.
+				tokensArray.push(tokenCustom);
+				boxArray.push(tokenBox);
+			}
+
+		}
+		else if(level==2){
+			for (let i = 0; i < totalTokens; i++) {
+				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				var randomZ = Math.floor(Math.random() * 250);
+				tokenCustom.position.set(5, 25, randomZ); //sets location of thetoken to be in a random line location
+				const tokenBox = new Box3(); //bounding box
+				tokenCustom.geometry.computeBoundingBox();
+
+				new Vector3();
+				tokenBox.getCenter();
+
+				scene.add(tokenCustom);
+				tokensArray.push(tokenCustom);
+				boxArray.push(tokenBox);
+			}
+		}
+		else if(level==3){
+			for (let i = 0; i < totalTokens; i++) {
+				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				var randomZ = Math.floor(Math.random() * 250);
+				tokenCustom.position.set(5, 25, randomZ);
+				const tokenBox = new Box3(); //bounding box
+				tokenCustom.geometry.computeBoundingBox();
+
+				new Vector3();
+				tokenBox.getCenter();
+
+				scene.add(tokenCustom);
+				tokensArray.push(tokenCustom);
+				boxArray.push(tokenBox);
+			}
+		}
+		else;
+	}
+
+
+	function updateTimer(){
+		//update timer
+		var timeRemaining = time_remaining(endTime);
+		minutes = timeRemaining["minutes"];
+		seconds = timeRemaining["seconds"];
+		if (minutes <= 0 && seconds <= 0) {
+			timeTaken = time_taken(gameStart);
+			var minutes_taken = timeTaken["minutes"];
+			var seconds_taken = timeTaken["seconds"];
+			timeTaken[0] = minutes_taken;
+			timeTaken[1] = seconds_taken;
+			inprogress = false;
+		}
+		if (minutes > 0 && seconds > 30 && inprogress) {
+			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+				+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+		}
+
+		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
+			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
+				+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
+		}
+		if (tokenScore == maxScore) { // checking if they have won the game
+			timeTaken = time_taken(gameStart);
+			var minutes_taken = timeTaken["minutes"];
+			var seconds_taken = timeTaken["sectimeronds"];
+			timeTaken[0] = minutes_taken;
+			timeTaken[1] = seconds_taken;
+			inprogress = false;
+
+		}
+		if (health <= 0) {//if the player loses all thier health end the game
+			timeTaken = time_taken(gameStart);
+			var minutes_taken = timeTaken["minutes"];
+			var seconds_taken = timeTaken["seconds"];
+			timeTaken[0] = minutes_taken;
+			timeTaken[1] = seconds_taken;
+			inprogress = false;
+		}
+
 	}
 
 	// const intructions = document.getElementById("instance");
@@ -57385,7 +57244,7 @@ study when they wake up! Youre new to the pilot game but youre a quick learner. 
 	    document.getElementById('instructions').className = '';
 	    document.body.style.marginTop = 0;
 	    const game = new Game();
-	    game.init();
+	    game.initGame();
 
 	}
 

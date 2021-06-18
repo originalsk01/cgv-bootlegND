@@ -12,6 +12,15 @@ import { DstColorFactor } from "three";
 let camera, scene, stats, renderer, clock, controls;
 let shipModel;
 
+
+// var ctx = new AudioContext();
+//   var audio = document.getElementById('myAudio');
+//   var audioSrc = ctx.createMediaElementSource(audio);
+//   var analyser = ctx.createAnalyser();
+
+
+
+
 // global asset paths
 const shipPath =
 	"/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
@@ -46,6 +55,8 @@ let rollSpeed = 0
 let yawSpeed = 0
 let accelerationImpulse
 
+let mouse
+
 //token global variables
 var tokensArray = []; //Array containing tokens
 var boxArray = []; // Array containing box for tokens'
@@ -63,7 +74,7 @@ var renderFrames = 0;
 //timer variables
 
 var minutes, seconds, milliseconds, gameStart, gameLoad, currentTime, endTime
-var levelDuration = 50
+var levelDuration = 3
 var timeTaken = [0, 0]
 var inprogress = true
 
@@ -74,6 +85,8 @@ var maxScore = 1;
 
 //animation variables
 var requestAnimationFrameID
+
+
 
 var level = 1
 // var levelOneComplete = false
@@ -86,7 +99,7 @@ var healthBarWidth = (health / totalHealth) * 100;
 bar.css('width', healthBarWidth + '%');
 var floor_id
 
-
+var playonce = true
 
 class Game {
 
@@ -175,10 +188,26 @@ class Game {
 		window.addEventListener("resize", onWindowResize, false);
 		document.body.appendChild(renderer.domElement);
 
-		// Orbit Controls for normal camera (currently does nothing)
-		//const controls = new OrbitControls(camera, renderer.domElement)
-		//controls.update()
+		//add some background music
+		if (playonce) {
+			const listener = new THREE.AudioListener();
+			flightCamera.add(listener);
 
+			// create a global audio source
+			const sound = new THREE.Audio(listener);
+
+			// load a sound and set it as the Audio object's buffer
+			const audioLoader = new THREE.AudioLoader();
+			audioLoader.load('DOMN.mp3', function (buffer) {
+				sound.setBuffer(buffer);
+				sound.setLoop(true);
+				sound.setVolume(0.2);
+				if (!sound.isPlaying) {
+					sound.play();
+				}
+			});
+			playonce = false
+		}
 		// Axes Helper
 		const axes = new THREE.AxesHelper(100);
 		scene.add(axes);
@@ -342,7 +371,7 @@ class Game {
 
 		// Function to add multiple platforms into a gameboard
 		// allow different textures/colours for different sections
-		const createGameBoard = () => {
+		const createGameBoard = ( x, y , z, scaleLength, scaleWidth, scaleHeight,) => {
 
 			const board = new THREE.Group();
 			const platformGeometries = [];
@@ -351,24 +380,24 @@ class Game {
 			let colorMap;
 
 			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
-			newPlatform = placePlatform(createPlatform(1, 50, 50, colorMap), -25, 0, -25);
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*50, scaleHeight*50, colorMap), x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
 			//final wall
 			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-			newPlatform = placePlatform(createPlatform(1, 50, 40, colorMap), 25, 0, -25);
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*50, scaleHeight*40, colorMap),x+ scaleLength*25,y+ scaleLength*0,z+ scaleHeight*-25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
 			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-			newPlatform = placePlatform(createPlatform(1, 45, 20, colorMap), 25, 40, -35);
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*45, scaleHeight*20, colorMap),x+ scaleLength*25,y+ scaleLength*40,z+ scaleHeight*-35);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
 			//floor 
 			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
-			newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 0, -25);
+			newPlatform = placePlatform(createPlatform(scaleLength*50, scaleWidth*50, scaleHeight*1, colorMap),x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 			floor_id = newPlatform.cannonPlatform.id
@@ -388,17 +417,17 @@ class Game {
 
 			//ceiling
 			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-			newPlatform = placePlatform(createPlatform(50, 50, 1, colorMap), -25, 50, -25);
+			newPlatform = placePlatform(createPlatform(scaleLength*50, scaleWidth*50, scaleHeight*1, colorMap),x+ scaleLength*-25,y+ scaleLength*50,z+ scaleHeight*-25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 			//world boundaries
 			colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
-			newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -26, 0, 25);
+			newPlatform = placePlatform(createPlatform(scaleLength*51, scaleWidth*1, scaleHeight*51, colorMap),x+ scaleLength*-26,y+ scaleLength*0,z+ scaleHeight*25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
 			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-			newPlatform = placePlatform(createPlatform(51, 1, 51, colorMap), -25, 0, -25);
+			newPlatform = placePlatform(createPlatform(scaleLength*51, scaleWidth*1, scaleHeight*51, colorMap),x+ scaleLength*-25,y+ scaleLength*0,z+ scaleHeight*-25);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
@@ -418,13 +447,7 @@ class Game {
 			return board;
 		};
 
-		// Add gameboard to world
-
-		const gameboard = createGameBoard();
-		scene.add(gameboard);
-
-
-		const createSquareRing = (x,y,z) =>{
+		const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight) =>{
 			const board = new THREE.Group();
 			const platformGeometries = [];
 			const platformBodies = [];
@@ -433,44 +456,64 @@ class Game {
 			
 			//ceiling
 			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-			newPlatform = placePlatform(createPlatform(5, 5, 1, colorMap), x-1, y+5, z-1);
+			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y+5*scaleWidth, z-1*scaleHeight);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 			//world boundaries
 			colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
-			newPlatform = placePlatform(createPlatform(5, 1, 6, colorMap), x-1, y, z+4);
+			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*6, colorMap), x-1*scaleLength, y, z+4*scaleHeight);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
-
+		
 			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-			newPlatform = placePlatform(createPlatform(5, 1, 5, colorMap), x-1, y, z-1);
+			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*5, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
-
+		
 			//floor 
 			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
-			newPlatform = placePlatform(createPlatform(5, 5, 1, colorMap), x-1, y, z-1);
+			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 			floor_id = newPlatform.cannonPlatform.id
-
+		
 			// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
 			// token.position.set(20*x,20*y,20*z)
 			// scene.add(token)
-
+		
 			for (let i = 0; i < platformGeometries.length; i++) {
 				board.add(platformGeometries[i]);
 				world.addBody(platformBodies[i]);
 			}
-
+		
 			return board;
 		}
 
-		var squareRing = createSquareRing(0,25,25)
-		scene.add(squareRing)
+		// Starting room
+		const gameboard = createGameBoard(0,0,0, 1,1,1);
+		scene.add(gameboard);
 
-		// var token = createToken(2,22,22,3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
-		// scene.add(token)
+
+		
+		// Ring obstacles to  drop tunnel
+		const ringOne = createSquareRing(50, 60, 18 , 1,1,1);
+		scene.add(ringOne)
+
+		const ringTwo = createSquareRing(70, 40, 21 , 1, 0.8, 0.8);
+		scene.add(ringTwo)
+
+		const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
+		scene.add(ringThree)
+
+		//Drop Tunnel
+		const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
+		scene.add(dropTunnel)
+
+		// Room two
+		// const gameboardTwo = createGameBoard(150,160,118, 1,1,1);
+		// scene.add(gameboardTwo);
+
+
 
 
 		//////////////// ADD PLAYER SHIP //////////////////////////
@@ -490,7 +533,7 @@ class Game {
 		shipModel.add(flightCamera)
 
 		flightCamera.position.set(0, 4, 7.5)
-
+		
 
 		// create cannon body for ship
 		shipBody = new CANNON.Body({
@@ -510,15 +553,30 @@ class Game {
 			timeTaken = time_taken(gameStart);
 			var minutes_taken = timeTaken["minutes"]
 			var seconds_taken = timeTaken["seconds"]
+			const hurtListener = new THREE.AudioListener();
+		flightCamera.add(hurtListener);
+
+		// create a global audio source
+		const hurtSound = new THREE.Audio(hurtListener);
+
+		// load a sound and set it as the Audio object's buffer
+		const hurtLoader = new THREE.AudioLoader();
+		hurtLoader.load('classic_hurt.mp3', function (buffer) {
+			hurtSound.setBuffer(buffer);
+			hurtSound.setLoop(false);
+			hurtSound.setVolume(0.2);
+			hurtSound.play()
+		});
 			if (lastCollisionTime + 2000 < new Date().getTime()) {
 				var damage = 5
 				updateHealth(damage);
 				lastCollisionTime = new Date().getTime();
 			}
 
-		});
+			
 
-		
+
+		});
 
 
 		// Initialize ship keyboard control
@@ -560,9 +618,9 @@ class Game {
 			// const tokenGeometry = new THREE.OctahedronBufferGeometry(5,0)
 			// const tokenMaterial = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
 			// const tokenCustom = new THREE.Mesh( tokenGeometry, tokenMaterial );
-			
+
 			//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
-			var tokenCustom = createToken(8, 12, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 			//Generate random positions for each of the tokens
 			var randomX = Math.floor(Math.random() * 250);
 			var randomZ = Math.floor(Math.random() * 250);
@@ -608,11 +666,14 @@ function fly() {
 		shipBody.applyImpulse(accelerationImpulse)
 	}
 
+
 	if (keys.w || keys.a || keys.s || keys.d || keys.arrowleft || keys.arrowright) {
 		if (keys.w) { pitchSpeed = -1 } else if (keys.s) { pitchSpeed = 1 } else { pitchSpeed = 0 }
 		if (keys.a) { rollSpeed = 0.75 } else if (keys.d) { rollSpeed = -0.75 } else { rollSpeed = 0 }
 		// if (keys.arrowleft) { yawSpeed = 1; rollSpeed = 1 } else if (keys.arrowright){ yawSpeed = -1; rollSpeed = -1} else { yawSpeed = 0 }
 		if (keys.arrowleft) { rollSpeed += 2 } else if (keys.arrowright) { rollSpeed += -2 } else { rollSpeed += 0 }
+
+		// if (mouseY<0) { pitchSpeed = -1 } else if (mouseY>0) { pitchSpeed = 1 } else { pitchSpeed = 0 }
 
 		// if (keys.w) { pitchSpeed = -0.5 }	else if (keys.s) { pitchSpeed = 0.5 } else { pitchSpeed = 0 }
 		// if (keys.arrowleft) { rollSpeed = 1 } else if (keys.arrowright){ rollSpeed = -1 } else { rollSpeed = 0 }
@@ -644,8 +705,6 @@ function switchView() {
 
 function animate() {
 
-	
-
 	renderFrames += 1;
 
 	if (inprogress == true) {
@@ -661,7 +720,6 @@ function animate() {
 
 	//check for token intersection
 	if (renderFrames >= 10) {
-
 		//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
 		for (let k = 0; k < tokensArray.length; k++) {
 			boxArray[k]
@@ -829,13 +887,10 @@ function nextLevel() {
 
 		animate()
 		for (let i = 0; i < totalTokens; i++) {
+			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 			var randomX = Math.floor(Math.random() * 250);
 			var randomZ = Math.floor(Math.random() * 250);
 			var randomY = Math.floor(Math.random() * 100) + 10;
-			var tokenCustom = createToken(8,12, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-			
-			console.log('randomZ',randomZ)
-
 			tokenCustom.position.set(5, 25, randomZ); //sets location of thetoken to be in a random line location
 			const tokenBox = new THREE.Box3(); //bounding box
 			tokenCustom.geometry.computeBoundingBox();
@@ -856,18 +911,16 @@ function nextLevel() {
 
 		animate()
 		for (let i = 0; i < totalTokens; i++) {
+			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 			var randomX = Math.floor(Math.random() * 250);
 			var randomZ = Math.floor(Math.random() * 250);
 			var randomY = Math.floor(Math.random() * 100) + 10;
-			var tokenCustom = createToken(8,12, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-			
 			tokenCustom.position.set(5, 25, randomZ);
 			const tokenBox = new THREE.Box3(); //bounding box
 			tokenCustom.geometry.computeBoundingBox();
 
 			var tokenCenter = new THREE.Vector3();
 			tokenCenter = tokenBox.getCenter();
-			console.log(tokenCenter)
 
 			scene.add(tokenCustom);
 			tokensArray.push(tokenCustom);
@@ -910,6 +963,30 @@ function initShipControls() {
 		if (keys[key] !== undefined) keys[key] = false
 
 	})
+	
+
+	document.addEventListener('mousemove', onDocumentMouseMove, false);
+
+}
+
+function onDocumentMouseMove(event) {
+    event.preventDefault();
+	mouse = new CANNON.Vec3();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+	pitchSpeed = mouse.y*1.1
+	rollSpeed = -mouse.x*1.1
+
+	var directionVector = new CANNON.Vec3(pitchSpeed, 0, rollSpeed)
+
+	var directionVector = shipBody.quaternion.vmult(directionVector)
+
+	shipBody.angularVelocity.set(directionVector.x, directionVector.y, directionVector.z)
+
+	shipBody.linearDamping = 0.5
+	shipBody.angularDamping = 0.9
+
 }
 
 // Randomizers that can be used for building Bufffer geometries
@@ -926,6 +1003,7 @@ function getRandomInt(min, max) {
 // 	return Math.random() * (max - min) + min
 // }
 function createToken(
+
 	innerRadius,
 	outerRadius,
 	innerDetail,
@@ -964,6 +1042,8 @@ function createToken(
 	innerCustomArray.push(innerCustom) // use separate array for innerCustom which will be global so that we can access them
 	return outerCustom
 }
+
+
 // function AddMinutesToDate(date, minutes) {
 // 	return new Date(date.getTime() + minutes * 60000);
 
