@@ -642,7 +642,7 @@ class Game {
 
 		// load a sound and set it as the Audio object's buffer
 		const hurtLoader = new THREE.AudioLoader();
-		hurtLoader.load('classic_hurt.mp3', function (buffer) {
+		hurtLoader.load('./classic_hurt.mp3', function (buffer) {
 			hurtSound.setBuffer(buffer);
 			hurtSound.setLoop(false);
 			hurtSound.setVolume(0.2);
@@ -964,6 +964,7 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
+
 const timer = document.getElementById("timer");
 function nextLevel() {
 	timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
@@ -1116,7 +1117,7 @@ function createToken(
 	// 	opacity: innerOpacity,
 	// })
 	var cubeRenderTarget = new THREE.WebGLCubeRenderTarget( 128, { format: THREE.RGBFormat, generateMipmaps: true, minFilter:THREE.LinearMipmapLinearFilter } );
-	var cubeCam = new THREE.CubeCamera(.01, 20, cubeRenderTarget);
+	var cubeCam = new THREE.CubeCamera(.1, 1000, cubeRenderTarget);
 	cubeCamera.push(cubeCam);
 
 	var innerMaterial = new THREE.MeshPhongMaterial({
@@ -1175,9 +1176,7 @@ function time_since_pause(pauseTime){
 	return t;
 
 }
-function get_time(){
-	
-}
+
 function gameEnd() {
 	if (tokenScore == maxScore) {
 		level += 1

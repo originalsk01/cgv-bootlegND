@@ -39991,6 +39991,43 @@
 
 	}
 
+	class AxesHelper extends LineSegments {
+
+		constructor( size = 1 ) {
+
+			const vertices = [
+				0, 0, 0,	size, 0, 0,
+				0, 0, 0,	0, size, 0,
+				0, 0, 0,	0, 0, size
+			];
+
+			const colors = [
+				1, 0, 0,	1, 0.6, 0,
+				0, 1, 0,	0.6, 1, 0,
+				0, 0, 1,	0, 0.6, 1
+			];
+
+			const geometry = new BufferGeometry();
+			geometry.setAttribute( 'position', new Float32BufferAttribute( vertices, 3 ) );
+			geometry.setAttribute( 'color', new Float32BufferAttribute( colors, 3 ) );
+
+			const material = new LineBasicMaterial( { vertexColors: true, toneMapped: false } );
+
+			super( geometry, material );
+
+			this.type = 'AxesHelper';
+
+		}
+
+		dispose() {
+
+			this.geometry.dispose();
+			this.material.dispose();
+
+		}
+
+	}
+
 	const _floatView = new Float32Array( 1 );
 	new Int32Array( _floatView.buffer );
 
@@ -56356,6 +56393,8 @@
 			]);
 			scene.background = skyBoxtexture;
 
+		
+
 
 			// Physics world
 			world = new World({
@@ -56417,36 +56456,32 @@
 				});
 				playonce = false;
 			}
+			// Axes Helper
+			const axes = new AxesHelper(100);
+			scene.add(axes);
+
+			// X-Z plane Grid, we could use this for our world cooridinates in the XZ plane
+			const gridSize = 500;
+			const gridDivisions = 50;
+			const gridHelper = new GridHelper(gridSize, gridDivisions);
+			scene.add(gridHelper);
 
 
 			// Size of one unit for world coordinates if Grid used as basis
-			const gridSize = 500;
-			const gridDivisions = 50;
 			const gridSquareSize = gridSize / gridDivisions;
 
 			// Lights
-			const ambientLight = new AmbientLight(0xffffff, 0.25);
+			const ambientLight = new AmbientLight(0xffffff, 0.6);
 			scene.add(ambientLight);
 
-			// const dirLight = new THREE.DirectionalLight(0xffffff,5);
-			// dirLight.position.set(-20, 200,500);
-			// dirLight.castShadow = true;
-			// dirLight.shadow.camera.top = 180;
-			// dirLight.shadow.camera.bottom = -100;
-			// dirLight.shadow.camera.left = -120;
-			// dirLight.shadow.camera.right = 120;
-			// scene.add(dirLight);
-
-			const spotLight = new SpotLight( 0xffffff,1);
-			spotLight.position.set( -750, 1000, 1000 );
-			spotLight.castShadow = true;
-			spotLight.shadow.mapSize.width = 1024;
-			spotLight.shadow.mapSize.height = 1024;
-			spotLight.shadow.camera.near = 500;
-			spotLight.shadow.camera.far = 4000;
-			spotLight.shadow.camera.fov = 30;
-
-			scene.add( spotLight );
+			const dirLight = new DirectionalLight(0xffffff);
+			dirLight.position.set(0, 200, 100);
+			dirLight.castShadow = true;
+			dirLight.shadow.camera.top = 180;
+			dirLight.shadow.camera.bottom = -100;
+			dirLight.shadow.camera.left = -120;
+			dirLight.shadow.camera.right = 120;
+			scene.add(dirLight);
 
 			// Materials
 			const groundMaterial = new Material("groundMaterial");
@@ -56537,7 +56572,6 @@
 
 				// merge into single super buffer geometry;
 				const geometriesTiles = BufferGeometryUtils.mergeBufferGeometries(tiles);
-				
 				// centre super geometry at local origin
 
 				geometriesTiles.applyMatrix4(new Matrix4().makeTranslation(-length / 2, -height / 2, -width / 2));
@@ -56546,7 +56580,6 @@
 
 				// create one mega big platform mesh from super geometry
 				const platform = new Mesh(geometriesTiles, tileMaterial);
-				
 
 				// place lower left corner of platform mesh  at X-Z (0,0)
 				platform.translateX((gridSquareSize * length) / 2);
@@ -56575,6 +56608,7 @@
 				const platformPos = new Vector3();
 				platform.getWorldPosition(platformPos);
 				platformBody.position.set(platformPos.x, platformPos.y, platformPos.z);
+
 				return {
 					threePlatform: platform,
 					cannonPlatform: platformBody,
@@ -56763,7 +56797,7 @@
 
 			shipModel.applyMatrix4(new Matrix4().makeScale(1.9, 1.9, 1.9));
 			shipModel.applyMatrix4(new Matrix4().makeTranslation(-5, 0, -5));
-			shipModel.castShadow = true;
+
 			scene.add(shipModel);
 			shipModel.add(flightCamera);
 
@@ -56794,7 +56828,7 @@
 
 			// load a sound and set it as the Audio object's buffer
 			const hurtLoader = new AudioLoader();
-			hurtLoader.load('./classic_hurt.mp3', function (buffer) {
+			hurtLoader.load('classic_hurt.mp3', function (buffer) {
 				hurtSound.setBuffer(buffer);
 				hurtSound.setLoop(false);
 				hurtSound.setVolume(0.2);
@@ -56805,6 +56839,9 @@
 					updateHealth(damage);
 					lastCollisionTime = new Date().getTime();
 				}
+
+				
+
 
 			});
 
@@ -57116,7 +57153,6 @@
 	    }
 	});
 
-
 	const timer = document.getElementById("timer");
 	function nextLevel() {
 		timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
@@ -57257,7 +57293,7 @@
 		// 	opacity: innerOpacity,
 		// })
 		var cubeRenderTarget = new WebGLCubeRenderTarget( 128, { format: RGBFormat, generateMipmaps: true, minFilter:LinearMipmapLinearFilter } );
-		var cubeCam = new CubeCamera(.1, 1000, cubeRenderTarget);
+		var cubeCam = new CubeCamera(.01, 20, cubeRenderTarget);
 		cubeCamera.push(cubeCam);
 
 		var innerMaterial = new MeshPhongMaterial({
@@ -57316,7 +57352,6 @@
 		return t;
 
 	}
-
 	function gameEnd() {
 		if (tokenScore == maxScore) {
 			level += 1;
@@ -57363,14 +57398,6 @@ study when they wake up! Youre new to the pilot game but youre a quick learner. 
 	"<p>Move Forward: &#8593</p>" + 
 	"<p>Move Back: &#8595</p>" + 
 	"<h1>(Click anywhere to start)</h1>";
-
-
-	document.addEventListener('keydown', function(event) {
-	    if (event.code == 'KeyR') {
-			window.location.reload();
-	    }
-	});
-
 	document.addEventListener("click",startGame);
 	var gameStart=false;
 	function startGame(){
@@ -57382,6 +57409,7 @@ study when they wake up! Youre new to the pilot game but youre a quick learner. 
 	    gameStart=true;
 	        game.init();
 	    }
+
 	}
 
 })));

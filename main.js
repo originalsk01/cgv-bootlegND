@@ -26,6 +26,14 @@ study when they wake up! Youre new to the pilot game but youre a quick learner. 
 "</div>" +
 "</div>" + 
 "</body>"
+
+
+document.addEventListener('keydown', function(event) {
+    if (event.code == 'KeyR') {
+		window.location.reload();
+    }
+});
+
 document.addEventListener("click",startGame);
 var gameStart=false
 function startGame(){
