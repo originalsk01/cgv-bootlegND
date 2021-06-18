@@ -447,7 +447,7 @@ class Game {
 			return board;
 		};
 
-		const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight) =>{
+		const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight, isZAxis) =>{
 			const board = new THREE.Group();
 			const platformGeometries = [];
 			const platformBodies = [];
@@ -459,16 +459,6 @@ class Game {
 			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y+5*scaleWidth, z-1*scaleHeight);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
-			//world boundaries
-			colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
-			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*6, colorMap), x-1*scaleLength, y, z+4*scaleHeight);
-			platformGeometries.push(newPlatform.threePlatform);
-			platformBodies.push(newPlatform.cannonPlatform);
-		
-			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*5, colorMap), x-1*scaleLength, y, z-1*scaleHeight);
-			platformGeometries.push(newPlatform.threePlatform);
-			platformBodies.push(newPlatform.cannonPlatform);
 		
 			//floor 
 			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
@@ -476,6 +466,33 @@ class Game {
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 			floor_id = newPlatform.cannonPlatform.id
+
+			if (isZAxis) {
+				//world boundaries
+				colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*6 -2, colorMap), x+3*scaleLength, y+1, z-1*scaleHeight);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+			
+				colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+			}else {
+				//world boundaries
+				colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*6, colorMap), x-1*scaleLength, y, z+4*scaleHeight);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+			
+				colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+				newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*1, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+				platformGeometries.push(newPlatform.threePlatform);
+				platformBodies.push(newPlatform.cannonPlatform);
+			}
+
+
+			
 		
 			// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
 			// token.position.set(20*x,20*y,20*z)
@@ -490,24 +507,74 @@ class Game {
 		}
 
 		// Starting room
-		const gameboard = createGameBoard(0,0,0, 1,1,1);
-		scene.add(gameboard);
+		// const gameboard = createGameBoard(0,0,0, 0.5,0.5,0.5);
+		// scene.add(gameboard);
 
 
 		
 		// Ring obstacles to  drop tunnel
-		const ringOne = createSquareRing(50, 60, 18 , 1,1,1);
+		const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
 		scene.add(ringOne)
 
-		const ringTwo = createSquareRing(70, 40, 21 , 1, 0.8, 0.8);
+		const ringTwo = createSquareRing(-10, 5, 50 , 1,1,1, true);
 		scene.add(ringTwo)
 
-		const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
+		const ringThree = createSquareRing(0, 8, 80 , 1,1,1, true);
 		scene.add(ringThree)
 
-		//Drop Tunnel
-		const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
-		scene.add(dropTunnel)
+		const ringFour = createSquareRing(13, 2, 110 , 1,1,1, false);
+		scene.add(ringFour)
+
+		const ringFive = createSquareRing(23, 10, 90 , 1,1,1, false);
+		scene.add(ringFive)
+
+		const ringSix = createSquareRing(33, 7, 75 , 1,1,1, true);
+		scene.add(ringSix)
+
+		const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight) =>{
+			const mazeGroup = new THREE.Group();
+			const platformGeometries = [];
+			const platformBodies = [];
+			let newPlatform;
+			let colorMap;
+			
+			colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*6 -2, colorMap), x+3*scaleLength, y+1, z-1*scaleHeight);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+		
+			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+
+			// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
+			// token.position.set(20*x,20*y,20*z)
+			// scene.add(token)
+		
+			for (let i = 0; i < platformGeometries.length; i++) {
+				mazeGroup.add(platformGeometries[i]);
+				world.addBody(platformBodies[i]);
+			}
+		
+			return mazeGroup;
+		}
+
+		// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
+		// scene.add(ringOne)
+
+		// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
+		// scene.add(ringOne)
+
+		// const ringTwo = createSquareRing(10, 0, 20 , 1, 0.8, 0.8, false);
+		// scene.add(ringTwo)
+
+		// const ringThree = createSquareRing(100, 50, 40 ,  1, 1, 1);
+		// scene.add(ringThree)
+
+		// //Drop Tunnel
+		// const dropTunnel = createSquareRing(110, 20, 40 ,  2, 1, 1);
+		// scene.add(dropTunnel)
 
 		// Room two
 		// const gameboardTwo = createGameBoard(150,160,118, 1,1,1);
@@ -659,8 +726,9 @@ class Game {
 function fly() {
 	if (keys.h) { switchView() }
 	if (keys.arrowup) { acceleration = -1 }
+	if (keys.space) { acceleration -= 0.25 }
 	if (keys.arrowdown) { acceleration = 1 }
-	if (keys.arrowup || keys.arrowdown) {
+	if (keys.arrowup || keys.arrowdown || keys.space) {
 		let accelerationImpulseDirection = new CANNON.Vec3(0, 0, acceleration)
 		accelerationImpulse = shipBody.quaternion.vmult(accelerationImpulseDirection)
 		shipBody.applyImpulse(accelerationImpulse)
@@ -947,7 +1015,8 @@ function initShipControls() {
 		arrowup: false,
 		arrowdown: false,
 		arrowleft: false,
-		arrowright: false
+		arrowright: false,
+		space: false,
 	};
 
 	document.body.addEventListener("keydown", function (e) {
