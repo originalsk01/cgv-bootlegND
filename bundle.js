@@ -56334,7 +56334,7 @@
 	var minutes, seconds, gameStart, gameLoad, endTime;
 	var levelDuration = 0.1;
 	var timeTaken = [0, 0];
-	var inprogress$1 = true;
+	var inprogress = true;
 
 	//score variable
 	var totalTokens = 1;
@@ -56888,7 +56888,7 @@
 	function animate() {
 		renderFrames += 1;
 
-		if (inprogress$1 == true) {
+		if (inprogress == true) {
 			//request render scene at every frame
 			requestAnimationFrame(animate);
 		}
@@ -56936,14 +56936,14 @@
 			var seconds_taken = timeTaken["seconds"];
 			timeTaken[0] = minutes_taken;
 			timeTaken[1] = seconds_taken;
-			inprogress$1 = false;
+			inprogress = false;
 		}
-		if (minutes > 0 && seconds > 30 && inprogress$1) {
+		if (minutes > 0 && seconds > 30 && inprogress) {
 			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
 				+ '<div class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 		}
 
-		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress$1) {
+		if (minutes == 0 && seconds <= 30 && seconds > 0 && inprogress) {
 			timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
 				+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 		}
@@ -56953,7 +56953,7 @@
 			var seconds_taken = timeTaken["sectimeronds"];
 			timeTaken[0] = minutes_taken;
 			timeTaken[1] = seconds_taken;
-			inprogress$1 = false;
+			inprogress = false;
 
 		}
 		if (health <= 0) {//if the player loses all thier health end the game
@@ -56962,7 +56962,7 @@
 			var seconds_taken = timeTaken["seconds"];
 			timeTaken[0] = minutes_taken;
 			timeTaken[1] = seconds_taken;
-			inprogress$1 = false;
+			inprogress = false;
 		}
 
 
@@ -57062,7 +57062,7 @@
 
 		if (level == 2) {
 			//increase level goal
-			inprogress$1 = true;
+			inprogress = true;
 			maxScore = 5;
 			totalTokens = 5;
 
@@ -57084,7 +57084,7 @@
 
 		}
 		if (level == 3) {
-			inprogress$1 = true;
+			inprogress = true;
 			maxScore = 10;
 			totalTokens = 10;
 
@@ -57107,7 +57107,7 @@
 		if (level == 4) { //end of the game
 			timer.innerHTML = "<h1>Game Complete</h1>" + "<h2>Time Taken</h2>"
 				+ '<div class ="timerSec" style="background: black">' + timeTaken[0] + " Minutes" + " " + timeTaken[1] + " Seconds" + '</div>';
-			inprogress$1 = false;
+			inprogress = false;
 		}
 		return
 	}
@@ -57232,45 +57232,55 @@
 		bar.css('width', healthBarWidth + '%');
 	}
 
-	document.getElementById("instance");
-	// instructions.body.style.lineHeight="1.0rem"
-		instructions.innerHTML = "<h1>Welcome to: Space Invaders except its a project made by coms students tryna survive the Rona</h1>" +
-	    "<h4> And also its not really space invaders</h4>" +
-	    "<h6> Part II(The Snyder cut)</h6>" +
-	    "<h2>Instructions</h2>"+ 
-	    "<p>You are a rookie pilot Ricch Heard with 10 PhDs in everyfield aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and PRAvenman VESHim'l have been knocked out from stress of studying for\
-    their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper tokens so they can buy past papers to help them \
-    study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Captain! Heres your manual</p>"+
-	    "<div id='leftHandControls'> <h3> Left Hand controls </h3> " +
-	        "<div>Tilt Left : A</div>" +
-	        "<div>Tilt Right : D</div>"+
-	        "<div>Tilt Up : W</div>"+
-	        "<div>Tilt Down : S</div>"+
-	        "<div>Switch Perspective : H</div>"+
-	    "</div>"+
-	    "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
-	    "<div>Turn Left: &#8592</div>" +
-	    "<div>Turn Right: &#8594</div>"+
-	    "<div>Move Forward: &#8593</div>"+
-	    "<div>Move Back: &#8595</div>"+
-	    "</div>"+
-	    "<h4> (Click anywhere to start)</h4>"; 
+	// const intructions = document.getElementById("instance");
+	// 	instructions.innerHTML = "<h1>Welcome to:Snake Invader</h1>" +
+	//     "<h4> (Click anywhere to start)</h4>" +
+	//     "<h2>Instructions</h2>"+ 
+	//     "<div id='leftHandControls'> <h3> Left Hand controls </h3>" +
+	//         "<div>Tilt Left: A</div>" +
+	//         "<div>Tilt Right:D</div>"+
+	//         "<div>Tilt Up:W</div>"+
+	//         "<div>Tilt Down:S</div>"+
+	//     "</div>"+
+	//     "<div id = 'rightHandControls'> <h3>Right Hand controls </h3>" +
+	//     "<div>Turn Left: &#8592</div>" +
+	//     "<div>Turn Right:&#8594</div>"+
+	//     "<div>Move Forward:&#8593</div>"+
+	//     "<div>Move Back:&#8595</div>"+
+	//     "</div>"+
+	//     "<h4> (Click anywhere to start)</h4>" 
 
-	var inprogress = false;
+	const NewStuff = document.getElementById("instructions");
+
+	NewStuff.innerHTML = "<body class='intro'>" + 
+	"<div class= 'wrapper'>" + '<div class= "scroll-text">' +
+	"<h1>Welcome to: Space Invaders except its a project made by coms students tryna survive the Rona</h1>" + 
+	"<h2>And also its not really space invaders </h2>" +
+	"<h3>Part II</h3>" +
+	"<h4>Instructions </h4>" +
+	"<p>You are a rookie pilot Ricch Heard with 10 PhDs in everyfield aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and PRAvenman VESHim'l have been knocked out from stress of studying for\
+their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper tokens so they can buy past papers to help them \
+study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Captain! Heres your manual</p> " + 
+	"<h2>Left Hand controls</h2>" +
+	"<p>Tilt Left : A</p>" + 
+	"<p>Tilt Right : D</p>" + 
+	"<p>Tilt Up : W</p>" + 
+	"<p>Tilt Down : S</p>" + 
+	"<p>Switch Perspective : H</p>" +
+	"<h2>Right Hand controls</h2> " + 
+	"<p>Turn Left: &#8592</p>" + 
+	"<p>Turn Right: &#8594</p>" + 
+	"<p>Move Forward: &#8593</p>" + 
+	"<p>Move Back: &#8595</p>" + 
+	"<h1>(Click anywhere to start)</h1>";
 	document.addEventListener("click",startGame);
-
 	function startGame(){
+	    NewStuff.innerHTML = '';
+	    document.getElementById('instructions').className = '';
+	    document.body.style.marginTop = 0;
+	    const game = new Game();
+	    game.init();
 
-	    if(!inprogress){
-	        inprogress = true;
-	        instructions.innerHTML = '';
-	        const game = new Game();
-	        game.init();
-	        console.log("onclick");
-	    
-	    }
-	    
-	 
 	}
 
 })));
