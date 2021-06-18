@@ -531,7 +531,7 @@ class Game {
 		const ringSix = createSquareRing(33, 7, 75 , 1,1,1, true);
 		scene.add(ringSix)
 
-		const createSquareRing = (x,y,z, scaleLength, scaleWidth, scaleHeight) =>{
+		const createTunnelDown = (x,y,z, scaleLength, scaleWidth, scaleHeight) =>{
 			const mazeGroup = new THREE.Group();
 			const platformGeometries = [];
 			const platformBodies = [];
@@ -539,19 +539,32 @@ class Game {
 			let colorMap;
 			
 			colorMap = new THREE.TextureLoader().load("./textures/light_floor.png");
-			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*6 -2, colorMap), x+3*scaleLength, y+1, z-1*scaleHeight);
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5-1 , colorMap), x+3*scaleLength, y+1, z-1*scaleHeight);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 		
 			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
-			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+			newPlatform = placePlatform(createPlatform(scaleLength*1, scaleWidth*5, scaleHeight*5-1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
 			platformGeometries.push(newPlatform.threePlatform);
 			platformBodies.push(newPlatform.cannonPlatform);
 
-			// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
-			// token.position.set(20*x,20*y,20*z)
-			// scene.add(token)
-		
+			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*5 -1, scaleWidth*1, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z-1*scaleHeight);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+
+			colorMap = new THREE.TextureLoader().load("./textures/dark_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*5 -1, scaleWidth*1, scaleHeight*5 -1, colorMap), x-1*scaleLength, y+1, z+1);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+
+			//floor 
+			colorMap = new THREE.TextureLoader().load("./textures/lime_floor.png");
+			newPlatform = placePlatform(createPlatform(scaleLength*5, scaleWidth*5, scaleHeight*1, colorMap), x-1*scaleLength, y-5, z-1*scaleHeight);
+			platformGeometries.push(newPlatform.threePlatform);
+			platformBodies.push(newPlatform.cannonPlatform);
+			floor_id = newPlatform.cannonPlatform.id
+
 			for (let i = 0; i < platformGeometries.length; i++) {
 				mazeGroup.add(platformGeometries[i]);
 				world.addBody(platformBodies[i]);
@@ -559,6 +572,12 @@ class Game {
 		
 			return mazeGroup;
 		}
+
+		var tunnel = createTunnelDown(33, -10, 65 ,1 ,1 ,3);
+		scene.add(tunnel);
+
+
+
 
 		// const ringOne = createSquareRing(0, 0, 18 , 1,1,1, true);
 		// scene.add(ringOne)
@@ -689,10 +708,7 @@ class Game {
 			//createToken(innerRadius, outerRadius, innerDetail, outerDetail, innerColour, outerColour, innerOpacity, outerOpacity);
 			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 			//Generate random positions for each of the tokens
-			var randomX = Math.floor(Math.random() * 250);
-			var randomZ = Math.floor(Math.random() * 250);
-			var randomY = Math.floor(Math.random() * 100) + 10;
-			tokenCustom.position.set(0, 20, 20);
+			tokenCustom.position.set(12, 30, 200);
 			const tokenBox = new THREE.Box3(); //bounding box
 			// ensure the bounding box is computed for its geometry
 			// this should be done only once (assuming static geometries)
@@ -947,31 +963,33 @@ function nextLevel() {
 	timer.innerHTML = "<h1>Snake Invader</h1>" + "<h2>Level " + level + "</h2>"
 		+ '<div style="color:red;" class ="timerSec">' + minutes + " Minutes" + " " + seconds + " Seconds" + '</div>' + '<div> Tokens Collected: ' + tokenScore + ' Out of ' + totalTokens + '</div>' + '</div>';
 
-	if (level == 2) {
-		//increase level goal
-		inprogress = true
-		maxScore = 5
-		totalTokens = 5
-
-		animate()
-		for (let i = 0; i < totalTokens; i++) {
-			var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
-			var randomX = Math.floor(Math.random() * 250);
-			var randomZ = Math.floor(Math.random() * 250);
-			var randomY = Math.floor(Math.random() * 100) + 10;
-			tokenCustom.position.set(5, 25, randomZ); //sets location of thetoken to be in a random line location
-			const tokenBox = new THREE.Box3(); //bounding box
-			tokenCustom.geometry.computeBoundingBox();
-
-			var tokenCenter = new THREE.Vector3();
-			tokenCenter = tokenBox.getCenter();
-
-			scene.add(tokenCustom);
-			tokensArray.push(tokenCustom);
-			boxArray.push(tokenBox);
+		if (level == 2) {
+			//increase level goal
+			inprogress = true
+			maxScore = 3
+			totalTokens = 3
+			var xCoordinates = [-80, 12, 130]
+			var yCoordinates = [80, 110, 55]
+			var zCoordinates = [500, 800, 1125]
+			animate()
+			for (let i = 0; i < totalTokens; i++) {
+				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
+				var randomX = Math.floor(Math.random() * 250);
+				var randomZ = Math.floor(Math.random() * 250);
+				var randomY = Math.floor(Math.random() * 100) + 10;
+				tokenCustom.position.set(xCoordinates[i], yCoordinates[i], zCoordinates[i]); //sets location of thetoken to be in a random line location
+				const tokenBox = new THREE.Box3(); //bounding box
+				tokenCustom.geometry.computeBoundingBox();
+	
+				var tokenCenter = new THREE.Vector3();
+				tokenCenter = tokenBox.getCenter();
+	
+				scene.add(tokenCustom);
+				tokensArray.push(tokenCustom);
+				boxArray.push(tokenBox);
+			}
+	
 		}
-
-	}
 	if (level == 3) {
 		inprogress = true
 		maxScore = 10
