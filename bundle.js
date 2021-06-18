@@ -56328,10 +56328,12 @@
 
 	//timer variables
 
-	var minutes, seconds, gameStart$1, gameLoad, endTime;
+	var minutes, seconds, gameStart$1, gameLoad, endTime, gamePause, timeSincePause;
+	var just_unpaused = false;
 	var levelDuration = 3;
 	var timeTaken = [0, 0];
 	var inprogress = true;
+
 
 	//score variable
 	var totalTokens = 1;
@@ -56969,6 +56971,15 @@
 		/*************************************************************************************************************/
 
 		if (!pause) {
+
+			if (just_unpaused){
+				timeSincePause = time_since_pause(gamePause);
+				gameStart$1= new Date(Date.parse(gameStart$1)+ timeSincePause);
+
+				endTime = new Date(Date.parse(endTime)+ timeSincePause);
+				just_unpaused = false;
+			}
+		
 			//check for token intersection
 			if (renderFrames >= 10) {
 				//Loop through each of the tokens and their respective boxes, for each, compute the current bounding box with the world matrix
@@ -57019,7 +57030,7 @@
 			if (tokenScore == maxScore) { // checking if they have won the game
 				timeTaken = time_taken(gameStart$1);
 				var minutes_taken = timeTaken["minutes"];
-				var seconds_taken = timeTaken["sectimeronds"];
+				var seconds_taken = timeTaken["seconds"];
 				timeTaken[0] = minutes_taken;
 				timeTaken[1] = seconds_taken;
 				inprogress = false;
@@ -57132,6 +57143,13 @@
 	document.addEventListener('keydown', function(event) {
 	    if (event.code == 'KeyP') {
 	      pause=!pause;
+			//gazmePause = Date.parse(new Date());
+			if(pause) {
+				gamePause = new Date();
+				console.log(gamePause);
+				just_unpaused = true;
+			}
+		
 	    }
 	});
 
@@ -57275,7 +57293,7 @@
 		// 	opacity: innerOpacity,
 		// })
 		var cubeRenderTarget = new WebGLCubeRenderTarget( 128, { format: RGBFormat, generateMipmaps: true, minFilter:LinearMipmapLinearFilter } );
-		var cubeCam = new CubeCamera(.1, 1000, cubeRenderTarget);
+		var cubeCam = new CubeCamera(.01, 20, cubeRenderTarget);
 		cubeCamera.push(cubeCam);
 
 		var innerMaterial = new MeshPhongMaterial({
@@ -57328,6 +57346,11 @@
 		var hours = Math.floor((t / (1000 * 60 * 60)) % 24);
 		var days = Math.floor(t / (1000 * 60 * 60 * 24));
 		return { 'total': t, 'days': days, 'hours': hours, 'minutes': minutes, 'seconds': seconds };
+	}
+	function time_since_pause(pauseTime){
+		var t = Date.parse(new Date()) - Date.parse(pauseTime);
+		return t;
+
 	}
 	function gameEnd() {
 		if (tokenScore == maxScore) {
