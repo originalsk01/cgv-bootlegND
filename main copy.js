@@ -50,7 +50,7 @@ function startGame(){
     document.getElementById('instructions').className = '';
     document.body.style.marginTop = 0;
     const game = new Game();
-    game.init();
+    game.initGame();
 
 }
 

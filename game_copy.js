@@ -23,7 +23,7 @@ let shipModel;
 
 // global asset paths
 const shipPath =
-	"/models/low_poly_spaceship_pack/models/GLTF/LPSP_SmallStarfigher.gltf";
+	"./LPSP_SmallStarfigher.gltf";
 
 
 // global colour variables
@@ -189,25 +189,25 @@ class Game {
 		document.body.appendChild(renderer.domElement);
 
 		//add some background music
-		if (playonce) {
-			const listener = new THREE.AudioListener();
-			flightCamera.add(listener);
+		// if (playonce) {
+		// 	const listener = new THREE.AudioListener();
+		// 	flightCamera.add(listener);
 
-			// create a global audio source
-			const sound = new THREE.Audio(listener);
+		// 	// create a global audio source
+		// 	const sound = new THREE.Audio(listener);
 
-			// load a sound and set it as the Audio object's buffer
-			const audioLoader = new THREE.AudioLoader();
-			audioLoader.load('DOMN.mp3', function (buffer) {
-				sound.setBuffer(buffer);
-				sound.setLoop(true);
-				sound.setVolume(0.2);
-				if (!sound.isPlaying) {
-					sound.play();
-				}
-			});
-			playonce = false
-		}
+		// 	// load a sound and set it as the Audio object's buffer
+		// 	const audioLoader = new THREE.AudioLoader();
+		// 	audioLoader.load('DOMN.mp3', function (buffer) {
+		// 		sound.setBuffer(buffer);
+		// 		sound.setLoop(true);
+		// 		sound.setVolume(0.2);
+		// 		if (!sound.isPlaying) {
+		// 			sound.play();
+		// 		}
+		// 	});
+		// 	playonce = false
+		// }
 		// Axes Helper
 		const axes = new THREE.AxesHelper(100);
 		scene.add(axes);
@@ -369,6 +369,7 @@ class Game {
 			};
 		};
 
+
 		// Function to add multiple platforms into a gameboard
 		// allow different textures/colours for different sections
 		const createGameBoard = () => {
@@ -468,7 +469,6 @@ class Game {
 		shipModel.add(flightCamera)
 
 		flightCamera.position.set(0, 4, 7.5)
-		
 
 		// create cannon body for ship
 		shipBody = new CANNON.Body({
@@ -588,6 +588,12 @@ class Game {
 		animate();
 	}
 
+}
+
+function CreateTrimesh(geometry) {
+	const vertices = geometry.attributes.position.array;
+	const indices = Object.keys(vertices).map(Number);
+	return new CANNON.Trimesh(vertices, indices);
 }
 
 
@@ -897,7 +903,7 @@ function initShipControls() {
 		if (keys[key] !== undefined) keys[key] = false
 
 	})
-	
+
 
 	document.addEventListener('mousemove', onDocumentMouseMove, false);
 
