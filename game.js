@@ -35,9 +35,6 @@ const blue = "rgb(110,197,233)";
 const vibrantYellow = new THREE.Color(0xf49f1c);
 const darkBlue = new THREE.Color(0x003380);
 
-//Obstacles
-let squareRing2, squareRing2;
-
 // cannon-es global variables
 let world;
 let shipBody;
@@ -456,13 +453,6 @@ class Game {
 
 		const gameboard = createGameBoard();
 		scene.add(gameboard);
-
-		//Add obstacles
-		squareRing = createSquareRing(0,15,15)
-        // scene.add(squareRing)
-
-		squareRing2 = createSquareRing(-10, 10, 10)
-		// scene.add(squareRing2)
 
 		//////////////// ADD PLAYER SHIP //////////////////////////
 

@@ -56702,12 +56702,9 @@
 				return board;
 			};
 
-<<<<<<< HEAD
 			
 
 
-=======
->>>>>>> 2537afd477196f5e3140f12a69e0e8d6fbf2f8c3
 			// Add gameboard to world
 
 			const gameboard = createGameBoard();
@@ -57078,15 +57075,6 @@
 			totalTokens = 5;
 
 			animate();
-<<<<<<< HEAD
-
-			var squareRing = createSquareRing(0,15,15);
-	        scene.add(squareRing);
-
-			var squareRing2 = createSquareRing(-10, 10, 10);
-			scene.add(squareRing2);
-=======
->>>>>>> 2537afd477196f5e3140f12a69e0e8d6fbf2f8c3
 			for (let i = 0; i < totalTokens; i++) {
 				var tokenCustom = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3);
 				var randomZ = Math.floor(Math.random() * 250);
@@ -57230,51 +57218,6 @@
 		innerCustomArray.push(innerCustom); // use separate array for innerCustom which will be global so that we can access them
 		return outerCustom
 	}
-<<<<<<< HEAD
-
-	const createSquareRing = (x,y,z) =>{
-		const board = new Group();
-		const platformGeometries = [];
-		const platformBodies = [];
-		let newPlatform;
-		let colorMap;
-		
-		//ceiling
-		colorMap = new TextureLoader().load("./textures/dark_floor.png");
-		newPlatform = placePlatform(createPlatform(5, 5, 1, colorMap), x-1, y+5, z-1);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
-		//world boundaries
-		colorMap = new TextureLoader().load("./textures/light_floor.png");
-		newPlatform = placePlatform(createPlatform(5, 1, 6, colorMap), x-1, y, z+4);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
-
-		colorMap = new TextureLoader().load("./textures/dark_floor.png");
-		newPlatform = placePlatform(createPlatform(5, 1, 5, colorMap), x-1, y, z-1);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
-
-		//floor 
-		colorMap = new TextureLoader().load("./textures/lime_floor.png");
-		newPlatform = placePlatform(createPlatform(5, 5, 1, colorMap), x-1, y, z-1);
-		platformGeometries.push(newPlatform.threePlatform);
-		platformBodies.push(newPlatform.cannonPlatform);
-		newPlatform.cannonPlatform.id;
-
-		// var token = createToken(3, 5, 0, 0, vibrantYellow, darkBlue, 1, 0.3)
-		// token.position.set(20*x,20*y,20*z)
-		// scene.add(token)
-
-		for (let i = 0; i < platformGeometries.length; i++) {
-			board.add(platformGeometries[i]);
-			world.addBody(platformBodies[i]);
-		}
-
-		return board;
-	};
-=======
->>>>>>> 2537afd477196f5e3140f12a69e0e8d6fbf2f8c3
 	// function AddMinutesToDate(date, minutes) {
 	// 	return new Date(date.getTime() + minutes * 60000);
 
@@ -57343,7 +57286,6 @@
 
 	NewStuff.innerHTML = "<body class='intro'>" + 
 	"<div class= 'wrapper'>" + '<div class= "scroll-text">' +
-<<<<<<< HEAD
 	"<h1>Welcome to: Space Invaders except its a project made by coms students tryna survive the Rona</h1>" + 
 	"<h2>And also its not really space invaders </h2>" +
 	"<h3>Part II</h3>" +
@@ -57351,15 +57293,6 @@
 	"<p>You are a rookie pilot Ricch Heard with 10 PhDs in everyfield aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and PRAvenman VESHim'l have been knocked out from stress of studying for\
 their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper tokens so they can buy past papers to help them \
 study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Captain! Heres your manual</p> " + 
-=======
-	"<h1>Welcome to: Space Invaders except its a project made by Coms students tryna survive the Rona</h1>" + 
-	"<h2>And also its not really space invaders </h2>" +
-	"<h3>Part II (dont sue us Disney pls)</h3>" +
-	"<h4>Instructions </h4>" +
-	"<p>You are a Padawan Jedi pilot Ricch Heard with 42 PhDs in everyfield (except flying because all the energade , coke and redbull you drink gives you the jitters!) aboard the Transdimensional Interstellar Neutron Observer (T.I.N.O) Spacecraft. Your head pilots Darth Stevovo and Padawan PRAvenman VESHim'l have been knocked out from stress of studying for\
-their pilot exams which are taking place on Monday the 21st!(The Cross-dimensional Orbital Milky-way Spacemen (C.O.M.S) board has no mercy on them :( ) Your job is to fly the ship and collect Past Paper Tokens so they can buy past papers to help them \
-study when they wake up! Youre new to the pilot game but youre a quick learner. Goodluck Master! Heres your Sacred Text</p> " + 
->>>>>>> 2537afd477196f5e3140f12a69e0e8d6fbf2f8c3
 	"<h2>Left Hand controls</h2>" +
 	"<p>Tilt Left : A</p>" + 
 	"<p>Tilt Right : D</p>" + 
